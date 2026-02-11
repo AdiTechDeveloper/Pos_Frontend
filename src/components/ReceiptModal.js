@@ -68,8 +68,8 @@ const ReceiptModal = forwardRef(
 
             {/* Totals */}
             <div style={styles.summaryRow}>
-              <span>Subtotal:</span>
-              <span>₹{parseFloat(bill?.subtotal || 0).toFixed(2)}</span>
+              <span>Total Taxable:</span>
+              <span>₹{parseFloat(bill?.subtotal - bill?.total_gst || 0).toFixed(2)}</span>
             </div>
             <div style={styles.summaryRow}>
               <span>Total GST:</span>

@@ -19,15 +19,18 @@ const CreateEditProduct = () => {
   const isEdit = Boolean(id);
 
   const [brands, setBrands] = useState([]);
+  const [barcode, setBarcode] = useState([]);
   const [categories, setCategories] = useState([]);
   const [gstRates, setGstRates] = useState([]);
   const [categoryId, setCategoryId] = useState("");
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [newCategory, setNewCategory] = useState("");
-    const [brandId, setBrandId] = useState("");
+  const [brandId, setBrandId] = useState("");
   const [showBrandModel, setShowBrandModel] = useState(false);
   const [newBrand, setNewBrand] = useState("");
   const [error, setError] = useState("");
+
+  let lastTime = 0;
 
   const [initialValues, setInitialValues] = useState({
     sku: "",
@@ -36,9 +39,6 @@ const CreateEditProduct = () => {
     category_id: "",
     hsn_code: "",
     gst_rate_id: "",
-    mrp: "",
-    selling_price: "",
-    cost_price: "",
   });
 
   // Fetch brands
@@ -66,8 +66,9 @@ const CreateEditProduct = () => {
   // If editing → set initial values
   const loadProductData = () => {
     if (incomingProduct) {
-       setBrandId(incomingProduct.brand_id);
-       setCategoryId(incomingProduct.category_id);
+      console.log(incomingProduct);
+      setBrandId(incomingProduct.brand_id);
+      setCategoryId(incomingProduct.category_id);
       setInitialValues({
         sku: incomingProduct.sku,
         name: incomingProduct.name,
@@ -78,6 +79,8 @@ const CreateEditProduct = () => {
         mrp: incomingProduct.mrp,
         selling_price: incomingProduct.selling_price,
         cost_price: incomingProduct.cost_price,
+        barcode: incomingProduct.barcode,
+        gst_inclusive: incomingProduct.gst_inclusive == 1,
       });
     }
   };
@@ -91,15 +94,7 @@ const CreateEditProduct = () => {
 
   // Validation Schema
   const validationSchema = Yup.object({
-    // sku: Yup.string().required("SKU is required"),
     name: Yup.string().required("Product Name is required"),
-    // brand_id: Yup.string().required("Brand is required"),
-    // category_id: Yup.string().required("Category is required"),
-    // hsn_code: Yup.string().required("HSN Code is required"),
-    // gst_rate_id: Yup.string().required("GST Rate required"),
-    // mrp: Yup.number().required("MRP required"),
-    // selling_price: Yup.number().required("Selling price required"),
-    // cost_price: Yup.number().required("Cost price required"),
   });
 
   // Submit (Create + Update)
@@ -209,27 +204,37 @@ const CreateEditProduct = () => {
             >
               {() => (
                 <Form className="wg-form">
-                  {/* SKU */}
                   <div className="row mb-20">
+                    {/* Name */}
                     <fieldset className="col-md-6">
-                      <div className="body-title">SKU *</div>
-                      <div className="body-content mb-15">
-                        <Field type="text" name="sku" className="mb-5" />
+                      <div className="body-title">Name *</div>
+                      <div className="body-content">
+                        <Field
+                          type="text"
+                          name="name"
+                          placeholder="Enter product name"
+                          className="mb-5"
+                        />
                         <ErrorMessage
-                          name="sku"
+                          name="name"
                           className="error-text"
                           component="div"
                         />
                       </div>
                     </fieldset>
 
-                    {/* Name */}
+                    {/* SKU */}
                     <fieldset className="col-md-6">
-                      <div className="body-title">Name *</div>
-                      <div className="body-content">
-                        <Field type="text" name="name" className="mb-5" />
+                      <div className="body-title">SKU</div>
+                      <div className="body-content mb-15">
+                        <Field
+                          type="text"
+                          name="sku"
+                          placeholder="Enter SKU"
+                          className="mb-5"
+                        />
                         <ErrorMessage
-                          name="name"
+                          name="sku"
                           className="error-text"
                           component="div"
                         />
@@ -258,14 +263,12 @@ const CreateEditProduct = () => {
                             >
                               <option value="">Select Brand</option>
                               {brands.map((b) => (
-                            <option value={b.id} key={b.id}>
-                              {b.name}
-                            </option>
-                          ))}
-                              {!newBrand && (
-                                <option value="add_new">
-                                  + Add New Brand
+                                <option value={b.id} key={b.id}>
+                                  {b.name}
                                 </option>
+                              ))}
+                              {!newBrand && (
+                                <option value="add_new">+ Add New Brand</option>
                               )}
                             </select>
                           )}
@@ -276,7 +279,6 @@ const CreateEditProduct = () => {
                           component="div"
                         />
                       </div>
-
                     </fieldset>
 
                     {/* Category */}
@@ -323,10 +325,10 @@ const CreateEditProduct = () => {
 
                   <div className="row mb-20">
                     <fieldset className="col-md-6">
-                      <div className="body-title">Gst Rate Id *</div>
+                      <div className="body-title">Gst Rate *</div>
                       <div className="body-content mb-15">
                         <Field as="select" name="gst_rate_id" className="mb-5">
-                          <option value="">Select Gst Rate Id</option>
+                          <option value="">Select Gst Rate</option>
                           {gstRates.map((element) => {
                             return (
                               <>
@@ -344,23 +346,16 @@ const CreateEditProduct = () => {
                         />
                       </div>
                     </fieldset>
-                    <fieldset className="col-md-6">
-                      <div className="body-title">MRP *</div>
-                      <div className="body-content">
-                        <Field type="number" name="mrp" className="mb-5" />
-                        <ErrorMessage
-                          name="mrp"
-                          component="div"
-                          className="error-text"
-                        />
-                      </div>
-                    </fieldset>
-                  </div>
-                  <div className="row mb-20">
+
                     <fieldset className="col-md-6">
                       <div className="body-title">HSN *</div>
                       <div className="body-content mb-15">
-                        <Field type="text" name="hsn_code" className="mb-5" />
+                        <Field
+                          type="text"
+                          name="hsn_code"
+                          placeholder="Enter HSN code"
+                          className="mb-5"
+                        />
                         <ErrorMessage
                           name="hsn_code"
                           className="error-text"
@@ -368,35 +363,85 @@ const CreateEditProduct = () => {
                         />
                       </div>
                     </fieldset>
+                  </div>
 
+                  <div className="row mb-20">
                     <fieldset className="col-md-6">
-                      <div className="body-title">Selling Price *</div>
-                      <div className="body-content">
-                        <Field
-                          type="number"
-                          name="selling_price"
-                          className="mb-5"
-                        />
+                      <div className="body-title">Barcode</div>
+                      <div className="body-content mb-15">
+                        <Field name="barcode">
+                          {({ field, form }) => (
+                            <input
+                              {...field}
+                              type="text"
+                              placeholder="Scan Barcode"
+                              autoFocus
+                              className="mb-5"
+                              onChange={(e) => {
+                                const now = Date.now();
+                                const isScanner = now - lastTime < 30;
+                                lastTime = now;
+
+                                form.setFieldValue("barcode", e.target.value);
+                                form.setFieldTouched("barcode", true, false);
+
+                                if (isScanner) {
+                                  form.setFieldValue("_scanner", true, false);
+                                }
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                  e.preventDefault();
+
+                                  const barcode = field.value.trim();
+                                  if (!barcode) return;
+
+                                  console.log("Process barcode:", barcode);
+                                  form.setFieldValue("_scanner", false, false);
+                                }
+                              }}
+                            />
+                          )}
+                        </Field>
                         <ErrorMessage
-                          name="selling_price"
-                          component="div"
+                          name="barcode"
                           className="error-text"
+                          component="div"
                         />
                       </div>
                     </fieldset>
-                  </div>
 
-                  <fieldset className="mb-20 col-md-6">
-                    <div className="body-title">Cost Price *</div>
-                    <div className="body-content">
-                      <Field type="number" name="cost_price" className="mb-5" />
-                      <ErrorMessage
-                        name="cost_price"
-                        component="div"
-                        className="error-text"
-                      />
-                    </div>
-                  </fieldset>
+                    <fieldset className="col-md-6">
+                      <div className="body-title mb-5">GST Included</div>
+
+                      <Field name="gst_inclusive">
+                        {({ field, form }) => {
+                          const isLocked =
+                            field.value === true || field.value === 1;
+
+                          return (
+                            <label
+                              className={`gst-toggle ${isLocked ? "locked" : ""}`}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={!!field.value}
+                                onChange={() => {
+                                  if (!isLocked) {
+                                    form.setFieldValue("gst_inclusive", true);
+                                  }
+                                }}
+                              />
+                              <span className="slider" />
+                              <span className="state-text">
+                                {isLocked ? "GST Included" : "GST Excluded"}
+                              </span>
+                            </label>
+                          );
+                        }}
+                      </Field>
+                    </fieldset>
+                  </div>
 
                   {/* SUBMIT BUTTON */}
                   <button className="tf-button w208" type="submit">
@@ -456,7 +501,7 @@ const CreateEditProduct = () => {
             </div>
           )}
 
-            {showBrandModel && (
+          {showBrandModel && (
             <div
               className="modal-overlay"
               onClick={() => setShowBrandModel(false)}

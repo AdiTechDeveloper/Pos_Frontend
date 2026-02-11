@@ -48,86 +48,98 @@ const PurchaseBill = () => {
       name: "Id",
       selector: (row) => row.id,
       sortable: true,
-      width: "100px",
+      width: "80px",
     },
     {
       name: "Branch Name",
       selector: (row) => row.branch.name,
       sortable: true,
+      width: "250px",
     },
     {
       name: "Supplier Name",
       selector: (row) => row.supplier.name,
       sortable: true,
+      width: "300px",
     },
     {
       name: "Bill No",
       selector: (row) => row.bill_no,
       sortable: true,
+      width: "150px",
     },
     {
       name: "Bill Date",
       selector: (row) => row.bill_date,
       sortable: true,
+      width: "120px",
     },
     {
-      name: "TaxableValue",
+      name: "Taxable Amount",
       selector: (row) => row.taxable_value,
       sortable: true,
+      width: "150px",
     },
     {
-      name: "Cgst Amount",
+      name: "CGST",
       selector: (row) => row.cgst_amount,
       sortable: true,
+      width: "100px",
     },
     {
-      name: "Sgst Amount",
+      name: "SGST",
       selector: (row) => row.sgst_amount,
       sortable: true,
+      width: "100px",
     },
     {
-      name: "Igst Amount",
+      name: "IGST",
       selector: (row) => row.igst_amount,
       sortable: true,
+      width: "100px",
     },
     {
-      name: "Cess Amount",
+      name: "CESS",
       selector: (row) => row.cess_amount,
       sortable: true,
+      width: "100px",
     },
     {
       name: "Total Tax",
       selector: (row) => row.total_tax,
       sortable: true,
+      width: "120px",
     },
     {
-      name: "Total Amount",
+      name: "Total",
       selector: (row) => row.total_amount,
       sortable: true,
+      width: "120px",
     },
     {
       name: "Expiry Date",
       selector: (row) => row.lines[0].expiry_date,
       sortable: true,
+      width: "120px",
     },
-    {
-      name: "Action",
-      cell: (row) => (
-        <div className="list-icon-function">
-          <div className="item edit">
-            <Link
-              to={`/purchase-bill/edit/${row.id}`}
-              onClick={() => handleEdit(row)}
-            >
-              <i className="icon-edit-3"></i>
-            </Link>
-          </div>
-          {/* <div className="item trash" onClick={() => handleDeleteConfirm(row.id)}>
-            <i className="icon-trash-2"></i>
-          </div> */}
-        </div>
-      ),
-    },
+    // {
+    //   name: "Action",
+    //   cell: (row) => (
+    //     <div className="list-icon-function">
+    //       <div className="item edit">
+    //         <Link
+    //           to={`/purchase-bill/edit/${row.id}`}
+    //           onClick={() => handleEdit(row)}
+    //         >
+    //           <i className="icon-edit-3"></i>
+    //         </Link>
+    //       </div>
+    //       {/* <div className="item trash" onClick={() => handleDeleteConfirm(row.id)}>
+    //         <i className="icon-trash-2"></i>
+    //       </div> */}
+    //     </div>
+    //   ),
+    // },
   ];
 
   const fetchPurchaseBill = async () => {
@@ -245,7 +257,7 @@ const PurchaseBill = () => {
                 headCells: {
                   style: {
                     fontWeight: "bold",
-                    fontSize: "14px",
+                    fontSize: "12px",
                   },
                 },
               }}

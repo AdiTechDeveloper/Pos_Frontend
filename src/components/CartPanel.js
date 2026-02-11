@@ -29,41 +29,75 @@ export default function CartPanel({ cart, setCart, triggerRefresh }) {
   const [showReceipt, setShowReceipt] = useState(false);
   const [printData, setPrintData] = useState(null);
 
+  // const getPriceWithGST = (item) => {
+  //   const price = parseFloat(item.selling_price);
+  //   const gst = parseFloat(item.gst_rate?.rate || 0);
+
+  //   const gstAmount = (price * gst) / 100;
+  //   // const finalPrice = price + gstAmount;
+  //   const finalPrice = price;
+
+  //   return { gstAmount, finalPrice };
+  // };
+
   const getPriceWithGST = (item) => {
-    const price = parseFloat(item.selling_price);
-    const gst = parseFloat(item.gst_rate?.rate || 0);
+    const sellingPrice = parseFloat(item.selling_price) || 0;
+    const gstRate = parseFloat(item.gst_percent) || 0;
+    const isInclusive = Number(item.gst_inclusive) === 1;
 
-    const gstAmount = (price * gst) / 100;
-    const finalPrice = price + gstAmount;
-
-    return { gstAmount, finalPrice };
+    if (gstRate > 0 && isInclusive) {
+      // INCLUSIVE: Selling price already includes tax
+      const taxable = (sellingPrice * 100) / (100 + gstRate);
+      const gstAmount = sellingPrice - taxable;
+      return { taxable, gstAmount, finalPrice: sellingPrice };
+    } else {
+      // EXCLUSIVE: Add tax on top of selling price
+      const gstAmount = (sellingPrice * gstRate) / 100;
+      return {
+        taxable: sellingPrice,
+        gstAmount,
+        finalPrice: sellingPrice + gstAmount,
+      };
+    }
   };
 
   const total = cart.reduce((acc, item) => {
     const { finalPrice } = getPriceWithGST(item);
     return acc + finalPrice * item.qty;
   }, 0);
+
   localStorage.setItem("cart_total", total);
   const increaseQty = (item) => {
-    setCart(cart.map((i) => (i.id === item.id ? { ...i, qty: i.qty + 1 } : i)));
+    setCart(
+      cart.map((i) =>
+        i.cart_key === item.cart_key ? { ...i, qty: i.qty + 1 } : i,
+      ),
+    );
   };
 
   const decreaseQty = (item) => {
     setCart(
       cart.map((i) =>
-        i.id === item.id ? { ...i, qty: Math.max(i.qty - 1, 1) } : i
-      )
+        i.cart_key === item.cart_key
+          ? { ...i, qty: Math.max(i.qty - 1, 1) }
+          : i,
+      ),
     );
   };
 
-  const removeItem = (item) => setCart(cart.filter((i) => i.id !== item.id));
+  const removeItem = (item) => {
+    setCart(cart.filter((i) => i.cart_key !== item.cart_key));
+  };
 
   const handlePayment = async (payments) => {
     try {
       const lines = cart.map((i) => ({
-        product_id: i.id,
+        product_id: i.product_id || i.id,
+        inventory_id: i.inventory_id || i.inventoryId,
         qty: i.qty,
       }));
+
+      console.log("Payload being sent:", { lines });
 
       const res = await createSalesBill(lines);
       const billId = res.data.data.id;
@@ -77,7 +111,7 @@ export default function CartPanel({ cart, setCart, triggerRefresh }) {
         },
         {
           headers: getAuthHeader(),
-        }
+        },
       );
 
       setPrintData(printRes.data);
@@ -88,7 +122,9 @@ export default function CartPanel({ cart, setCart, triggerRefresh }) {
       triggerRefresh();
       setShowPayment(false);
     } catch (err) {
-      toast.error("Error paying bill");
+      const serverMessage = err.response?.data?.message;
+      toast.error(serverMessage || "Error processing payment");
+      console.error("Payment Error:", err);
     }
   };
 
@@ -192,7 +228,7 @@ export default function CartPanel({ cart, setCart, triggerRefresh }) {
           ) : (
             cart.map((item) => (
               <div
-                key={item.id}
+                key={`${item.inventory_id}_${item.selling_price}`}
                 className="bg-white p-6 rounded-3xl shadow-2xl flex justify-between items-center"
               >
                 <div>
@@ -207,14 +243,22 @@ export default function CartPanel({ cart, setCart, triggerRefresh }) {
                     const { gstAmount, finalPrice } = getPriceWithGST(item);
                     return (
                       <>
-                        <p className="text-gray-600 text-xl mb-5">
-                          Base: ₹{item.selling_price}
+                        <p className="text-gray-600">
+                          Unit Price: ₹{Number(item.selling_price).toFixed(2)}
+                          <span className="text-xs ml-1">
+                            (
+                            {Number(item.gst_inclusive) === 1
+                              ? "Incl."
+                              : "Excl."}{" "}
+                            GST)
+                          </span>
                         </p>
-                        <p className="text-gray-600 text-xl mb-5">
-                          GST ({item.gst_rate?.rate}%): ₹{gstAmount.toFixed(2)}
+                        <p className="text-gray-500">
+                          GST ({item.gst_percent}%): ₹
+                          {(gstAmount * item.qty).toFixed(2)}
                         </p>
-                        <p className="font-bold text-2xl text-green-700 mb-5">
-                          Final: ₹{finalPrice.toFixed(2)}
+                        <p className="font-bold text-green-700">
+                          Subtotal: ₹{(finalPrice * item.qty).toFixed(2)}
                         </p>
                       </>
                     );
@@ -242,23 +286,25 @@ export default function CartPanel({ cart, setCart, triggerRefresh }) {
                     onChange={(e) => {
                       let val = e.target.value;
 
-                      // If user clears input → dont crash, keep empty temporarily
                       if (val === "") {
-                        setCart(
-                          cart.map((i) =>
-                            i.id === item.id ? { ...i, qty: "" } : i
-                          )
+                        setCart((prev) =>
+                          prev.map((i) =>
+                            i.inventory_id === item.inventory_id
+                              ? { ...i, qty: "" }
+                              : i,
+                          ),
                         );
                         return;
                       }
 
-                      // Convert to number
                       const newQty = Math.max(1, Number(val));
 
-                      setCart(
-                        cart.map((i) =>
-                          i.id === item.id ? { ...i, qty: newQty } : i
-                        )
+                      setCart((prev) =>
+                        prev.map((i) =>
+                          i.inventory_id === item.inventory_id
+                            ? { ...i, qty: newQty }
+                            : i,
+                        ),
                       );
                     }}
                     className="w-20 text-center text-3xl font-bold border rounded-xl p-2"

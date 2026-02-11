@@ -27,7 +27,7 @@ export const scanBarcode = (barcode) =>
   axios.post(
     `${BASE_URL}/api/sales/scan`,
     { barcode },
-    { headers: getAuthHeader() }
+    { headers: getAuthHeader() },
   );
 
 const generateIdempotencyKey = () =>
@@ -43,20 +43,22 @@ export const createSalesBill = async (lines) => {
     localStorage.setItem("store_idemp_key", key);
   }
 
-  const res = await axios.post(
-    `${BASE_URL}/api/sales-bills`,
-    { lines },
-    {
-      headers: {
-        ...getAuthHeader(),
-        "Idempotency-Key": key,
+  try {
+    const res = await axios.post(
+      `${BASE_URL}/api/sales-bills`,
+      { lines },
+      {
+        headers: {
+          ...getAuthHeader(),
+          "Idempotency-Key": key,
+        },
       },
-    }
-  );
+    );
 
-  localStorage.removeItem("store_idemp_key");
-
-  return res;
+    return res;
+  } finally {
+    localStorage.removeItem("store_idemp_key");
+  }
 };
 
 export const paySalesBill = async (sales_bill_id, payments) => {
@@ -74,7 +76,7 @@ export const paySalesBill = async (sales_bill_id, payments) => {
         ...getAuthHeader(),
         "Idempotency-Key": key,
       },
-    }
+    },
   );
 
   localStorage.removeItem("pay_idemp_key");

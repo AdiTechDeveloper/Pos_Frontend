@@ -5,6 +5,7 @@ import axios from "axios";
 import Layout from "./layout";
 import { toast } from "react-toastify";
 import BarcodePrintModal from "./BarcodePrintModal";
+import Barcode from "react-barcode";
 
 const Product = () => {
   const BASE_URL = process.env.REACT_APP_API_BASE_URL;
@@ -12,15 +13,17 @@ const Product = () => {
   const [products, setProducts] = useState([]);
   const [search, setSearch] = useState("");
   const [filteredData, setFilteredData] = useState(products);
+  const [currentPage, setCurrentPage] = useState(1);
+  const perPage = 10;
 
   const [selectedProduct, setSelectedProduct] = useState(null);
-  const [printProduct, setPrintProduct] = useState(null);
 
   const user_data = JSON.parse(localStorage.getItem("user_detail"));
 
-  const handleEdit = (row) => {
-    localStorage.setItem("product_detail", JSON.stringify(row));
+  const handleEdit = (product) => {
+    localStorage.setItem("product_detail", JSON.stringify(product));
   };
+
   const handleDeleteConfirm = (id) => {
     if (window.confirm("Are you sure you want to delete this Product?")) {
       handleDelete(id);
@@ -49,98 +52,6 @@ const Product = () => {
     setSelectedProduct(row);
   };
 
-  const columns = [
-    {
-      name: "Id",
-      selector: (row) => row.id,
-      sortable: true,
-      width: "100px",
-    },
-    {
-      name: "SKU",
-      selector: (row) => row.sku,
-      sortable: true,
-    },
-    {
-      name: "Barcode",
-      selector: (row) => row.barcode,
-      sortable: true,
-    },
-    {
-      name: "Name",
-      selector: (row) => row?.name,
-      sortable: true,
-    },
-    {
-      name: "Brand Name",
-      selector: (row) => row?.brand?.name,
-      sortable: true,
-    },
-    {
-      name: "Category Name",
-      selector: (row) => row?.category?.name,
-      sortable: true,
-    },
-    {
-      name: "HSN Code",
-      selector: (row) => row?.hsn_code,
-      sortable: true,
-    },
-    {
-      name: "GST",
-      selector: (row) => row?.gst_rate?.rate,
-      sortable: true,
-    },
-    {
-      name: "MRP",
-      selector: (row) => row?.mrp,
-      sortable: true,
-    },
-    {
-      name: "Selling Price",
-      selector: (row) => row?.selling_price,
-      sortable: true,
-    },
-    {
-      name: "Cost Price",
-      selector: (row) => row?.cost_price,
-      sortable: true,
-    },
-    {
-      name: "Action",
-      cell: (row) => (
-        <div className="list-icon-function">
-          {/* Edit */}
-          <div className="item edit">
-            <Link
-              to={`/product/edit/${row?.id}`}
-              onClick={() => handleEdit(row)}
-            >
-              <i className="icon-edit-3"></i>
-            </Link>
-          </div>
-
-          {/* Delete */}
-          <div
-            className="item trash"
-            onClick={() => handleDeleteConfirm(row.id)}
-          >
-            <i className="icon-trash-2"></i>
-          </div>
-
-          {/* Print Barcode */}
-          <div
-            className="item print"
-            onClick={() => handlePrintBarcode(row)}
-            title="Print Barcode"
-          >
-            <i className="icon-printer"></i>
-          </div>
-        </div>
-      ),
-    },
-  ];
-
   const fetchProduct = async () => {
     try {
       const response = await axios.get(`${BASE_URL}/api/products`, {
@@ -149,9 +60,95 @@ const Product = () => {
           Authorization: `Bearer ${user_data.token}`,
         },
       });
-      setProducts(response.data.products);
+
+      const rows = [];
+
+      response.data.products.forEach((product) => {
+        if (product.inventories && product.inventories.length > 0) {
+          const grouped = {};
+
+          product.inventories.forEach((inv) => {
+            const key = `${inv.batch_no}-${inv.batch_barcode}-${inv.mrp}-${inv.selling_price}`;
+
+            if (!grouped[key]) {
+              grouped[key] = {
+                row_id: `inv-${product.id}-${key}`,
+                inventory_ids: [inv.id],
+
+                product_id: product.id,
+                sku: product.sku,
+                name: product.name,
+                brand: product.brand,
+                category: product.category,
+                hsn_code: product.hsn_code,
+                gst_rate: product.gst_rate,
+                gst_inclusive: product.gst_inclusive,
+
+                batch_no: inv.batch_no,
+
+                mrp: Number(inv.mrp),
+                selling_price: Number(inv.selling_price),
+
+                qty: Number(inv.qty) || 0,
+                free: Number(inv.free) || 0,
+
+                cost_total: Number(inv.cost_price) * Number(inv.qty || 0),
+
+                barcodes: new Set([inv.batch_barcode]),
+              };
+            } else {
+              grouped[key].inventory_ids.push(inv.id);
+              grouped[key].qty += Number(inv.qty) || 0;
+              grouped[key].free += Number(inv.free) || 0;
+              grouped[key].cost_total +=
+                Number(inv.cost_price) * Number(inv.qty || 0);
+              grouped[key].barcodes.add(inv.batch_barcode);
+            }
+          });
+
+          Object.values(grouped).forEach((row) => {
+            row.total_qty = row.qty + row.free;
+            row.cost_price = row.qty
+              ? (row.cost_total / row.qty).toFixed(2)
+              : 0;
+
+            row.show_barcode = row.barcodes.size === 1;
+            row.barcode = row.show_barcode ? [...row.barcodes][0] : null;
+
+            delete row.barcodes;
+            rows.push(row);
+          });
+        } else {
+          rows.push({
+            row_id: `prod-${product.id}`,
+
+            product_id: product.id,
+            sku: product.sku,
+            name: product.name,
+            brand: product.brand,
+            category: product.category,
+            hsn_code: product.hsn_code,
+            gst_rate: product.gst_rate,
+            gst_inclusive: product.gst_inclusive,
+
+            batch_no: "-",
+            barcode: product.barcode ?? null,
+
+            mrp: product.mrp ?? 0,
+            selling_price: product.selling_price ?? 0,
+            cost_price: product.cost_price ?? 0,
+
+            qty: 0,
+            free: 0,
+            total_qty: 0,
+            show_barcode: !!product.barcode,
+          });
+        }
+      });
+
+      setProducts(rows);
     } catch (error) {
-      console.error("Error fetching categories:", error);
+      console.error("Error fetching products:", error);
     }
   };
 
@@ -180,6 +177,152 @@ const Product = () => {
     });
     setFilteredData(result);
   }, [search, products]);
+
+  const columns = [
+    {
+      name: "ID",
+      cell: (row, index) => (currentPage - 1) * perPage + index + 1,
+      width: "80px",
+      center: true,
+    },
+
+    {
+      name: "SKU",
+      selector: (row) => row.sku,
+      sortable: true,
+      width: "120px",
+    },
+
+    {
+      name: "Barcode",
+      center: true,
+      minWidth: "180px",
+      cell: (row) =>
+        row.show_barcode && row.barcode ? (
+          <div className="barcode-cell">
+            <Barcode
+              value={row.barcode}
+              width={1}
+              height={35}
+              displayValue={false}
+            />
+            <div className="barcode-text">{row.barcode}</div>
+          </div>
+        ) : (
+          "-"
+        ),
+    },
+
+    {
+      name: "Name",
+      selector: (row) => row?.name,
+      sortable: true,
+      minWidth: "220px",
+    },
+
+    {
+      name: "Brand",
+      selector: (row) => row?.brand?.name,
+      sortable: true,
+      minWidth: "120px",
+    },
+
+    {
+      name: "Category",
+      selector: (row) => row?.category?.name,
+      sortable: true,
+      minWidth: "100px",
+    },
+
+    {
+      name: "HSN",
+      selector: (row) => row?.hsn_code,
+      sortable: true,
+      width: "100px",
+    },
+
+    {
+      name: "GST %",
+      selector: (row) => row?.gst_rate?.rate,
+      sortable: true,
+      width: "90px",
+    },
+
+    {
+      name: "MRP",
+      selector: (row) => row.mrp,
+      sortable: true,
+      width: "80px",
+    },
+
+    {
+      name: "SP",
+      selector: (row) => row.selling_price,
+      sortable: true,
+      width: "80px",
+    },
+
+    {
+      name: "GST Included",
+      sortable: true,
+      center: true,
+      width: "130px",
+      cell: (row) => {
+        const isYes = row?.gst_inclusive === true || row?.gst_inclusive === 1;
+
+        return (
+          <span className={`gst-dot ${isYes ? "yes" : "no"}`}>
+            {isYes ? "✓" : "✕"}
+          </span>
+        );
+      },
+    },
+
+    {
+      name: "Action",
+      center: true,
+      width: "160px",
+      cell: (row) => (
+        <div className="list-icon-function">
+          <span className="item edit" title="Edit">
+            <Link
+              to={`/product/edit/${row.product_id}`}
+              onClick={() =>
+                handleEdit({
+                  id: row.product_id,
+                  name: row.name,
+                  sku: row.sku,
+                  brand_id: row.brand?.id,
+                  category_id: row.category?.id,
+                  hsn_code: row.hsn_code,
+                  gst_rate_id: row.gst_rate?.id,
+                  gst_inclusive: row.gst_inclusive,
+                })
+              }
+            >
+              <i className="icon-edit-3" />
+            </Link>
+          </span>
+
+          <span
+            className="item trash"
+            title="Delete"
+            onClick={() => handleDeleteConfirm(row.product_id)}
+          >
+            <i className="icon-trash-2" />
+          </span>
+
+          <span
+            className="item print"
+            title="Print Barcode"
+            onClick={() => handlePrintBarcode(row)}
+          >
+            <i className="icon-printer" />
+          </span>
+        </div>
+      ),
+    },
+  ];
 
   return (
     <Layout>
@@ -247,6 +390,8 @@ const Product = () => {
               columns={columns}
               data={filteredData}
               pagination
+              paginationPerPage={perPage}
+              onChangePage={(page) => setCurrentPage(page)}
               highlightOnHover
               pointerOnHover
               responsive
@@ -254,7 +399,7 @@ const Product = () => {
                 headCells: {
                   style: {
                     fontWeight: "bold",
-                    fontSize: "14px",
+                    fontSize: "12px",
                   },
                 },
               }}

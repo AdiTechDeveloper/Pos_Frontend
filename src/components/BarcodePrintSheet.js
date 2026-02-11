@@ -34,7 +34,7 @@ const BarcodePrintSheet = forwardRef(({ product }, ref) => {
       {/* Barcode Element */}
       <Barcode
         value={product?.barcode || product?.sku || "0000"}
-        width={1.4}
+        width={1}
         height={40}
         renderer="svg"
         displayValue={true}

@@ -80,6 +80,9 @@ const CreateStore = () => {
     gstin: editingData?.gstin || "",
     logo: editingData?.logo || null,
     tagline: editingData?.tagline || "",
+    username: editingData?.username || "",
+    password: "",
+    password_confirmation: "",
   };
 
   const handleSubmit = async (values, { setSubmitting }) => {
@@ -97,6 +100,7 @@ const CreateStore = () => {
       formData.append("tagline", values.tagline || "");
       formData.append("username", values.username);
       formData.append("password", values.password);
+      formData.append("password_confirmation", values.password_confirmation);
 
       if (values.logo instanceof File) {
         formData.append("logo", values.logo);

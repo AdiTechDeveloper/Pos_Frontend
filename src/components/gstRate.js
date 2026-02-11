@@ -92,8 +92,27 @@ const GstRate = () => {
     },
     {
       name: "Active",
-      selector: (row) => row.active,
       sortable: true,
+      cell: (row) => {
+        const isActive = row.active == 1;
+        return (
+          <div
+            style={{
+              width: "28px",
+              height: "28px",
+              borderRadius: "50%",
+              backgroundColor: isActive ? "#22c55e" : "#ef4444",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "white",
+              fontWeight: "bold",
+            }}
+          >
+            {isActive ? "✓" : "✕"}
+          </div>
+        );
+      },
     },
     {
       name: "Action",
