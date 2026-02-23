@@ -343,8 +343,9 @@ const CreateEditPurchaseBill = () => {
         return;
       }
 
-      const product = response.data.data;
-      const inventory = product.inventories?.[0] || {};
+      const product = response.data.product;
+      const inventory =
+        response.data.batches?.find((b) => b.batch_barcode === barcode) || {};
 
       // Check if product already exists in lines
       const existingIndex = values.lines.findIndex(
@@ -367,13 +368,12 @@ const CreateEditPurchaseBill = () => {
         product_id: product.id.toString(),
         qty: 1,
         free_qty: 0,
-        purchase_rate: product.cost_price,
-        mrp: product.mrp,
-        selling_price: product.selling_price,
-        // discount_type: "",
-        // discount: "",
+        purchase_rate: inventory.purchase_rate || 0,
+        mrp: inventory.mrp,
+        cost_price: inventory.cost_price,
+        selling_price: inventory.selling_price,
         hsn_code: product.hsn_code,
-        gst_rate_id: product.gst_rate_id?.toString(),
+        gst_rate: product.gst_rate.id,
         batch_no: inventory.batch_no || "",
         expiry_date: inventory.expiry_date || "",
       };
@@ -609,10 +609,10 @@ const CreateEditPurchaseBill = () => {
                               <small className="field-label">Rate</small>
                               <Field
                                 type="number"
-                                name={`lines.${index}.purchase_rate`}
+                                name={`lines.${index}.cost_price`}
                               />
                               <ErrorMessage
-                                name={`lines.${index}.purchase_rate`}
+                                name={`lines.${index}.cost_price`}
                                 component="div"
                                 className="field-error"
                               />
@@ -683,7 +683,7 @@ const CreateEditPurchaseBill = () => {
                               <small className="field-label">GST %</small>
                               <Field
                                 as="select"
-                                name={`lines.${index}.gst_rate_id`}
+                                name={`lines.${index}.gst_rate`}
                               >
                                 <option value="">–</option>
                                 {gstRates.map((g) => (
@@ -693,7 +693,7 @@ const CreateEditPurchaseBill = () => {
                                 ))}
                               </Field>
                               <ErrorMessage
-                                name={`lines.${index}.gst_rate_id`}
+                                name={`lines.${index}.gst_rate`}
                                 component="div"
                                 className="field-error"
                               />
