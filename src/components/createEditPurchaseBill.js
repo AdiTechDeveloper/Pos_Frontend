@@ -193,7 +193,7 @@ const CreateEditPurchaseBill = () => {
             .typeError("Discount must be a number")
             .min(0, "Discount cannot be negative"),
 
-          hsn_code: Yup.string().required("HSN is required"),
+          // hsn_code: Yup.string().required("HSN is required"),
 
           gst_rate_id: Yup.string().required("GST rate required"),
 
