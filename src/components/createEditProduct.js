@@ -195,6 +195,7 @@ const CreateEditProduct = () => {
             {isEdit ? "Edit Product" : "Create Product"}
           </h3>
 
+          
           <div className="wg-box">
             <Formik
               enableReinitialize
@@ -348,7 +349,7 @@ const CreateEditProduct = () => {
                     </fieldset>
 
                     <fieldset className="col-md-6">
-                      <div className="body-title">HSN *</div>
+                      <div className="body-title">HSN</div>
                       <div className="body-content mb-15">
                         <Field
                           type="text"

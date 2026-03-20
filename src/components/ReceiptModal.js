@@ -23,7 +23,7 @@ const ReceiptModal = forwardRef(
 
     const metaRows = [
       ["Bill No", bill?.number],
-      ["Date", formatDateTime(bill?.date)],
+      ["Date", bill?.date],
       ["Cashier", bill?.cashier || "-"],
     ];
 
