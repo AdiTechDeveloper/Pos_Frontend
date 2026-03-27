@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useHistory } from "react-router-dom";
 import axios from "axios";
-import defaultLogo from "../assets/images/logo/logo.png";
 
 const BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
@@ -191,6 +190,32 @@ const Navbar = () => {
                         <div className="text">Sale Bill</div>
                       </Link>
                     </li>
+
+                    <li className="menu-item">
+                      <Link
+                        to="/reports/sales-analytics"
+                        className="menu-item-button"
+                        onClick={closeSidebar}
+                      >
+                        <div className="icon">
+                          <i className="icon-layers"></i>
+                        </div>
+                        <div className="text">Sales Analytics</div>
+                      </Link>
+                    </li>
+
+                    <li className="menu-item">
+                      <Link
+                        to="/reports/gst-analytics"
+                        className="menu-item-button"
+                        onClick={closeSidebar}
+                      >
+                        <div className="icon">
+                          <i className="icon-layers"></i>
+                        </div>
+                        <div className="text">GST Output (Sales)</div>
+                      </Link>
+                    </li>
                   </>
                 )}
 
@@ -297,6 +322,84 @@ const Navbar = () => {
                           <i className="icon-box"></i>
                         </div>
                         <div className="text">Sale Bill</div>
+                      </Link>
+                    </li>
+
+                    <li className="menu-item">
+                      <Link
+                        to="/reports/stock-summary"
+                        className="menu-item-button"
+                        onClick={closeSidebar}
+                      >
+                        <div className="icon">
+                          <i className="icon-layers"></i>
+                        </div>
+                        <div className="text">Stock Summury</div>
+                      </Link>
+                    </li>
+
+                    <li className="menu-item">
+                      <Link
+                        to="/reports/purchase-summary"
+                        className="menu-item-button"
+                        onClick={closeSidebar}
+                      >
+                        <div className="icon">
+                          <i className="icon-layers"></i>
+                        </div>
+                        <div className="text">Purchase Summury</div>
+                      </Link>
+                    </li>
+
+                    <li className="menu-item">
+                      <Link
+                        to="/reports/sales-analytics"
+                        className="menu-item-button"
+                        onClick={closeSidebar}
+                      >
+                        <div className="icon">
+                          <i className="icon-layers"></i>
+                        </div>
+                        <div className="text">Sales Analytics</div>
+                      </Link>
+                    </li>
+
+                    <li className="menu-item">
+                      <Link
+                        to="/reports/gst-output-sales"
+                        className="menu-item-button"
+                        onClick={closeSidebar}
+                      >
+                        <div className="icon">
+                          <i className="icon-layers"></i>
+                        </div>
+                        <div className="text">GST Output (Sales)</div>
+                      </Link>
+                    </li>
+
+                    <li className="menu-item">
+                      <Link
+                        to="/reports/GSTR3B"
+                        className="menu-item-button"
+                        onClick={closeSidebar}
+                      >
+                        <div className="icon">
+                          <i className="icon-layers"></i>
+                        </div>
+                        <div className="text">GSTR-3B Report</div>
+                      </Link>
+                    </li> 
+
+                    <li className="menu-item">
+                      <Link
+                        to="/reports/GSTR1-Summary"
+                        className="menu-item-button"
+                        onClick={closeSidebar}
+                      >
+                        <div className="icon">
+                          <i className="icon-layers"></i>
+                        </div>
+                        <div className="text">GSTR1 Summary</div>
                       </Link>
                     </li>
 

@@ -42,6 +42,13 @@ import CreateEditGstRates from "./components/createEditGstRate";
 import PurchaseReturn from "./components/purchaseReturn";
 import CreateEditPurchaseReturn from "./components/createEditPurchaseReturn";
 import StockExpiryAlertsPage from "./components/ExpiryAlertModal";
+import StockSummury from "./components/reports/stockSummury";
+import PurchaseSummary from "./components/reports/PurchaseSummary";
+import SalesAnalytics from "./components/reports/SalesAnalytics";
+import GstReports from "./components/reports/GstReports";
+import GSTR3BReport from "./components/reports/GSTR3BReport";
+import GSTR1Summary from "./components/reports/GSTR1Summary";
+
 const isAuthenticated = () => {
   const storedData = localStorage.getItem("user_detail");
   const userDetail = storedData ? JSON.parse(storedData) : null;
@@ -208,6 +215,27 @@ function App() {
           <ProtectedRoute
             path="/stock-expiry-alerts"
             component={StockExpiryAlertsPage}
+          />
+          <ProtectedRoute
+            path="/reports/stock-summary"
+            component={StockSummury}
+          />
+          <ProtectedRoute
+            path="/reports/purchase-summary"
+            component={PurchaseSummary}
+          />
+          <ProtectedRoute
+            path="/reports/sales-analytics"
+            component={SalesAnalytics}
+          />
+          <ProtectedRoute
+            path="/reports/gst-output-sales"
+            component={GstReports}
+          />
+          <ProtectedRoute path="/reports/GSTR3B" component={GSTR3BReport} />
+          <ProtectedRoute
+            path="/reports/GSTR1-Summary"
+            component={GSTR1Summary}
           />
           <Route path="*" component={Login} />
         </Switch>
