@@ -19,6 +19,7 @@ const PurchaseSummary = () => {
     supplier_id: "",
     brand_id: "",
     product_id: "",
+    branch_id: "",
     include_bills: false,
   });
 
@@ -27,9 +28,9 @@ const PurchaseSummary = () => {
   const [bills, setBills] = useState([]);
   const [loading, setLoading] = useState(false);
   const [totals, setTotals] = useState({ taxable: 0, gst: 0, net: 0, qty: 0 });
-
   const [suppliers, setSuppliers] = useState([]);
   const [brands, setBrands] = useState([]);
+  const [branch, setbranch] = useState([]);
   const [products, setProducts] = useState([]);
 
   useEffect(() => {
@@ -73,6 +74,20 @@ const PurchaseSummary = () => {
     loadDropdowns();
   }, []);
 
+  const fetchBrach = async () => {
+    try {
+      const response = await axios.get(`${BASE_URL}/api/branches`, {
+        headers: {
+          Accept: "application/json",
+          Authorization: `Bearer ${user_data.token}`,
+        },
+      });
+      setbranch(response.data.data);
+    } catch (error) {
+      console.error("Error fetching branchs:", error);
+    }
+  };
+
   const fetchReport = useCallback(async () => {
     console.log("API SENDING FILTERS:", filters);
 
@@ -114,6 +129,7 @@ const PurchaseSummary = () => {
 
   useEffect(() => {
     fetchReport();
+    fetchBrach();
   }, [fetchReport]);
 
   const handleFilterChange = (e) => {
@@ -335,6 +351,23 @@ const PurchaseSummary = () => {
                   {products.map((p) => (
                     <option key={p.id} value={p.id}>
                       {p.name}
+                    </option>
+                  ))}
+                </select>
+              </FilterField>
+
+              <FilterField label="Branch">
+                <select
+                  className="..."
+                  value={filters.branch_id}
+                  onChange={(e) =>
+                    setFilters({ ...filters, branch_id: e.target.value })
+                  }
+                >
+                  <option value="">All Branches</option>
+                  {branch.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name}
                     </option>
                   ))}
                 </select>

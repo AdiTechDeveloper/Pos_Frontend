@@ -216,6 +216,32 @@ const Navbar = () => {
                         <div className="text">GST Output (Sales)</div>
                       </Link>
                     </li>
+
+                    <li className="menu-item">
+                      <Link
+                        to="/reports/stock-summary"
+                        className="menu-item-button"
+                        onClick={closeSidebar}
+                      >
+                        <div className="icon">
+                          <i className="icon-layers"></i>
+                        </div>
+                        <div className="text">Stock Summury</div>
+                      </Link>
+                    </li>
+
+                    <li className="menu-item">
+                      <Link
+                        to="/reports/purchase-summary"
+                        className="menu-item-button"
+                        onClick={closeSidebar}
+                      >
+                        <div className="icon">
+                          <i className="icon-layers"></i>
+                        </div>
+                        <div className="text">Purchase Summury</div>
+                      </Link>
+                    </li>
                   </>
                 )}
 
@@ -388,7 +414,7 @@ const Navbar = () => {
                         </div>
                         <div className="text">GSTR-3B Report</div>
                       </Link>
-                    </li> 
+                    </li>
 
                     <li className="menu-item">
                       <Link

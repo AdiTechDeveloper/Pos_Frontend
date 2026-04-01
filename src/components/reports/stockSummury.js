@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import DataTable from "react-data-table-component";
 import { Link } from "react-router-dom";
 import axios from "axios";
@@ -11,6 +11,32 @@ const StockSummury = () => {
   const [filteredData, setFilteredData] = useState(stockSummury);
   const scanTimer = useRef(null);
   const user_data = JSON.parse(localStorage.getItem("user_detail"));
+  const [branch, setbranch] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  const [filters, setFilters] = useState({
+    start_date: (() => {
+      const d = new Date();
+      d.setDate(1);
+      return d.toLocaleDateString("en-CA");
+    })(),
+    end_date: new Date().toLocaleDateString("en-CA"),
+    branch_id: "",
+  });
+
+  const fetchBrach = async () => {
+    try {
+      const response = await axios.get(`${BASE_URL}/api/branches`, {
+        headers: {
+          Accept: "application/json",
+          Authorization: `Bearer ${user_data.token}`,
+        },
+      });
+      setbranch(response.data.data);
+    } catch (error) {
+      console.error("Error fetching branchs:", error);
+    }
+  };
 
   const columns = [
     {
@@ -220,11 +246,17 @@ const StockSummury = () => {
     },
   ];
 
-  const fetchStockSummury = async () => {
+  const fetchStockSummury = useCallback(async () => {
+    setLoading(true);
     try {
       const response = await axios.get(
         `${BASE_URL}/api/reports/stock-summary`,
         {
+          params: {
+            start_date: filters.start_date,
+            end_date: filters.end_date,
+            branch_id: filters.branch_id,
+          },
           headers: {
             Accept: "application/json",
             Authorization: `Bearer ${user_data.token}`,
@@ -235,9 +267,11 @@ const StockSummury = () => {
       setStockSummury(data);
       setFilteredData(data);
     } catch (error) {
-      console.error("Error fetching stock summury:", error);
+      console.error("Error fetching stock summary:", error);
+    } finally {
+      setLoading(false);
     }
-  };
+  }, [filters, BASE_URL, user_data.token]);
 
   const handleBarcodeSearch = (value) => {
     if (!value) {
@@ -268,24 +302,34 @@ const StockSummury = () => {
 
   useEffect(() => {
     fetchStockSummury();
-  }, []);
+    fetchBrach();
+  }, [fetchStockSummury]);
 
   useEffect(() => {
-    if (!search.trim()) {
+    if (user_data.role === "admin") fetchBrach();
+  }, []);
+
+  const handleFilterChange = (e) => {
+    const { name, value } = e.target;
+    setFilters((prev) => ({ ...prev, [name]: value }));
+  };
+
+  useEffect(() => {
+    const searchText = search.toLowerCase().trim();
+
+    if (!searchText) {
       setFilteredData(stockSummury);
       return;
     }
-
-    const searchText = search.toLowerCase();
 
     const result = stockSummury.filter((item) => {
       return (
         item.product_name?.toLowerCase().includes(searchText) ||
         item.barcode?.toString().includes(searchText) ||
-        item.product_id?.toString().includes(searchText)
+        item.product_id?.toString().includes(searchText) ||
+        item.stock_health?.toLowerCase().includes(searchText)
       );
     });
-
     setFilteredData(result);
   }, [search, stockSummury]);
 
@@ -343,6 +387,58 @@ const StockSummury = () => {
               </li>
             </ul>
           </div>
+
+          {/* FILTER PANEL */}
+          <div className="wg-box mb-6 shadow-lg rounded-2xl p-6 border border-slate-200">
+            <h5 className="text-2xl font-extrabold text-slate-800">Filters</h5>
+
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <FilterField label="Start Date">
+                <input
+                  type="date"
+                  name="start_date"
+                  value={filters.start_date}
+                  onChange={handleFilterChange}
+                />
+              </FilterField>
+
+              <FilterField label="End Date">
+                <input
+                  type="date"
+                  name="end_date"
+                  value={filters.end_date}
+                  onChange={handleFilterChange}
+                />
+              </FilterField>
+
+              <FilterField label="Branch">
+                <select
+                  className="..."
+                  value={filters.branch_id}
+                  onChange={(e) =>
+                    setFilters({ ...filters, branch_id: e.target.value })
+                  }
+                >
+                  <option value="">All Branches</option>
+                  {branch.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name}
+                    </option>
+                  ))}
+                </select>
+              </FilterField>
+
+              <div className="flex items-end">
+                <button
+                  onClick={fetchStockSummury}
+                  className="bg-green-600 text-white w-full h-[55px] text-2xl font-bold rounded-xl shadow-md"
+                >
+                  {loading ? "Loading..." : "Refresh"}
+                </button>
+              </div>
+            </div>
+          </div>
+
           {/* <!-- all-user --> */}
           <div className="wg-box">
             <div className="flex items-center justify-between gap10 flex-wrap mb-3">
@@ -394,5 +490,16 @@ const StockSummury = () => {
     </Layout>
   );
 };
+
+const FilterField = ({ label, children }) => (
+  <div className="flex flex-col">
+    <label className="text-xl font-bold text-slate-500 uppercase tracking-wide mb-1 ml-1">
+      {label}
+    </label>
+    {React.cloneElement(children, {
+      className: `w-full h-[55px] bg-white border border-slate-300 rounded-xl px-4 text-2xl font-semibold text-slate-900 outline-none shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 ${children.props.className || ""}`,
+    })}
+  </div>
+);
 
 export default StockSummury;

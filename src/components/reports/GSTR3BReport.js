@@ -24,7 +24,7 @@ export default function GSTR3BReport() {
   const [loading, setLoading] = useState(false);
   const [branchList, setBranchList] = useState([]);
 
-  // 1. Fetch Branches for Admin
+  // Fetch Branches for Admin
   useEffect(() => {
     const fetchBranches = async () => {
       try {
@@ -42,7 +42,7 @@ export default function GSTR3BReport() {
     fetchBranches();
   }, [token]);
 
-  // 2. Memoized API Call
+  // Memoized API Call
   const handleFetch = useCallback(async () => {
     if (!filters.start_date || !filters.end_date) return;
 
@@ -61,10 +61,10 @@ export default function GSTR3BReport() {
     }
   }, [filters, token]);
 
-  // 3. INSTANT CHANGE TRIGGER: Watch filters for any changes
+  // INSTANT CHANGE TRIGGER: Watch filters for any changes
   useEffect(() => {
     handleFetch();
-  }, [handleFetch]); // This triggers immediately on page load and every filter change
+  }, [handleFetch]); 
 
   // Helper component for summary cards
   const SummaryTable = ({ title, data, colorClass }) => (
