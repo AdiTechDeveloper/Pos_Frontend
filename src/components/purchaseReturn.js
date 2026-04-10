@@ -57,6 +57,11 @@ const PurchaseReturn = () => {
       selector: (row) => row.total_amount,
       sortable: true,
     },
+    {
+      name: "Return Type",
+      selector: (row) => row.return_type,
+      sortable: true,
+    },
   ];
 
   const fetchPurchaseReturn = async () => {
@@ -159,7 +164,14 @@ const PurchaseReturn = () => {
                 to="/create-purchase-return-bill"
                 onClick={handleCreatePurchaseReturns}
               >
-                <i className="icon-plus"></i>Add new
+                <i className="icon-plus"></i>Add Return Bill
+              </Link>
+
+              <Link
+                className="tf-button style-1 w208"
+                to="/create-purchase-replace"
+              >
+                <i className="icon-plus"></i>Add Replace Bill
               </Link>
             </div>
 

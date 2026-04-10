@@ -48,6 +48,7 @@ import SalesAnalytics from "./components/reports/SalesAnalytics";
 import GstReports from "./components/reports/GstReports";
 import GSTR3BReport from "./components/reports/GSTR3BReport";
 import GSTR1Summary from "./components/reports/GSTR1Summary";
+import CreatePurchaseReplace from "./components/createPurchaseReplace";
 
 const isAuthenticated = () => {
   const storedData = localStorage.getItem("user_detail");
@@ -155,6 +156,11 @@ function App() {
             exact
             path="/purchase-return-bill/edit/:id"
             component={CreateEditPurchaseReturn}
+          />
+          <ProtectedRoute
+            exact
+            path="/create-purchase-replace"
+            component={CreatePurchaseReplace}
           />
           <ProtectedRoute
             exact

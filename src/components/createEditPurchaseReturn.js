@@ -1,42 +1,32 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { useParams, useLocation, useHistory } from "react-router-dom";
+import { useParams, useHistory } from "react-router-dom";
 import { Formik, Form, Field, ErrorMessage, FieldArray } from "formik";
 import * as Yup from "yup";
-import { getCookie } from "../utils/cookies";
 import Layout from "./layout";
 import { toast } from "react-toastify";
 
 const CreateEditPurchaseReturn = () => {
   const BASE_URL = process.env.REACT_APP_API_BASE_URL;
-  const { id } = useParams(); // if id exists -> Edit Mode
+  const { id } = useParams();
   const history = useHistory();
   const [branches, setBranches] = useState([]);
   const [suppliers, setSupplierBill] = useState([]);
-  const [products, setProducts] = useState([]);
   const [purchaseBills, setPurchaseBills] = useState([]);
   const [purchaseLines, setPurchaseLines] = useState([]);
-  const [gstRates, setGstRates] = useState([]);
   const [supplierId, setSupplierId] = useState("");
-   const [productId, setProductId] = useState("");
   const [purchaseBillId, setPurchaseBillId] = useState("");
-  const [showModal, setShowModal] = useState(false);
-  const [showPurchaseModal, setShowPurchaseModal] = useState(false);
-  const [newSupplier, setNewSupplier] = useState("");
   const [newPurchaseBill, setNewPurchaseBill] = useState("");
-  const [showProductModal, setShowProductModal] = useState(false);
-    const [newProduct, setNewProduct] = useState("");
   const [error, setError] = useState("");
+  const [fieldValue, setFieldValue] = useState(() => () => {});
 
   const user_data = JSON.parse(localStorage.getItem("user_detail"));
   const store_purchase_return_bill = localStorage.getItem(
-    "purchase_return_bills_create"
+    "purchase_return_bills_create",
   );
   const incomingReturnBill = store_purchase_return_bill
     ? JSON.parse(store_purchase_return_bill)
     : null;
-
-  const isEdit = Boolean(id);
 
   const [initialValues, setInitialValues] = useState({
     purchase_bill_id: "",
@@ -46,15 +36,11 @@ const CreateEditPurchaseReturn = () => {
     lines: [
       {
         purchase_line_id: "",
-        product_id: "",
         qty: "",
-        free_qty: "",
-        rate: "",
-        gst_rate_id: "",
-        hsn_code: "",
       },
     ],
   });
+  
   useEffect(() => {
     if (incomingReturnBill) {
       setInitialValues({
@@ -64,22 +50,14 @@ const CreateEditPurchaseReturn = () => {
         return_date: incomingReturnBill.return_date || "",
         lines: incomingReturnBill.lines?.length
           ? incomingReturnBill.lines.map((line) => ({
-              purchase_line_id: line.purchase_line_id?.toString() || "",
-              product_id: line.product_id || "",
+              purchase_bill_line_id: line.purchase_line_id?.toString() || "",
               qty: line.qty || "",
-              free_qty: line.free_qty || "",
-              rate: line.rate || "",
-              taxable_value: line.taxable_value || "",
-              gst_rate_id: line.gst_rate_id?.toString() || "",
-              hsn_code: line.hsn_code || "",
-              cgst: line.cgst || "",
-              sgst: line.sgst || "",
-              igst: line.igst || "",
             }))
-          : initialValues.lines, // fallback
+          : initialValues.lines,
       });
     }
   }, []);
+
   const fetchPurchaseBill = async () => {
     try {
       const response = await axios.get(`${BASE_URL}/api/purchase-bill`, {
@@ -136,38 +114,56 @@ const CreateEditPurchaseReturn = () => {
     }
   };
 
-  const fetchProduct = async () => {
-    try {
-      const response = await axios.get(`${BASE_URL}/api/products`, {
-        headers: {
-          Accept: "application/json",
-          Authorization: `Bearer ${user_data.token}`,
-        },
-      });
-      setProducts(response.data.products);
-    } catch (error) {
-      console.error("Error fetching categories:", error);
-    }
-  };
-
-  const fetchGstRates = async () => {
-    const response = await axios.get(`${BASE_URL}/api/gst-rates`, {
-      headers: { Authorization: `Bearer ${user_data.token}` },
-    });
-    setGstRates(response.data.gstRates);
-  };
-
   useEffect(() => {
     fetchBranch();
     fetchSupplierBill();
-    fetchProduct();
     fetchPurchaseBill();
-    fetchPurchaseLine();
-    fetchGstRates();
+    // fetchPurchaseLine();
   }, []);
 
-  // Validation Schema
+  const handlePurchaseBillSelection = async (selectedBillId, setFieldValue) => {
+    try {
+      const billDetails = purchaseBills.find(
+        (b) => b.id === parseInt(selectedBillId),
+      );
 
+      if (billDetails) {
+        setFieldValue("branch_id", billDetails.branch_id?.toString() || "");
+        setFieldValue("supplier_id", billDetails.supplier_id?.toString() || "");
+
+        const response = await axios.get(`${BASE_URL}/api/purchase-line`, {
+          params: { purchase_bill_id: selectedBillId },
+          headers: { Authorization: `Bearer ${user_data.token}` },
+        });
+
+        const apiLines = response.data.data;
+
+        // Only KEEP lines belonging to this bill
+        const filteredLines = apiLines.filter(
+          (line) =>
+            line.purchase_bill_id == selectedBillId ||
+            line.purchase_id == selectedBillId,
+        );
+
+        // Populate form with filtered lines
+        const formattedLines = filteredLines.map((line) => ({
+          purchase_bill_line_id: line.id.toString(),
+          qty: line.qty,
+          product_id: line.product_id,
+        }));
+
+        setFieldValue("lines", formattedLines);
+
+        // Also update dropdown list
+        setPurchaseLines(filteredLines);
+      }
+    } catch (error) {
+      console.error("Error fetching bill lines:", error);
+      toast.error("Failed to load bill items");
+    }
+  };
+
+  // Validation Schema
   const validationSchema = Yup.object().shape({
     purchase_bill_id: Yup.string().required("Purchase Bill Id is required"),
     branch_id: Yup.string().required("Branch is required"),
@@ -177,163 +173,49 @@ const CreateEditPurchaseReturn = () => {
       .min(1, "At least one product is required")
       .of(
         Yup.object().shape({
-          purchase_line_id: Yup.string().required(
-            "Purchase Line Id is required"
+          purchase_bill_line_id: Yup.string().required(
+            "Purchase Bill Product name and batch no. is required",
           ),
           product_id: Yup.string().required("Product is required"),
           qty: Yup.number()
-            .typeError("Quantity must be a number")
-            .required("Qty required")
-            .min(0.0001, "Qty must be greater than 0"),
-          free: Yup.number()
-            .nullable()
-            .typeError("Free Qty must be a number")
-            .min(0, "Free Qty cannot be negative"),
-          rate: Yup.number()
-            .typeError("rate must be a number")
-            .required("rate required")
-            .min(0, "Rate cannot be negative"),
-          hsn_code: Yup.string().required(),
-          taxable_value: Yup.string().required(),
-          cgst: Yup.string().required(),
-          sgst: Yup.date().required(),
-          igst: Yup.date().required(),
-        })
+            .required("Quantity is required")
+            .positive("Must be positive")
+            .integer("Must be an integer"),
+        }),
       ),
   });
 
   const handleSubmit = async (values, actions) => {
     try {
-      let response;
+      const response = await axios.post(
+        `${BASE_URL}/api/purchase-return`,
+        values,
+        {
+          headers: {
+            Accept: "application/json",
+            Authorization: `Bearer ${user_data.token}`,
+          },
+        },
+      );
 
-      if (isEdit) {
-        // UPDATE
-        response = await axios.put(`/api/purchase-return/${id}`, values, {
-          headers: {
-            Accept: "application/json",
-            Authorization: `Bearer ${user_data.token}`,
-          },
-        });
-        toast.success("Purchase Return Updated!");
-      } else {
-        // CREATE
-        response = await axios.post("/api/purchase-return", values, {
-          headers: {
-            Accept: "application/json",
-            Authorization: `Bearer ${user_data.token}`,
-          },
-        });
-        actions.resetForm();
-        toast.success("Purchase Return Saved!");
-      }
+      toast.success("Purchase Return Saved Successfully!");
+
+      actions.resetForm();
 
       history.push("/purchase-return-bill");
     } catch (error) {
-      console.log(error.response?.data);
-      alert(error.response?.data?.message || "Something went wrong");
+      console.error("API Error:", error.response?.data);
+      const errorMessage =
+        error.response?.data?.message || "Something went wrong while saving";
+      toast.error(errorMessage);
     }
-  };
-
-  const saveSupplier = async (e) => {
-    e.preventDefault();
-    if (newSupplier.trim().length < 3) {
-      setError("Supplier name must be at least 3 characters.");
-      return;
-    }
-    // Clear error if valid
-    setError("");
-
-    const supplier = {
-      id: Date.now(),
-      name: newSupplier.trim(),
-    };
-    let url = `${BASE_URL}/api/suppliers`;
-    let method = "post";
-    const response = await axios({
-      method,
-      url,
-      data: supplier,
-      headers: {
-        Accept: "application/json",
-        Authorization: `Bearer ${user_data.token}`,
-      },
-    });
-    toast.success("Suppliers Created!");
-    setSupplierId(supplier.id);
-    setNewSupplier("");
-    setShowModal(false);
-    fetchSupplierBill();
-  };
-
-  const savePurchaseBill = async (e) => {
-    e.preventDefault();
-    if (newPurchaseBill.trim().length < 3) {
-      setError("Purchase Bill must be at least 3 characters.");
-      return;
-    }
-    // Clear error if valid
-    setError("");
-
-    const purchase_bill = {
-      id: Date.now(),
-      name: newPurchaseBill.trim(),
-    };
-    let url = `${BASE_URL}/api/purchase-bill`;
-    let method = "post";
-    const response = await axios({
-      method,
-      url,
-      data: purchase_bill,
-      headers: {
-        Accept: "application/json",
-        Authorization: `Bearer ${user_data.token}`,
-      },
-    });
-    toast.success("Purchase Bill Created!");
-    setPurchaseBillId(purchase_bill.id);
-    setNewPurchaseBill("");
-    setShowModal(false);
-    fetchPurchaseBill();
-  };
-
-  const saveProduct = async (e) => {
-    e.preventDefault();
-    if (newProduct.trim().length < 3) {
-      setError("Product name must be at least 3 characters.");
-      return;
-    }
-    setError("");
-    const product = {
-      id: Date.now(),
-      name: newProduct.trim(),
-    };
-    let url = `${BASE_URL}/api/products`;
-    let method = "post";
-    const response = await axios({
-      method,
-      url,
-      data: product,
-      headers: {
-        Accept: "application/json",
-        Authorization: `Bearer ${user_data.token}`,
-      },
-    });
-    toast.success("Products Created!");
-    setNewProduct("");
-    setProductId(product.id);
-    setShowProductModal(false);
-    fetchProduct();
   };
 
   return (
     <Layout>
       <div className="main-content-inner">
         <div className="main-content-wrap">
-          <h3 className="mb-20">
-            {isEdit
-              ? "Edit Purchase Return Bill"
-              : "Create Purchase Return Bill"}
-          </h3>
+          <h3 className="mb-20">Create Purchase Return Bill</h3>
 
           <div className="wg-box" style={{ width: "100%" }}>
             <Formik
@@ -342,19 +224,26 @@ const CreateEditPurchaseReturn = () => {
               validationSchema={validationSchema}
               onSubmit={(values, actions) => handleSubmit(values, actions)}
             >
-              {({ values }) => (
+              {({ values, setFieldValue }) => (
                 <Form>
-                  {/* ---------------- Basic Form Fields ---------------- */}
                   <div className="container">
                     <div className="row mb-20">
                       <div className="mb-20 col-md-6">
                         <label className="mb-8 purchase-label">
                           Purchase Bill No
                         </label>
-                         <Field
+                        <Field
                           as="select"
                           name="purchase_bill_id"
-                          className="mb-6"
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setFieldValue("purchase_bill_id", val);
+                            if (val) {
+                              handlePurchaseBillSelection(val, setFieldValue);
+                            } else {
+                              setFieldValue("lines", []);
+                            }
+                          }}
                         >
                           <option value="">Select Purchase Bill</option>
                           {purchaseBills?.map((b) => (
@@ -385,13 +274,12 @@ const CreateEditPurchaseReturn = () => {
                           component="div"
                         />
                       </div>
-
-                      {/* <div className="mb-20 col-md-6">
+                      <div className="mb-20 col-md-6">
                         <label className="mb-8 purchase-label">Supplier</label>
                         <Field as="select" name="supplier_id" className="mb-6">
                           <option value="">Select Supplier</option>
                           {suppliers.map((s) => (
-                            <option value={s.id} key={s.id}>
+                            <option key={s.id} value={s.id}>
                               {s.name}
                             </option>
                           ))}
@@ -401,116 +289,28 @@ const CreateEditPurchaseReturn = () => {
                           className="error-text"
                           component="div"
                         />
-                      </div> */}
-                      <div className="mb-20 col-md-6">
-                        <label className="mb-8 purchase-label">Supplier</label>
-                        <Field name="supplier_id" as="select" className="mb-6">
-                          {({ field }) => (
-                            <select
-                              {...field}
-                              value={supplierId}
-                              onChange={(e) => {
-                                field.onChange(e);
+                      </div>
 
-                                const value = e.target.value;
-                                if (value === "add_new") {
-                                  setShowModal(true);
-                                }
-                                setSupplierId(value);
-                              }}
-                            >
-                              <option value="">Select Supplier</option>
-                              {suppliers.map((s) => (
-                                <option key={s.id} value={s.id}>
-                                  {s.name}
-                                </option>
-                              ))}
-                              {!newSupplier && (
-                                <option value="add_new">
-                                  + Add New Supplier
-                                </option>
-                              )}
-                            </select>
-                          )}
-                        </Field>
-                        <ErrorMessage
-                          name="supplier_id"
-                          className="error-text"
-                          component="div"
-                        />
-                      </div>
-                    </div>
-                    <div className="mb-20 col-md-6">
-                      <label
-                        className="mb-8 purchase-label"
-                        style={{ fontSize: "15px" }}
-                      >
-                        Return Date
-                      </label>
-                      <Field type="date" name="return_date" className="mb-6" />
-                      <ErrorMessage
-                        name="return_date"
-                        className="error-text"
-                        component="div"
-                      />
-                    </div>
-                    {/* <div className="row mb-20">
                       <div className="mb-20 col-md-6">
-                        <label className="mb-8 purchase-label">Total Gst</label>
-                        <Field type="text" name="total_gst" className="mb-6" />
-                        <ErrorMessage
-                          name="total_gst"
-                          className="error-text"
-                          component="div"
-                        />
-                      </div>
-                      <div className="mb-20 col-md-6">
-                        <label className="mb-8 purchase-label">
-                          Total Amount
+                        <label
+                          className="mb-8 purchase-label"
+                          style={{ fontSize: "15px" }}
+                        >
+                          Return Date
                         </label>
                         <Field
-                          type="text"
-                          name="total_amount"
+                          type="date"
+                          name="return_date"
                           className="mb-6"
                         />
                         <ErrorMessage
-                          name="total_amount"
+                          name="return_date"
                           className="error-text"
                           component="div"
                         />
                       </div>
-                    </div> */}
+                    </div>
                   </div>
-                  {/* <div className="container"> */}
-                  {/* <div className="row mb-20">
-                    <div className="mb-20 col-md-6">
-                      <label className="mb-8 purchase-label">Bill No</label>
-                      <Field type="text" name="bill_no" className="mb-6" />
-                      <ErrorMessage
-                        name="bill_no"
-                        className="error-text"
-                        component="div"
-                      />
-                    </div>
-
-                    <div className="mb-20 col-md-6">
-                      <label
-                        className="mb-8 purchase-label"
-                        style={{ fontSize: "15px" }}
-                      >
-                        Bill Date
-                      </label>
-                      <Field type="date" name="bill_date" className="mb-6" />
-                      <ErrorMessage
-                        name="bill_date"
-                        className="error-text"
-                        component="div"
-                      />
-                    </div>
-                  </div> */}
-                  {/* </div> */}
-
-                  {/* ---------------- Line Items ---------------- */}
                   <FieldArray name="lines">
                     {({ push, remove }) => (
                       <>
@@ -523,8 +323,6 @@ const CreateEditPurchaseReturn = () => {
                               marginBottom: 12,
                             }}
                           >
-                            <h4>Product {index + 1}</h4>
-
                             <div className="line-row">
                               <div className="line-col">
                                 <label
@@ -538,92 +336,17 @@ const CreateEditPurchaseReturn = () => {
                                 </label>
                                 <Field
                                   as="select"
-                                  name={`lines.${index}.purchase_line_id`}
+                                  name={`lines.${index}.purchase_bill_line_id`}
                                 >
                                   <option value="">Select Purchase Line</option>
                                   {purchaseLines.map((p) => (
                                     <option value={p.id} key={p.id}>
-                                      {p.batch_no}
+                                      {p.batch_no} ({p.product?.name})
                                     </option>
                                   ))}
                                 </Field>
                                 <ErrorMessage
-                                  name={`lines.${index}.purchase_line_id`}
-                                  className="error-text"
-                                  component="div"
-                                />
-                              </div>
-                              {/* <div className="line-col">
-                                <label
-                                  className="mb-8 mt-12"
-                                  style={{
-                                    fontSize: "15px",
-                                    marginTop: "12px",
-                                  }}
-                                >
-                                  Product
-                                </label>
-                                <Field
-                                  as="select"
-                                  name={`lines.${index}.product_id`}
-                                >
-                                  <option value="">Select Product</option>
-                                  {products.map((p) => (
-                                    <option value={p.id} key={p.id}>
-                                      {p.name}
-                                    </option>
-                                  ))}
-                                </Field>
-                                <ErrorMessage
-                                  name={`lines.${index}.product_id`}
-                                  className="error-text"
-                                  component="div"
-                                />
-                              </div> */}
-                              <div className="line-col">
-                                <label
-                                  className="mb-8 mt-12"
-                                  style={{
-                                    fontSize: "15px",
-                                    marginTop: "12px",
-                                  }}
-                                >
-                                  Product
-                                </label>
-                                <Field
-                                  name={`lines.${index}.product_id`}
-                                  as="select"
-                                  className="mb-6"
-                                >
-                                  {({ field }) => (
-                                    <select
-                                      {...field}
-                                      value={productId}
-                                      onChange={(e) => {
-                                        field.onChange(e);
-                                        const value = e.target.value;
-                                        if (value === "add_new") {
-                                          setShowProductModal(true);
-                                        }
-                                        setProductId(value);
-                                      }}
-                                    >
-                                      <option value="">Select Product</option>
-                                      {products.map((p) => (
-                                        <option key={p.id} value={p.id}>
-                                          {p.name}
-                                        </option>
-                                      ))}
-                                      {!newProduct && (
-                                        <option value="add_new">
-                                          + Add New Product
-                                        </option>
-                                      )}
-                                    </select>
-                                  )}
-                                </Field>
-                                <ErrorMessage
-                                  name={`lines.${index}.product_id`}
+                                  name={`lines.${index}.purchase_bill_line_id`}
                                   className="error-text"
                                   component="div"
                                 />
@@ -633,7 +356,8 @@ const CreateEditPurchaseReturn = () => {
                                 <label style={{ fontSize: "15px" }}>Qty</label>
                                 <Field
                                   type="number"
-                                  name={`lines.${index}.qty`}
+                                  // name={`lines.${index}.qty`}
+                                  placeholder="Enter quantity to return"
                                 />
                                 <ErrorMessage
                                   name={`lines.${index}.qty`}
@@ -642,178 +366,13 @@ const CreateEditPurchaseReturn = () => {
                                 />
                               </div>
 
-                              <div className="line-col">
-                                <label style={{ fontSize: "15px" }}>
-                                  Free Qty
-                                </label>
-                                <Field
-                                  type="number"
-                                  name={`lines.${index}.free`}
-                                />
-                                <ErrorMessage
-                                  name={`lines.${index}.free`}
-                                  className="error-text"
-                                  component="div"
-                                />
-                              </div>
-
-                              <div className="line-col">
-                                <label style={{ fontSize: "15px" }}>
-                                  Purchase Rate
-                                </label>
-                                <Field
-                                  type="number"
-                                  name={`lines.${index}.rate`}
-                                />
-                                <ErrorMessage
-                                  name={`lines.${index}.rate`}
-                                  className="error-text"
-                                  component="div"
-                                />
-                              </div>
-
-                              <div className="line-col">
-                                <label style={{ fontSize: "15px" }}>
-                                  HSN Code
-                                </label>
-                                <Field
-                                  type="text"
-                                  name={`lines.${index}.hsn_code`}
-                                />
-                                <ErrorMessage
-                                  name={`lines.${index}.hsn_code`}
-                                  className="error-text"
-                                  component="div"
-                                />
-                              </div>
-
-                              <div className="line-col">
-                                <label style={{ fontSize: "15px" }}>
-                                  GST Rate
-                                </label>
-                                <Field
-                                  as="select"
-                                  name={`lines.${index}.gst_rate_id`}
-                                >
-                                  <option value="">Select Gst Rates</option>
-                                  {gstRates.map((element) => {
-                                    return (
-                                      <>
-                                        <option value={element.id} key="1">
-                                          {element.rate}%
-                                        </option>
-                                      </>
-                                    );
-                                  })}
-                                </Field>
-                                <ErrorMessage
-                                  name={`lines.${index}.gst_rate_id`}
-                                  className="error-text"
-                                  component="div"
-                                />
-                              </div>
-
-                              <div className="line-col">
-                                <label style={{ fontSize: "15px" }}>
-                                  Purchase Rate
-                                </label>
-                                <Field
-                                  type="number"
-                                  name={`lines.${index}.purchase_rate`}
-                                />
-                                <ErrorMessage
-                                  name={`lines.${index}.purchase_rate`}
-                                  className="error-text"
-                                  component="div"
-                                />
-                              </div>
-
-                              <div className="line-col">
-                                <label style={{ fontSize: "15px" }}>Qty</label>
-                                <Field
-                                  type="number"
-                                  name={`lines.${index}.qty`}
-                                />
-                                <ErrorMessage
-                                  name={`lines.${index}.qty`}
-                                  className="error-text"
-                                  component="div"
-                                />
-                              </div>
-
-                              <div className="line-col">
-                                <label style={{ fontSize: "15px" }}>
-                                  Free Qty
-                                </label>
-                                <Field
-                                  type="number"
-                                  name={`lines.${index}.free_qty`}
-                                />
-                                <ErrorMessage
-                                  name={`lines.${index}.free_qty`}
-                                  className="error-text"
-                                  component="div"
-                                />
-                              </div>
-
-                              {/* <div className="line-col">
-                                <label style={{ fontSize: "15px" }}>
-                                  Taxable Value
-                                </label>
-                                <Field
-                                  type="text"
-                                  name={`lines.${index}.taxable_value`}
-                                />
-                                <ErrorMessage
-                                  name={`lines.${index}.taxable_value`}
-                                  className="error-text"
-                                  component="div"
-                                />
-                              </div>
-
-                              <div className="line-col">
-                                <label style={{ fontSize: "15px" }}>CGST</label>
-                                <Field
-                                  type="text"
-                                  name={`lines.${index}.cgst`}
-                                />
-                                <ErrorMessage
-                                  name={`lines.${index}.cgst`}
-                                  className="error-text"
-                                  component="div"
-                                />
-                              </div>
-
-                              <div className="line-col">
-                                <label style={{ fontSize: "15px" }}>SGST</label>
-                                <Field
-                                  type="text"
-                                  name={`lines.${index}.sgst`}
-                                />
-                                <ErrorMessage
-                                  name={`lines.${index}.sgst`}
-                                  className="error-text"
-                                  component="div"
-                                />
-                              </div>
-
-                              <div className="line-col">
-                                <label style={{ fontSize: "15px" }}>IGST</label>
-                                <Field
-                                  type="text"
-                                  name={`lines.${index}.igst`}
-                                />
-                                <ErrorMessage
-                                  name={`lines.${index}.igst`}
-                                  className="error-text"
-                                  component="div"
-                                />
-                              </div> */}
+                              <button
+                                type="button"
+                                onClick={() => remove(index)}
+                              >
+                                Delete
+                              </button>
                             </div>
-
-                            <button type="button" onClick={() => remove(index)}>
-                              Remove Line
-                            </button>
                           </div>
                         ))}
 
@@ -822,18 +381,7 @@ const CreateEditPurchaseReturn = () => {
                           className="mt-12"
                           style={{ marginRight: "12px" }}
                           onClick={() =>
-                            push({
-                              product_id: "",
-                              qty: "",
-                              free_qty: "",
-                              purchase_rate: "",
-                              // discount_type: "",
-                              // discount: "",
-                              hsn_code: "",
-                              gst_rate_id: "",
-                              batch_no: "",
-                              expiry_date: "",
-                            })
+                            push({ purchase_bill_line_id: "", qty: "" })
                           }
                         >
                           + Add Product
@@ -841,158 +389,12 @@ const CreateEditPurchaseReturn = () => {
                       </>
                     )}
                   </FieldArray>
-                  <button type="submit">
-                    {isEdit ? "Update Return Bill" : "Save Return Bill"}
-                  </button>
+                  <button type="submit">Save Return Bill</button>
                 </Form>
               )}
             </Formik>
           </div>
         </div>
-        {showModal && (
-          <div className="modal-overlay" onClick={() => setShowModal(false)}>
-            <div className="modal-card" onClick={(e) => e.stopPropagation()}>
-              {/* Header */}
-              <div className="modal-header">
-                <h5>Add New Supplier</h5>
-              </div>
-
-              {/* Body */}
-              <div className="modal-body">
-                <input
-                  type="text"
-                  className={`form-control model-form-control ${
-                    error ? "is-invalid" : ""
-                  }`}
-                  placeholder="Supplier Name"
-                  value={newSupplier}
-                  onChange={(e) => {
-                    setNewSupplier(e.target.value);
-                    if (error) setError("");
-                  }}
-                />
-
-                {error && <div className="invalid-feedback">{error}</div>}
-              </div>
-
-              {/* Footer */}
-              <div className="modal-footer">
-                <button
-                  className="btn btn-secondary cancel-btn"
-                  onClick={() => setShowModal(false)}
-                >
-                  Cancel
-                </button>
-
-                <button
-                  className="btn btn-primary save-btn"
-                  disabled={!newSupplier.trim()}
-                  onClick={(e) => saveSupplier(e)}
-                >
-                  Save
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-        {showPurchaseModal && (
-          <div
-            className="modal-overlay"
-            onClick={() => setShowPurchaseModal(false)}
-          >
-            <div className="modal-card" onClick={(e) => e.stopPropagation()}>
-              {/* Header */}
-              <div className="modal-header">
-                <h5>Add New Purchase Modal</h5>
-              </div>
-
-              {/* Body */}
-              <div className="modal-body">
-                <input
-                  type="text"
-                  className={`form-control model-form-control ${
-                    error ? "is-invalid" : ""
-                  }`}
-                  placeholder="Purchase Bill Name"
-                  value={newPurchaseBill}
-                  onChange={(e) => {
-                    setNewPurchaseBill(e.target.value);
-                    if (error) setError("");
-                  }}
-                />
-
-                {error && <div className="invalid-feedback">{error}</div>}
-              </div>
-
-              {/* Footer */}
-              <div className="modal-footer">
-                <button
-                  className="btn btn-secondary cancel-btn"
-                  onClick={() => setShowPurchaseModal(false)}
-                >
-                  Cancel
-                </button>
-
-                <button
-                  className="btn btn-primary save-btn"
-                  disabled={!newPurchaseBill.trim()}
-                  onClick={(e) => savePurchaseBill(e)}
-                >
-                  Save
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-        {showProductModal && (
-            <div
-              className="modal-overlay"
-              onClick={() => setShowProductModal(false)}
-            >
-              <div className="modal-card" onClick={(e) => e.stopPropagation()}>
-                {/* Header */}
-                <div className="modal-header">
-                  <h5>Add New Product</h5>
-                </div>
-
-                {/* Body */}
-                <div className="modal-body">
-                  <input
-                    type="text"
-                    className={`form-control model-form-control ${
-                      error ? "is-invalid" : ""
-                    }`}
-                    placeholder="Product Name"
-                    value={newProduct}
-                    onChange={(e) => {
-                      setNewProduct(e.target.value);
-                      if (error) setError("");
-                    }}
-                  />
-
-                  {error && <div className="invalid-feedback">{error}</div>}
-                </div>
-
-                {/* Footer */}
-                <div className="modal-footer">
-                  <button
-                    className="btn btn-secondary cancel-btn"
-                    onClick={() => setShowProductModal(false)}
-                  >
-                    Cancel
-                  </button>
-
-                  <button
-                    className="btn btn-primary save-btn"
-                    disabled={!newProduct.trim()}
-                    onClick={(e) => saveProduct(e)}
-                  >
-                    Save
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
       </div>
     </Layout>
   );
