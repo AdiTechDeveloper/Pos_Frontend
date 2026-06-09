@@ -194,7 +194,7 @@ export default function CartPanel({ cart, setCart, triggerRefresh }) {
       console.log("Payload being sent:", createPayload);
 
       const res = await createSalesBill(createPayload);
-      const res = await createSalesBill(lines);
+      // const res = await createSalesBill(lines);
       const billId = res.data.data.id;
 
       // If payments provided, call pay endpoint (backwards compatible)
