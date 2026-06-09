@@ -21,6 +21,9 @@ const ReceiptModal = forwardRef(
       );
     };
 
+    // Check if any item has a price override
+    const hasAnyOverride = items.some((item) => item.is_price_overridden);  
+
     const metaRows = [
       ["Bill No", bill?.number],
       ["Date", bill?.date],
@@ -85,6 +88,14 @@ const ReceiptModal = forwardRef(
                 <span style={{ flex: 1, textAlign: "right" }}>
                   {format(item.amount)}
                 </span>
+        
+
+              {/* Price override note — only shown if overridden */}
+                {item.is_price_overridden && (
+                  <div style={styles.overrideNote}>
+                    * Price: ₹{format(item.original_price)} → ₹{format(item.selling)}
+                  </div>
+                )}
               </div>
             ))}
 
@@ -109,9 +120,35 @@ const ReceiptModal = forwardRef(
             <div style={{ ...styles.row, fontWeight: "bold", fontSize: 16 }}>
               <span>Total</span>
               <span>{format(bill?.total_amount)}</span>
-            </div>
+            </div>0
 
             <div style={styles.dash} />
+
+
+              {/* ── PRICE OVERRIDE SUMMARY ── only shown if any override exists */}
+            {hasAnyOverride && (
+              <>
+                <div style={styles.overrideSummaryBox}>
+                  <div style={styles.overrideSummaryTitle}>
+                    * Special Price Applied
+                  </div>
+                  {items
+                    .filter((item) => item.is_price_overridden)
+                    .map((item, i) => (
+                      <div key={i} style={styles.overrideSummaryRow}>
+                        <span style={{ flex: 2 }}>{item.name}</span>
+                        <span style={{ flex: 1, textDecoration: "line-through", color: "#999" }}>
+                          ₹{format(item.original_price)}
+                        </span>
+                        <span style={{ flex: 1, textAlign: "right" }}>
+                          ₹{format(item.selling)}
+                        </span>
+                      </div>
+                    ))}
+                </div>
+                <div style={styles.dash} />
+              </>
+            )}
 
             {/* ================= GST BREAKUP ================= */}
             <div style={styles.sectionTitle}>GST Breakup</div>
@@ -164,6 +201,12 @@ const ReceiptModal = forwardRef(
             </button>
           </div>
         </div>
+
+           {/* ── ACTIONS ── */}
+          <div style={styles.actions}>
+            <button onClick={onPrint} style={styles.printBtn}>Print</button>
+            <button onClick={onClose} style={styles.closeBtn}>Close</button>
+          </div>
       </div>
     );
   },
@@ -232,6 +275,31 @@ const styles = {
 
   itemRow: {
     display: "flex",
+    margin: "2px 0",
+  },
+
+   // Override note below item line
+  overrideNote: {
+    fontSize: 11,
+    color: "#555",
+    marginLeft: 2,
+    marginBottom: 3,
+    fontStyle: "italic",
+  },
+ 
+  // Override summary section
+  overrideSummaryBox: {
+    marginBottom: 4,
+  },
+  overrideSummaryTitle: {
+    fontWeight: "bold",
+    fontSize: 12,
+    marginBottom: 3,
+    textAlign: "center",
+  },
+  overrideSummaryRow: {
+    display: "flex",
+    fontSize: 11,
     margin: "2px 0",
   },
 
