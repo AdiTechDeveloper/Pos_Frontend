@@ -123,8 +123,8 @@ export default function ProductList({
         stock: Number(b.total_stock),
         free_qty: 0,
 
-        gst_percent: Number(product.gst_rate || 0),
-        gst_inclusive: Number(product.is_gst_inclusive),
+        gst_percent: Number(product.gst_rate?.rate || 0),
+        gst_inclusive: Number(product.is_gst_inclusive ?? 0),
 
         inventories: [
           {

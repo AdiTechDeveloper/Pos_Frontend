@@ -3,15 +3,16 @@ import DataTable from "react-data-table-component";
 import { Link, useHistory } from "react-router-dom";
 import axios from "axios";
 import Layout from "./layout";
+import { toast } from "react-toastify";
 
 const PurchaseBill = () => {
   const BASE_URL = process.env.REACT_APP_API_BASE_URL;
   const history = useHistory();
-  const [products, setProducts] = useState([]);
   const [search, setSearch] = useState("");
   const [purchaseBill, setPurchaseBill] = useState([]);
-  const [filteredData, setFilteredData] = useState(products);
-  console.log("filter-data", filteredData);
+  const [filteredData, setFilteredData] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const perPage = 10;
 
   const user_data = JSON.parse(localStorage.getItem("user_detail"));
 
@@ -23,124 +24,153 @@ const PurchaseBill = () => {
     localStorage.setItem("purchase_bills_create", JSON.stringify(row));
   };
 
-  // const handleDeleteConfirm = (id) => {
-  //   if (window.confirm("Are you sure you want to delete this Purchase Bill?")) {
-  //     handleDelete(id);
-  //   }
-  // };
+ const handleDeleteConfirm = (id) => {
+    console.log("Deleting ID:", id); // ← add this
+    if (window.confirm("Are you sure you want to delete this Purchase Bill?")) {
+      handleDelete(id);
+    }
+};
 
-  // const handleDelete = async (id) => {
-  //   const response = await axios.delete(`${BASE_URL}/api/purchase-bill/${id}`, {
-  //     headers: {
-  //       accept: "application/json",
-  //       Authorization: `Bearer ${user_data.token}`,
-  //     },
-  //   });
-  //   if (response) {
-  //     history.push("/purchase-bill");
-  //     toast.success("Purchase Bill Deleted!");
-  //     fetchPurchaseBill();
-  //   }
-  // };
+  const handleDelete = async (id) => {
+    try {
+      const response = await axios.delete(`${BASE_URL}/api/purchase-bill/${id}`, {
+        headers: {
+          accept: "application/json",
+          Authorization: `Bearer ${user_data.token}`,
+        },
+      });
+      if (response) {
+        toast.success("Purchase Bill Deleted!");
+        fetchPurchaseBill();  
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to delete purchase bill.");
+    }
+  };
 
-  const columns = [
-    {
-      name: "Id",
-      selector: (row) => row.id,
-      sortable: true,
-      width: "80px",
-    },
-    {
-      name: "Branch Name",
-      selector: (row) => row.branch.name,
-      sortable: true,
-      width: "250px",
-    },
-    {
-      name: "Supplier Name",
-      selector: (row) => row.supplier.name,
-      sortable: true,
-      width: "300px",
-    },
-    {
-      name: "Bill No",
-      selector: (row) => row.bill_no,
-      sortable: true,
-      width: "150px",
-    },
-    {
-      name: "Bill Date",
-      selector: (row) => row.bill_date,
-      sortable: true,
-      width: "120px",
-    },
-    {
-      name: "Taxable Amount",
-      selector: (row) => row.taxable_value,
-      sortable: true,
-      width: "150px",
-    },
-    {
-      name: "CGST",
-      selector: (row) => row.cgst_amount,
-      sortable: true,
-      width: "100px",
-    },
-    {
-      name: "SGST",
-      selector: (row) => row.sgst_amount,
-      sortable: true,
-      width: "100px",
-    },
-    {
-      name: "IGST",
-      selector: (row) => row.igst_amount,
-      sortable: true,
-      width: "100px",
-    },
-    {
-      name: "CESS",
-      selector: (row) => row.cess_amount,
-      sortable: true,
-      width: "100px",
-    },
-    {
-      name: "Total Tax",
-      selector: (row) => row.total_tax,
-      sortable: true,
-      width: "120px",
-    },
-    {
-      name: "Total",
-      selector: (row) => row.total_amount,
-      sortable: true,
-      width: "120px",
-    },
-    {
-      name: "Expiry Date",
-      selector: (row) => row.lines[0].expiry_date,
-      sortable: true,
-      width: "120px",
-    },
-    // {
-    //   name: "Action",
-    //   cell: (row) => (
-    //     <div className="list-icon-function">
-    //       <div className="item edit">
-    //         <Link
-    //           to={`/purchase-bill/edit/${row.id}`}
-    //           onClick={() => handleEdit(row)}
-    //         >
-    //           <i className="icon-edit-3"></i>
-    //         </Link>
-    //       </div>
-    //       {/* <div className="item trash" onClick={() => handleDeleteConfirm(row.id)}>
-    //         <i className="icon-trash-2"></i>
-    //       </div> */}
-    //     </div>
-    //   ),
-    // },
-  ];
+ const columns = [
+  {
+    name: "ID",
+    cell: (row, index) => (currentPage - 1) * perPage + index + 1,
+    width: "60px",
+  },
+  {
+    name: "Branch Name",
+    selector: (row) => row.branch?.name,
+    sortable: true,
+    width: "180px",
+  },
+  {
+    name: "Supplier Name",
+    selector: (row) => row.supplier?.name,
+    sortable: true,
+    width: "180px",
+  },
+  {
+    name: "Bill No",
+    selector: (row) => row.bill_no,
+    sortable: true,
+    width: "150px",
+    cell: (row) => (
+      <span style={row.is_lost ? { color: "#ef4444", fontWeight: 600 } : {}}>
+        {row.bill_no}
+        {row.is_lost ? (
+          <span
+            style={{
+              marginLeft: "6px",
+              fontSize: "10px",
+              background: "#fef2f2",
+              color: "#ef4444",
+              border: "1px solid #fecaca",
+              borderRadius: "4px",
+              padding: "1px 5px",
+              fontWeight: 500,
+            }}
+          >
+            LOST
+          </span>
+        ) : null}
+      </span>
+    ),
+  },
+  {
+    name: "Bill Date",
+    selector: (row) => row.bill_date,
+    sortable: true,
+    width: "110px",
+  },
+  {
+    name: "Taxable Amt",
+    selector: (row) => row.taxable_value,
+    sortable: true,
+    width: "120px",
+  },
+  {
+    name: "CGST",
+    selector: (row) => row.cgst_amount,
+    sortable: true,
+    width: "90px",
+  },
+  {
+    name: "SGST",
+    selector: (row) => row.sgst_amount,
+    sortable: true,
+    width: "90px",
+  },
+  {
+    name: "IGST",
+    selector: (row) => row.igst_amount,
+    sortable: true,
+    width: "90px",
+  },
+  {
+    name: "CESS",
+    selector: (row) => row.cess_amount,
+    sortable: true,
+    width: "90px",
+  },
+  {
+    name: "Total Tax",
+    selector: (row) => row.total_tax,
+    sortable: true,
+    width: "100px",
+  },
+  {
+    name: "Total",
+    selector: (row) => row.total_amount,
+    sortable: true,
+    width: "100px",
+  },
+  {
+    name: "Expiry Date",
+    selector: (row) => row.lines?.[0]?.expiry_date ?? "—",
+    sortable: true,
+    width: "110px",
+  },
+  {
+    name: "Action",
+    width: "120px",
+    cell: (row) => (
+      <div className="list-icon-function">
+        <span className="item edit" title="Edit">
+          <Link
+            to={`/purchase-bill/edit/${row.id}`}
+            onClick={() => handleEdit(row)}
+          >
+            <i className="icon-edit-3" />
+          </Link>
+        </span>
+        <span
+          className="item trash"
+          title="Delete"
+          onClick={() => handleDeleteConfirm(row.id)}
+        >
+          <i className="icon-trash-2" />
+        </span>
+      </div>
+    ),
+  },
+];
 
   const fetchPurchaseBill = async () => {
     try {
@@ -152,41 +182,39 @@ const PurchaseBill = () => {
       });
       setPurchaseBill(response.data.data);
     } catch (error) {
-      console.error("Error fetching categories:", error);
+      console.error("Error fetching purchase bills:", error);
     }
   };
+
   useEffect(() => {
     fetchPurchaseBill();
   }, []);
 
   useEffect(() => {
     const searchText = search.toLowerCase();
-
     const result = purchaseBill.filter((item) => {
       const searchable = `
-      ${item.id}
-      ${item.branch?.name}
-      ${item.supplier?.name}
-      ${item.bill_no}
-      ${item.bill_date}
-      ${item.taxable_value}
-      ${item.cgst_amount}
-      ${item.sgst_amount}
-      ${item.igst_amount}
-      ${item.cess_amount}
-      ${item.total_tax}
-      ${item.total_amount}
-    `.toLowerCase();
+        ${item.id}
+        ${item.branch?.name}
+        ${item.supplier?.name}
+        ${item.bill_no}
+        ${item.bill_date}
+        ${item.taxable_value}
+        ${item.cgst_amount}
+        ${item.sgst_amount}
+        ${item.igst_amount}
+        ${item.cess_amount}
+        ${item.total_tax}
+        ${item.total_amount}
+      `.toLowerCase();
       return searchable.includes(searchText);
     });
-
     setFilteredData(result);
   }, [search, purchaseBill]);
 
   return (
     <Layout>
       <div className="main-content-inner">
-        {/* <!-- main-content-wrap --> */}
         <div className="main-content-wrap">
           <div className="flex items-center flex-wrap justify-between gap20 mb-27">
             <h3>All Purchase Bills</h3>
@@ -196,30 +224,23 @@ const PurchaseBill = () => {
                   <div className="text-tiny">Dashboard</div>
                 </Link>
               </li>
-              <li>
-                <i className="icon-chevron-right"></i>
-              </li>
+              <li><i className="icon-chevron-right"></i></li>
               <li>
                 <Link to="#">
                   <div className="text-tiny">Purchase Bill</div>
                 </Link>
               </li>
-              <li>
-                <i className="icon-chevron-right"></i>
-              </li>
+              <li><i className="icon-chevron-right"></i></li>
               <li>
                 <div className="text-tiny">All Purchase Bill</div>
               </li>
             </ul>
           </div>
-          {/* <!-- all-user --> */}
+
           <div className="wg-box">
             <div className="flex items-center justify-between gap10 flex-wrap mb-3">
               <div className="wg-filter flex-grow">
-                <form
-                  className="form-search"
-                  onSubmit={(e) => e.preventDefault()}
-                >
+                <form className="form-search" onSubmit={(e) => e.preventDefault()}>
                   <fieldset className="name">
                     <input
                       type="text"
@@ -250,6 +271,8 @@ const PurchaseBill = () => {
               columns={columns}
               data={filteredData}
               pagination
+              paginationPerPage={perPage}
+              onChangePage={(page) => setCurrentPage(page)}
               highlightOnHover
               pointerOnHover
               responsive
@@ -264,11 +287,10 @@ const PurchaseBill = () => {
             />
             <div className="divider"></div>
           </div>
-          {/* <!-- /all-user --> */}
         </div>
-        {/* <!-- /main-content-wrap --> */}
       </div>
     </Layout>
   );
 };
+
 export default PurchaseBill;

@@ -38,7 +38,7 @@ const CreateEditGstRates = () => {
   // Validation Schema
   const validationSchema = Yup.object({
     rate: Yup.string().required("Rate is required"),
-    description: Yup.string().required("Description is required"),
+    // description: Yup.string().required("Description is required"),
   });
 
   // Submit (Create + Update)
@@ -113,11 +113,11 @@ const CreateEditGstRates = () => {
                           className="mb-5 form-control small-textarea"
                           placeholder="Enter description"
                         />
-                        <ErrorMessage
+                        {/* <ErrorMessage
                           name="description"
                           className="error-text"
                           component="div"
-                        />
+                        /> */}
                       </div>
                     </fieldset>
                   </div>

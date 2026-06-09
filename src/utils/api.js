@@ -61,6 +61,12 @@ export const createSalesBill = async (lines) => {
   }
 };
 
+export const fetchProfitLoss = (params = {}) =>
+  axios.get(`${BASE_URL}/api/profit-loss`, {
+    headers: getAuthHeader(), // This ensures the token is included
+    params: params,
+  });
+
 export const paySalesBill = async (sales_bill_id, payments) => {
   let key = localStorage.getItem("pay_idemp_key");
   if (!key) {
