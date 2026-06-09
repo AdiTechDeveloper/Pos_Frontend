@@ -36,7 +36,10 @@ const generateIdempotencyKey = () =>
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");
 
-export const createSalesBill = async (lines) => {
+export const createSalesBill = async (payload) => {
+  // Backwards compatible: if caller provides an array, treat as { lines }
+  const body = Array.isArray(payload) ? { lines: payload } : payload;
+
   let key = localStorage.getItem("store_idemp_key");
   if (!key) {
     key = generateIdempotencyKey();
@@ -44,16 +47,12 @@ export const createSalesBill = async (lines) => {
   }
 
   try {
-    const res = await axios.post(
-      `${BASE_URL}/api/sales-bills`,
-      { lines },
-      {
-        headers: {
-          ...getAuthHeader(),
-          "Idempotency-Key": key,
-        },
+    const res = await axios.post(`${BASE_URL}/api/sales-bills`, body, {
+      headers: {
+        ...getAuthHeader(),
+        "Idempotency-Key": key,
       },
-    );
+    });
 
     return res;
   } finally {

@@ -163,7 +163,7 @@ export default function CartPanel({ cart, setCart, triggerRefresh }) {
     toast.info("Price reset to original");
   };
 
-  const handlePayment = async (payments) => {
+  const handlePayment = async (payloadOrPayments) => {
     try {
       const lines = cart.map((i) => ({
         product_id: i.product_id || i.id,
@@ -174,10 +174,33 @@ export default function CartPanel({ cart, setCart, triggerRefresh }) {
         is_price_overridden: i.is_price_overridden || false,
       }));
 
-      const res = await createSalesBill(lines);
+      // Normalize incoming payload from PaymentModal
+      let payments = [];
+      let payment_type = null;
+      let customer = null;
+
+      if (Array.isArray(payloadOrPayments)) {
+        payments = payloadOrPayments;
+      } else if (payloadOrPayments && payloadOrPayments.payments) {
+        payments = payloadOrPayments.payments;
+        payment_type = payloadOrPayments.payment_type || null;
+        customer = payloadOrPayments.customer || null;
+      }
+
+      const createPayload = { lines };
+      if (payment_type) createPayload.payment_type = payment_type;
+      if (customer) createPayload.customer = customer;
+
+      console.log("Payload being sent:", createPayload);
+
+      const res = await createSalesBill(createPayload);
+      // const res = await createSalesBill(lines);
       const billId = res.data.data.id;
 
-      await paySalesBill(billId, payments);
+      // If payments provided, call pay endpoint (backwards compatible)
+      if (payments && payments.length > 0) {
+        await paySalesBill(billId, payments);
+      }
 
       const printRes = await axios.post(
         `${BASE_URL}/api/sales-bill/print-data`,
