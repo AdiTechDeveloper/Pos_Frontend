@@ -277,7 +277,7 @@ export default function CartPanel({ cart, setCart, triggerRefresh }) {
               return (
                 <div
                   key={`${item.inventory_id}_${item.selling_price}`}
-                  className="bg-white p-6 rounded-3xl shadow-2xl"
+                  className="bg-white p-3 rounded-xl shadow border border-gray-100"
                   style={{
                     border: isOverridden ? "2px solid #f59e0b" : "2px solid transparent",
                   }}
