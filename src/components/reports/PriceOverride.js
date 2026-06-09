@@ -1,0 +1,461 @@
+import React, { useEffect, useState, useCallback } from "react";
+import axios from "axios";
+import DataTable from "react-data-table-component";
+import { Link } from "react-router-dom";
+import Layout from "../layout";
+
+const BASE_URL = process.env.REACT_APP_API_BASE_URL;
+
+const PriceOverride = () => {
+  const user_data = JSON.parse(localStorage.getItem("user_detail"));
+  const today = new Date().toISOString().split("T")[0];
+
+  const [records, setRecords] = useState([]);
+  const [filteredRecords, setFilteredRecords] = useState([]);
+  const [totalLoss, setTotalLoss] = useState(0);
+  const [loading, setLoading] = useState(false);
+
+  const [filters, setFilters] = useState({
+    from_date: today,
+    to_date: today,
+    product_id: "",
+    overridden_by: "",
+    // branch_id: "",
+  });
+
+  const [search, setSearch] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const perPage = 10;
+
+  const fetchReport = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params = {};
+      if (filters.from_date) params.from_date = filters.from_date;
+      if (filters.to_date) params.to_date = filters.to_date;
+      if (filters.product_id) params.product_id = filters.product_id;
+      if (filters.overridden_by) params.overridden_by = filters.overridden_by;
+    //   if (filters.branch_id) params.branch_id = filters.branch_id;
+
+      const response = await axios.get(`${BASE_URL}/api/price-override-report`, {
+        headers: {
+          Accept: "application/json",
+          Authorization: `Bearer ${user_data?.token}`,
+        },
+        params,
+      });
+
+      if (response.data && response.data.status) {
+        const data = response.data.data || [];
+        setRecords(data);
+        setFilteredRecords(data);
+        setTotalLoss(response.data.total_loss || 0);
+      }
+    } catch (error) {
+      console.error("Error fetching price override report:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [filters, user_data?.token]);
+
+  useEffect(() => {
+    fetchReport();
+  }, []);
+
+  // Client-side quick search bar handling
+  useEffect(() => {
+    const text = search.toLowerCase();
+    const result = records.filter((r) => {
+      return (
+        (r.product?.name?.toLowerCase() || "").includes(text) ||
+        (r.bill?.bill_no?.toString() || "").includes(text) ||
+        (r.overridden_by?.name?.toLowerCase() || "").includes(text)
+        // (r.branch?.name?.toLowerCase() || "").includes(text)
+      );
+    });
+    setFilteredRecords(result);
+  }, [search, records]);
+
+  const handleFilterChange = (e) => {
+    setFilters((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
+  const handleClearFilters = () => {
+    const cleared = {
+      from_date: today,
+      to_date: today,
+      product_id: "",
+      overridden_by: "",
+    //   branch_id: "",
+    };
+    setFilters(cleared);
+    // Explicitly pass cleared state to fetch immediate results
+    setLoading(true);
+    axios.get(`${BASE_URL}/api/price-override-report`, {
+      headers: {
+        Accept: "application/json",
+        Authorization: `Bearer ${user_data?.token}`,
+      },
+      params: cleared,
+    }).then((res) => {
+      if (res.data && res.data.status) {
+        const data = res.data.data || [];
+        setRecords(data);
+        setFilteredRecords(data);
+        setTotalLoss(res.data.total_loss || 0);
+      }
+    }).catch(err => console.error(err)).finally(() => setLoading(false));
+  };
+
+  const columns = [
+    {
+      name: "#",
+      cell: (row, index) => (currentPage - 1) * perPage + index + 1,
+      width: "55px",
+    },
+    {
+      name: "Date & Time",
+      selector: (row) => row.created_at,
+      sortable: true,
+      width: "160px",
+      cell: (row) => (
+        <span style={{ fontSize: "12px" }}>
+          {new Date(row.created_at).toLocaleString("en-IN", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+          })}
+        </span>
+      ),
+    },
+    {
+      name: "Bill No",
+      selector: (row) => row.bill?.bill_no,
+      sortable: true,
+      width: "140px",
+      cell: (row) => (
+        <span style={{ fontSize: "12px", fontWeight: 600 }}>
+          {row.bill?.bill_no || "—"}
+        </span>
+      ),
+    },
+    {
+      name: "Product",
+      selector: (row) => row.product?.name,
+      sortable: true,
+      width: "180px",
+      cell: (row) => (
+        <span style={{ fontWeight: 500 }}>{row.product?.name || "—"}</span>
+      ),
+    },
+    {
+      name: "Branch",
+      selector: (row) => row.branch?.name,
+      sortable: true,
+      width: "130px",
+    },
+    {
+      name: "Original Price",
+      selector: (row) => row.original_price,
+      sortable: true,
+      width: "130px",
+      cell: (row) => <span>₹{Number(row.original_price).toFixed(2)}</span>,
+    },
+    {
+      name: "Override Price",
+      selector: (row) => row.override_price,
+      sortable: true,
+      width: "130px",
+      cell: (row) => (
+        <span style={{ color: "#b45309", fontWeight: 600 }}>
+          ₹{Number(row.override_price).toFixed(2)}
+        </span>
+      ),
+    },
+    {
+      name: "Diff/Unit",
+      selector: (row) => row.difference,
+      sortable: true,
+      width: "100px",
+      cell: (row) => (
+        <span style={{ color: "#ef4444", fontWeight: 500 }}>
+          -₹{Number(row.difference).toFixed(2)}
+        </span>
+      ),
+    },
+    {
+      name: "Qty",
+      selector: (row) => row.qty,
+      sortable: true,
+      width: "70px",
+    },
+    {
+      name: "Total Loss",
+      selector: (row) => row.total_loss,
+      sortable: true,
+      width: "120px",
+      cell: (row) => (
+        <span
+          style={{
+            color: "#fff",
+            background: "#ef4444",
+            borderRadius: "6px",
+            padding: "3px 10px",
+            fontWeight: 700,
+            fontSize: "13px",
+          }}
+        >
+          -₹{Number(row.total_loss).toFixed(2)}
+        </span>
+      ),
+    },
+    {
+      name: "Done By",
+      selector: (row) => row.overridden_by?.name,
+      sortable: true,
+      width: "130px",
+      cell: (row) => (
+        <span
+          style={{
+            background: "#f3f4f6",
+            borderRadius: "6px",
+            padding: "2px 8px",
+            fontSize: "12px",
+            fontWeight: 500,
+          }}
+        >
+          {row.overridden_by?.name || "—"}
+        </span>
+      ),
+    },
+  ];
+
+  return (
+    <Layout>
+      <div className="main-content-inner">
+        <div className="main-content-wrap">
+          
+          {/* Title Area */}
+          <div className="flex items-center flex-wrap justify-between gap20 mb-27">
+            <h3>Price Override Report</h3>
+            <ul className="breadcrumbs flex items-center flex-wrap justify-start gap10">
+              <li>
+                <Link to="/">
+                  <div className="text-tiny">Dashboard</div>
+                </Link>
+              </li>
+              <li><i className="icon-chevron-right" /></li>
+              <li>
+                <div className="text-tiny">Price Override Report</div>
+              </li>
+            </ul>
+          </div>
+
+          {/* COMPACT LOSS MINI BOX - Small and clean */}
+          <div style={{ maxWidth: "250px" }} className="mb-20">
+            <div
+              className="wg-box"
+              style={{
+                background: "#fef2f2",
+                border: "1px solid #fecaca",
+                borderRadius: "8px",
+                padding: "12px 16px",
+              }}
+            >
+              <p style={{ fontSize: "11px", color: "#ef4444", margin: "0 0 2px 0", fontWeight: "700", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                Total Loss
+              </p>
+              <h3 style={{ fontSize: "22px", fontWeight: "800", color: "#dc2626", margin: 0 }}>
+                -₹{Number(totalLoss).toFixed(2)}
+              </h3>
+            </div>
+          </div>
+
+          {/* HORIZONTAL FILTER ROW - Styled perfectly like your reference image */}
+          <div className="wg-box mb-20" style={{ padding: "16px 20px" }}>
+            <div style={{ fontSize: "14px", fontWeight: "700", color: "#1e293b", marginBottom: "12px" }}>Filters</div>
+            
+            <div style={{ display: "flex", flexDirection: "row", gap: "12px", alignItems: "flex-end", width: "100%", flexWrap: "nowrap" }}>
+              
+              {/* From Date */}
+              <div style={{ flex: 1, minWidth: "120px" }}>
+                <label style={{ fontSize: "10px", fontWeight: "700", color: "#64748b", display: "block", marginBottom: "6px", textTransform: "uppercase" }}>
+                  START DATE
+                </label>
+                <input
+                  type="date"
+                  name="from_date"
+                  className="form-control"
+                  style={{ height: "40px", borderRadius: "6px", border: "1px solid #cbd5e1", fontSize: "13px", padding: "0 10px", width: "100%" }}
+                  value={filters.from_date}
+                  onChange={handleFilterChange}
+                />
+              </div>
+
+              {/* To Date */}
+              <div style={{ flex: 1, minWidth: "120px" }}>
+                <label style={{ fontSize: "10px", fontWeight: "700", color: "#64748b", display: "block", marginBottom: "6px", textTransform: "uppercase" }}>
+                  END DATE
+                </label>
+                <input
+                  type="date"
+                  name="to_date"
+                  className="form-control"
+                  style={{ height: "40px", borderRadius: "6px", border: "1px solid #cbd5e1", fontSize: "13px", padding: "0 10px", width: "100%" }}
+                  value={filters.to_date}
+                  onChange={handleFilterChange}
+                />
+              </div>
+
+              {/* Branch */}
+              {/* <div style={{ flex: 1, minWidth: "130px" }}>
+                <label style={{ fontSize: "10px", fontWeight: "700", color: "#64748b", display: "block", marginBottom: "6px", textTransform: "uppercase" }}>
+                  BRANCH
+                </label>
+                <select
+                  name="branch_id"
+                  className="form-control"
+                  style={{ height: "40px", borderRadius: "6px", border: "1px solid #cbd5e1", fontSize: "13px", padding: "0 10px", width: "100%", backgroundColor: "#fff" }}
+                  value={filters.branch_id}
+                  onChange={handleFilterChange}
+                >
+                  <option value="">All Branches</option>
+                  <option value="1">Branch 1</option>
+                </select>
+              </div> */}
+
+              {/* Product ID Input */}
+              <div style={{ flex: 1, minWidth: "110px" }}>
+                <label style={{ fontSize: "10px", fontWeight: "700", color: "#64748b", display: "block", marginBottom: "6px", textTransform: "uppercase" }}>
+                  PRODUCT ID
+                </label>
+                <input
+                  type="number"
+                  name="product_id"
+                  className="form-control"
+                  placeholder="All Products"
+                  style={{ height: "40px", borderRadius: "6px", border: "1px solid #cbd5e1", fontSize: "13px", padding: "0 10px", width: "100%" }}
+                  value={filters.product_id}
+                  onChange={handleFilterChange}
+                />
+              </div>
+
+              {/* Staff ID Input */}
+              <div style={{ flex: 1, minWidth: "110px" }}>
+                <label style={{ fontSize: "10px", fontWeight: "700", color: "#64748b", display: "block", marginBottom: "6px", textTransform: "uppercase" }}>
+                  STAFF ID
+                </label>
+                <input
+                  type="number"
+                  name="overridden_by"
+                  className="form-control"
+                  placeholder="All Staff"
+                  style={{ height: "40px", borderRadius: "6px", border: "1px solid #cbd5e1", fontSize: "13px", padding: "0 10px", width: "100%" }}
+                  value={filters.overridden_by}
+                  onChange={handleFilterChange}
+                />
+              </div>
+
+              {/* Action Buttons: Unified into the layout alignment */}
+              <div style={{ display: "flex", gap: "8px", minWidth: "180px" }}>
+                <button
+                  onClick={fetchReport}
+                  disabled={loading}
+                  className="btn btn-success"
+                  style={{
+                    height: "40px",
+                    background: loading ? "#10b981" : "#22c55e",
+                    color: "#fff",
+                    border: "none",
+                    borderRadius: "6px",
+                    padding: "0 16px",
+                    fontWeight: "600",
+                    fontSize: "13px",
+                    cursor: "pointer",
+                    flex: 1,
+                    whiteSpace: "nowrap"
+                  }}
+                >
+                  {loading ? "Loading..." : "Apply"}
+                </button>
+                <button
+                  onClick={handleClearFilters}
+                  className="btn btn-secondary"
+                  style={{
+                    height: "40px",
+                    background: "#f1f5f9",
+                    color: "#475569",
+                    border: "1px solid #cbd5e1",
+                    borderRadius: "6px",
+                    padding: "0 16px",
+                    fontWeight: "600",
+                    fontSize: "13px",
+                    cursor: "pointer",
+                    whiteSpace: "nowrap"
+                  }}
+                >
+                  Clear
+                </button>
+              </div>
+
+            </div>
+          </div>
+
+          {/* Table Container Area */}
+          <div className="wg-box">
+            <div className="flex items-center justify-between gap10 flex-wrap mb-3">
+              <div className="wg-filter flex-grow">
+                <form className="form-search" onSubmit={(e) => e.preventDefault()}>
+                  <fieldset className="name">
+                    <input
+                      type="text"
+                      placeholder="Search by product, bill no, staff..."
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                    />
+                  </fieldset>
+                </form>
+              </div>
+            </div>
+
+            <DataTable
+              columns={columns}
+              data={filteredRecords}
+              pagination
+              paginationPerPage={perPage}
+              onChangePage={(page) => setCurrentPage(page)}
+              highlightOnHover
+              pointerOnHover
+              responsive
+              progressPending={loading}
+              noDataComponent={
+                <div style={{ padding: "40px", textAlign: "center", color: "#9ca3af" }}>
+                  <p style={{ fontSize: "14px", fontWeight: 500 }}>No price overrides found</p>
+                </div>
+              }
+              customStyles={{
+                headCells: {
+                  style: {
+                    fontWeight: "bold",
+                    fontSize: "12px",
+                    background: "#f9fafb",
+                  },
+                },
+                rows: {
+                  style: {
+                    fontSize: "13px",
+                  },
+                },
+              }}
+            />
+          </div>
+
+        </div>
+      </div>
+    </Layout>
+  );
+};
+
+export default PriceOverride;

@@ -45,6 +45,7 @@ import StockExpiryAlertsPage from "./components/ExpiryAlertModal";
 import StockSummury from "./components/reports/stockSummury";
 import PurchaseSummary from "./components/reports/PurchaseSummary";
 import SalesAnalytics from "./components/reports/SalesAnalytics";
+import PriceOverride from "./components/reports/PriceOverride";
 import GstReports from "./components/reports/GstReports";
 import GSTR3BReport from "./components/reports/GSTR3BReport";
 import GSTR1Summary from "./components/reports/GSTR1Summary";
@@ -233,6 +234,10 @@ function App() {
           <ProtectedRoute
             path="/reports/sales-analytics"
             component={SalesAnalytics}
+          />
+           <ProtectedRoute
+            path="/reports/price_overridden"
+            component={PriceOverride}
           />
           <ProtectedRoute
             path="/reports/gst-output-sales"

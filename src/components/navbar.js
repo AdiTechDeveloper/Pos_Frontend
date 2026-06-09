@@ -206,6 +206,19 @@ const Navbar = () => {
 
                     <li className="menu-item">
                       <Link
+                        to="/reports/price_override"
+                        className="menu-item-button"
+                        onClick={closeSidebar}
+                      >
+                        <div className="icon">
+                          <i className="icon-layers"></i>
+                        </div>
+                        <div className="text">Price Override Report</div>
+                      </Link>
+                    </li>
+
+                    <li className="menu-item">
+                      <Link
                         to="/reports/gst-analytics"
                         className="menu-item-button"
                         onClick={closeSidebar}
@@ -387,6 +400,19 @@ const Navbar = () => {
                           <i className="icon-layers"></i>
                         </div>
                         <div className="text">Sales Analytics</div>
+                      </Link>
+                    </li>
+
+                    <li className="menu-item">
+                      <Link
+                        to="/reports/price_overridden"
+                        className="menu-item-button"
+                        onClick={closeSidebar}
+                      >
+                        <div className="icon">
+                          <i className="icon-layers"></i>
+                        </div>
+                        <div className="text">Price Overridden Report</div>
                       </Link>
                     </li>
 
