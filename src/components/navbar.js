@@ -79,7 +79,11 @@ const Navbar = () => {
           </Link>
 
           {/* Close button (mobile) */}
-          <div className="button-show-hide" onClick={() => setIsOpen(false)} style={{ display:"none" }}>
+          <div
+            className="button-show-hide"
+            onClick={() => setIsOpen(false)}
+            style={{ display: "none" }}
+          >
             <i className="icon-menu-left"></i>
           </div>
         </div>
@@ -206,7 +210,7 @@ const Navbar = () => {
 
                     <li className="menu-item">
                       <Link
-                        to="/reports/gst-analytics"
+                        to="/reports/gst-output-sales"
                         className="menu-item-button"
                         onClick={closeSidebar}
                       >
@@ -466,8 +470,3 @@ const Navbar = () => {
   );
 };
 export default Navbar;
-
-
-
-
-

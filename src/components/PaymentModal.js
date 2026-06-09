@@ -1,29 +1,20 @@
-import React, { useState } from "react";
-import QRCode from "react-qr-code";
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+
+const BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
 export default function PaymentModal({ total, onClose, onConfirm, cart_data }) {
-  const [method, setMethod] = useState("cash");
   const [cashGiven, setCashGiven] = useState(null);
   const [paymentType, setPaymentType] = useState("cash");
+  const [customerName, setCustomerName] = useState("");
+  const [customerMobile, setCustomerMobile] = useState("");
+  const [customerDue, setCustomerDue] = useState(0);
+  const [loadingCustomer, setLoadingCustomer] = useState(false);
 
   const parse = (v) => (parseFloat(v) ? parseFloat(v) : 0);
   const cashApplied = Math.min(parse(cashGiven), total);
   const remaining = total - cashApplied;
   const balanceReturn = Math.max(parse(cashGiven) - total, 0);
-  const user_data = JSON.parse(localStorage.getItem("user_detail"));
-  const upiId = "store@upi";
-  const name = "Your Name";
-  const amount = 250;
-  const note = "Order Payment";
-
-  const upiLink = `upi://pay?pa=${upiId}&pn=${name}&am=${amount}&tn=${note}&cu=INR`;
-
-  const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-
-  const handlePayment = () => {
-    window.location.href = upiLink;
-  };
-
   const amountStyle = { fontSize: "45px", marginBottom: "10px" };
 
   const keypad = (k) => {
@@ -36,25 +27,91 @@ export default function PaymentModal({ total, onClose, onConfirm, cart_data }) {
     });
   };
 
+  // const handleConfirm = () => {
+  //   let payments = [];
+  //   let customer = null;
+  //   const apiPaymentType = paymentType;
+
+  //   if (customerName && customerMobile && paymentType === "credit") {
+  //     customer = {
+  //       name: customerName,
+  //       mobile: customerMobile,
+  //     };
+  //   }
+
+  //   if (paymentType === "online") {
+  //     payments.push({
+  //       method: "online",
+  //       amount: total,
+  //       transaction_id: "",
+  //       cash_received: 0,
+  //       balance_return: 0,
+  //     });
+  //   }
+
+  //   if (paymentType === "cash") {
+  //     payments.push({
+  //       method: "cash",
+  //       amount: cashApplied,
+  //       cash_received: parse(cashGiven),
+  //       balance_return: balanceReturn,
+  //     });
+  //   }
+
+  //   // SPLIT PAYMENT
+  //   if (paymentType === "split") {
+  //     if (cashApplied > 0) {
+  //       payments.push({
+  //         method: "cash",
+  //         amount: cashApplied,
+  //         cash_received: parse(cashGiven),
+  //         balance_return: balanceReturn,
+  //       });
+  //     }
+
+  //     if (remaining > 0) {
+  //       payments.push({
+  //         method: "online",
+  //         amount: remaining,
+  //         transaction_id: "",
+  //       });
+  //     }
+  //   }
+
+  //   onConfirm({ payments, payment_type: apiPaymentType, customer });
+  // };
+
   const handleConfirm = () => {
     let payments = [];
+    let customer = null;
 
-    if (paymentType === "upi") {
-      payments.push({
-        method: "upi",
-        amount: total,
-        transaction_id: "QR_SCAN",
-        cash_received: 0,
-        balance_return: 0,
-      });
+    const apiPaymentType = paymentType;
+
+    if (paymentType === "credit") {
+      if (!customerName || !customerMobile) {
+        alert("Customer name & mobile are required for Pay Later");
+        return;
+      }
+
+      customer = {
+        name: customerName,
+        mobile: customerMobile,
+      };
+
+      payments = [];
     }
 
     if (paymentType === "cash") {
+      if (!cashGiven || parse(cashGiven) < total) {
+        alert("Insufficient cash amount");
+        return;
+      }
+
       payments.push({
         method: "cash",
-        amount: cashApplied,
+        amount: total,
         cash_received: parse(cashGiven),
-        balance_return: balanceReturn,
+        balance_return: Math.max(parse(cashGiven) - total, 0),
       });
     }
 
@@ -62,35 +119,83 @@ export default function PaymentModal({ total, onClose, onConfirm, cart_data }) {
       payments.push({
         method: "online",
         amount: total,
-        cash_received: parse(cashGiven),
-        balance_return: balanceReturn,
+        transaction_id: "",
       });
     }
 
-    // SPLIT PAYMENT
     if (paymentType === "split") {
-      if (cashApplied > 0) {
-        payments.push({
-          method: "cash",
-          amount: cashApplied,
-        });
+      if (!cashGiven || parse(cashGiven) <= 0) {
+        alert("Enter valid cash amount for split payment");
+        return;
       }
 
-      if (remaining > 0) {
+      const cashAmt = Math.min(parse(cashGiven), total);
+      const onlineAmt = total - cashAmt;
+
+      payments.push({
+        method: "cash",
+        amount: cashAmt,
+        cash_received: parse(cashGiven),
+        balance_return: Math.max(parse(cashGiven) - cashAmt, 0),
+      });
+
+      if (onlineAmt > 0) {
         payments.push({
           method: "online",
-          amount: remaining,
+          amount: onlineAmt,
           transaction_id: "",
         });
       }
     }
 
-    onConfirm(payments);
+    onConfirm({
+      payments,
+      payment_type: apiPaymentType,
+      customer,
+    });
   };
 
   const handleMethod = (type) => {
     setPaymentType(type);
   };
+
+  const getAuthHeader = () => {
+    const user_detail = localStorage.getItem("user_detail");
+    const user = user_detail ? JSON.parse(user_detail) : null;
+    const token = user?.token;
+
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  };
+
+  useEffect(() => {
+    if (customerMobile.length === 10) {
+      setLoadingCustomer(true);
+
+      axios
+        .get(`${BASE_URL}/api/customer-due/${customerMobile}`, {
+          headers: getAuthHeader(),
+        })
+        .then((res) => {
+          if (res.data.customer) {
+            setCustomerName(res.data.customer.name || "");
+            setCustomerDue(res.data.total_due || 0);
+          } else {
+            setCustomerName("");
+            setCustomerDue(0);
+          }
+        })
+        .catch((err) => {
+          console.error("Customer fetch error", err);
+          setCustomerDue(0);
+        })
+        .finally(() => {
+          setLoadingCustomer(false);
+        });
+    } else {
+      setCustomerName("");
+      setCustomerDue(0);
+    }
+  }, [customerMobile]);
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
@@ -124,7 +229,6 @@ export default function PaymentModal({ total, onClose, onConfirm, cart_data }) {
               </div>
             </button>
 
-            {/* UPI QR */}
             <button
               onClick={() => handleMethod("online")}
               className={`p-5 rounded-2xl text-center transition-all border ${
@@ -140,7 +244,9 @@ export default function PaymentModal({ total, onClose, onConfirm, cart_data }) {
               >
                 Online
               </div>
-              <div className="text-sm opacity-70 text-center">Scan Only</div>
+              <div className="text-sm opacity-70 text-center">
+                Pay with online method
+              </div>
             </button>
 
             <button
@@ -160,6 +266,26 @@ export default function PaymentModal({ total, onClose, onConfirm, cart_data }) {
               </div>
               <div className="text-sm opacity-70 text-center">
                 Cash + Online
+              </div>
+            </button>
+
+            <button
+              onClick={() => handleMethod("credit")}
+              className={`p-5 rounded-2xl text-center transition-all border ${
+                paymentType === "credit"
+                  ? "bg-blue-600 text-white shadow-xl scale-105"
+                  : "bg-gray-100 hover:bg-gray-200"
+              }`}
+              style={{ width: "90%" }}
+            >
+              <div
+                className="text-xl font-semibold text-center mb-5"
+                style={{ fontSize: "25px" }}
+              >
+                Pay Later
+              </div>
+              <div className="text-sm opacity-70 text-center">
+                Create credit bill
               </div>
             </button>
           </div>
@@ -198,23 +324,6 @@ export default function PaymentModal({ total, onClose, onConfirm, cart_data }) {
               </>
             )}
 
-            {method === "upi" && (
-              <div>
-                {isMobile ? (
-                  <button
-                    onClick={handlePayment}
-                    style={{ padding: "10px 20px" }}
-                  >
-                    Pay ₹{amount} via UPI
-                  </button>
-                ) : (
-                  <div style={{ textAlign: "center" }}>
-                    <h3>Scan & Pay</h3>
-                    <QRCode value={upiLink} size={200} />
-                  </div>
-                )}
-              </div>
-            )}
             <div style={amountStyle}>
               <strong>Paid: </strong> ₹
               {paymentType === "online" || paymentType === "split"
@@ -231,6 +340,40 @@ export default function PaymentModal({ total, onClose, onConfirm, cart_data }) {
                   <strong>Online: </strong> ₹{(total - cashApplied).toFixed(2)}
                 </div>
               </>
+            )}
+
+            {paymentType === "credit" && (
+              <div className="space-y-4">
+                <h2 className="text-xl font-bold" style={{ fontSize: "2rem" }}>
+                  Customer Details
+                </h2>
+                <input
+                  type="text"
+                  className="payment-cash p-4 text-xl w-full border rounded-xl shadow"
+                  placeholder="Customer Mobile"
+                  value={customerMobile}
+                  onChange={(e) => setCustomerMobile(e.target.value)}
+                />
+                <input
+                  type="text"
+                  className="payment-cash p-4 text-xl w-full border rounded-xl shadow"
+                  placeholder="Customer Name"
+                  value={customerName}
+                  onChange={(e) => setCustomerName(e.target.value)}
+                />
+              </div>
+            )}
+
+            {loadingCustomer && (
+              <div className="text-blue-500 text-sm mt-2">
+                Checking customer...
+              </div>
+            )}
+
+            {customerDue > 0 && (
+              <div className="bg-red-100 text-red-700 p-4 rounded-lg mt-2 font-bold text-3xl">
+                Pending Due: ₹{customerDue}
+              </div>
             )}
 
             {paymentType === "cash" && balanceReturn > 0 && (
@@ -297,13 +440,7 @@ export default function PaymentModal({ total, onClose, onConfirm, cart_data }) {
 
         {/* SUMMARY + ACTION BUTTONS */}
         <div className="col-span-3 flex justify-between items-center mt-6">
-          <div>
-            {method === "upi" && (
-              <div className="text-green-600 font-semibold">
-                Waiting for customer to scan
-              </div>
-            )}
-          </div>
+          <div></div>
           <div className="flex gap-4">
             <button
               onClick={onClose}
@@ -316,7 +453,8 @@ export default function PaymentModal({ total, onClose, onConfirm, cart_data }) {
             <button
               disabled={
                 (paymentType === "cash" && remaining > 0) ||
-                (paymentType === "split" && cashApplied <= 0)
+                (paymentType === "split" && cashApplied <= 0) ||
+                (paymentType === "credit" && (!customerName || !customerMobile))
               }
               onClick={handleConfirm}
               className={`rounded-xl text-white font-bold ${

@@ -29,17 +29,6 @@ export default function CartPanel({ cart, setCart, triggerRefresh }) {
   const [showReceipt, setShowReceipt] = useState(false);
   const [printData, setPrintData] = useState(null);
 
-  // const getPriceWithGST = (item) => {
-  //   const price = parseFloat(item.selling_price);
-  //   const gst = parseFloat(item.gst_rate?.rate || 0);
-
-  //   const gstAmount = (price * gst) / 100;
-  //   // const finalPrice = price + gstAmount;
-  //   const finalPrice = price;
-
-  //   return { gstAmount, finalPrice };
-  // };
-
   const getPriceWithGST = (item) => {
     const sellingPrice = parseFloat(item.selling_price) || 0;
     const gstRate = parseFloat(item.gst_percent) || 0;
@@ -89,7 +78,7 @@ export default function CartPanel({ cart, setCart, triggerRefresh }) {
     setCart(cart.filter((i) => i.cart_key !== item.cart_key));
   };
 
-  const handlePayment = async (payments) => {
+  const handlePayment = async (payloadOrPayments) => {
     try {
       const lines = cart.map((i) => ({
         product_id: i.product_id || i.id,
@@ -97,12 +86,32 @@ export default function CartPanel({ cart, setCart, triggerRefresh }) {
         qty: i.qty,
       }));
 
-      console.log("Payload being sent:", { lines });
+      // Normalize incoming payload from PaymentModal
+      let payments = [];
+      let payment_type = null;
+      let customer = null;
 
-      const res = await createSalesBill(lines);
+      if (Array.isArray(payloadOrPayments)) {
+        payments = payloadOrPayments;
+      } else if (payloadOrPayments && payloadOrPayments.payments) {
+        payments = payloadOrPayments.payments;
+        payment_type = payloadOrPayments.payment_type || null;
+        customer = payloadOrPayments.customer || null;
+      }
+
+      const createPayload = { lines };
+      if (payment_type) createPayload.payment_type = payment_type;
+      if (customer) createPayload.customer = customer;
+
+      console.log("Payload being sent:", createPayload);
+
+      const res = await createSalesBill(createPayload);
       const billId = res.data.data.id;
 
-      await paySalesBill(billId, payments);
+      // If payments provided, call pay endpoint (backwards compatible)
+      if (payments && payments.length > 0) {
+        await paySalesBill(billId, payments);
+      }
 
       const printRes = await axios.post(
         `${BASE_URL}/api/sales-bill/print-data`,
