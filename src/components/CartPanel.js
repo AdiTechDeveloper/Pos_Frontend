@@ -28,8 +28,6 @@ export default function CartPanel({ cart, setCart, triggerRefresh }) {
   const [showReceipt, setShowReceipt] = useState(false);
   const [printData, setPrintData] = useState(null);
 
-
-  // Price override state: { [cart_key]: { editing: bool, tempValue: string } }
   const [priceOverrides, setPriceOverrides] = useState({});
 
   const canOverridePrice = role === "admin" || role === "manager";
@@ -63,8 +61,8 @@ export default function CartPanel({ cart, setCart, triggerRefresh }) {
   const increaseQty = (item) => {
     setCart(
       cart.map((i) =>
-        i.cart_key === item.cart_key ? { ...i, qty: i.qty + 1 } : i
-      )
+        i.cart_key === item.cart_key ? { ...i, qty: i.qty + 1 } : i,
+      ),
     );
   };
 
@@ -73,8 +71,8 @@ export default function CartPanel({ cart, setCart, triggerRefresh }) {
       cart.map((i) =>
         i.cart_key === item.cart_key
           ? { ...i, qty: Math.max(i.qty - 1, 1) }
-          : i
-      )
+          : i,
+      ),
     );
   };
 
@@ -124,18 +122,17 @@ export default function CartPanel({ cart, setCart, triggerRefresh }) {
       return;
     }
 
-    // Log the override in cart item for sending to backend
     setCart((prev) =>
       prev.map((i) =>
         i.cart_key === item.cart_key
           ? {
-            ...i,
-            selling_price: newPrice,
-            original_price: i.original_price || i.selling_price, // preserve first original
-            is_price_overridden: true,
-          }
-          : i
-      )
+              ...i,
+              selling_price: newPrice,
+              original_price: i.original_price || i.selling_price, 
+              is_price_overridden: true,
+            }
+          : i,
+      ),
     );
 
     setPriceOverrides((prev) => ({
@@ -144,7 +141,7 @@ export default function CartPanel({ cart, setCart, triggerRefresh }) {
     }));
 
     toast.success(
-      `Price updated: ₹${originalPrice.toFixed(2)} → ₹${newPrice.toFixed(2)}`
+      `Price updated: ₹${originalPrice.toFixed(2)} → ₹${newPrice.toFixed(2)}`,
     );
   };
 
@@ -154,12 +151,12 @@ export default function CartPanel({ cart, setCart, triggerRefresh }) {
       prev.map((i) =>
         i.cart_key === item.cart_key
           ? {
-            ...i,
-            selling_price: i.original_price,
-            is_price_overridden: false,
-          }
-          : i
-      )
+              ...i,
+              selling_price: i.original_price,
+              is_price_overridden: false,
+            }
+          : i,
+      ),
     );
     toast.info("Price reset to original");
   };
@@ -170,12 +167,11 @@ export default function CartPanel({ cart, setCart, triggerRefresh }) {
         product_id: i.product_id || i.id,
         inventory_id: i.inventory_id || i.inventoryId,
         qty: i.qty,
-        selling_price: i.selling_price,                          // overridden price sent here
+        selling_price: i.selling_price, // overridden price sent here
         original_price: i.original_price || i.selling_price,
         is_price_overridden: i.is_price_overridden || false,
       }));
 
-      // Normalize incoming payload from PaymentModal
       let payments = [];
       let payment_type = null;
       let customer = null;
@@ -195,10 +191,8 @@ export default function CartPanel({ cart, setCart, triggerRefresh }) {
       console.log("Payload being sent:", createPayload);
 
       const res = await createSalesBill(createPayload);
-      // const res = await createSalesBill(lines);
       const billId = res.data.data.id;
 
-      // If payments provided, call pay endpoint (backwards compatible)
       if (payments && payments.length > 0) {
         await paySalesBill(billId, payments);
       }
@@ -206,7 +200,7 @@ export default function CartPanel({ cart, setCart, triggerRefresh }) {
       const printRes = await axios.post(
         `${BASE_URL}/api/sales-bill/print-data`,
         { id: [billId] },
-        { headers: getAuthHeader() }
+        { headers: getAuthHeader() },
       );
 
       setPrintData(printRes.data);
@@ -224,14 +218,34 @@ export default function CartPanel({ cart, setCart, triggerRefresh }) {
     }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      const user_detail = localStorage.getItem("user_detail");
+      const user = user_detail ? JSON.parse(user_detail) : null;
+
+      await axios.post(
+        `${BASE_URL}/api/logout`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${user?.token}`,
+            Accept: "application/json",
+          },
+        },
+      );
+    } catch (error) {
+      console.error("Logout API error:", error);
+    }
+
     document.cookie.split(";").forEach((c) => {
       document.cookie = c
         .replace(/^ +/, "")
         .replace(/=.*/, "=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/");
     });
+
     localStorage.clear();
     sessionStorage.clear();
+
     history.push("/cashier_login");
   };
 
@@ -257,7 +271,10 @@ export default function CartPanel({ cart, setCart, triggerRefresh }) {
     `);
     win.document.close();
     win.focus();
-    setTimeout(() => { win.print(); win.close(); }, 500);
+    setTimeout(() => {
+      win.print();
+      win.close();
+    }, 500);
   };
 
   return (
@@ -285,30 +302,40 @@ export default function CartPanel({ cart, setCart, triggerRefresh }) {
         </div>
 
         {/* Cart Items */}
-        <div className="flex-1 overflow-y-auto space-y-6">
+        <div className="flex-1 overflow-y-auto">
           {cart.length === 0 ? (
             <div className="flex flex-col items-center justify-center text-center py-20">
-              <p className="text-5xl font-extrabold text-gray-400">Empty Cart</p>
-              <p className="text-2xl text-gray-500 mt-8">Add products to begin billing</p>
+              <p className="text-5xl font-extrabold text-gray-400">
+                Empty Cart
+              </p>
+              <p className="text-2xl text-gray-500 mt-8">
+                Add products to begin billing
+              </p>
             </div>
           ) : (
             cart.map((item) => {
               const { gstAmount, finalPrice } = getPriceWithGST(item);
               const override = priceOverrides[item.cart_key];
               const isEditing = override?.editing;
-              const isOverridden = item.is_price_overridden && item.original_price;
+              const isOverridden =
+                item.is_price_overridden && item.original_price;
 
               return (
                 <div
                   key={`${item.inventory_id}_${item.selling_price}`}
                   className="bg-white p-3 rounded-xl shadow border border-gray-100"
                   style={{
-                    border: isOverridden ? "2px solid #f59e0b" : "2px solid transparent",
+                    border: isOverridden
+                      ? "2px solid #f59e0b"
+                      : "2px solid transparent",
                   }}
                 >
                   {/* Top row: name + override badge */}
                   <div className="flex items-center justify-between mb-3">
-                    <p className="font-bold" style={{ fontSize: "17px", color: "black" }}>
+                    <p
+                      className="font-bold"
+                      style={{ fontSize: "17px", color: "black" }}
+                    >
                       {item.name}
                     </p>
                     {isOverridden && (
@@ -344,16 +371,20 @@ export default function CartPanel({ cart, setCart, triggerRefresh }) {
                           if (val === "") {
                             setCart((prev) =>
                               prev.map((i) =>
-                                i.inventory_id === item.inventory_id ? { ...i, qty: "" } : i
-                              )
+                                i.inventory_id === item.inventory_id
+                                  ? { ...i, qty: "" }
+                                  : i,
+                              ),
                             );
                             return;
                           }
                           const newQty = Math.max(1, Number(val));
                           setCart((prev) =>
                             prev.map((i) =>
-                              i.inventory_id === item.inventory_id ? { ...i, qty: newQty } : i
-                            )
+                              i.inventory_id === item.inventory_id
+                                ? { ...i, qty: newQty }
+                                : i,
+                            ),
                           );
                         }}
                         className="w-12 text-center text-3xl font-bold border rounded-xl p-2"
@@ -376,14 +407,16 @@ export default function CartPanel({ cart, setCart, triggerRefresh }) {
                     </div>
                   </div>
 
-
                   {/* Price row */}
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex flex-col gap-1">
                       <div className="flex items-center gap-2 flex-wrap">
                         {/* Unit price — editable */}
 
-                        <span className="text-gray-600" style={{ fontSize: "14px" }}>
+                        <span
+                          className="text-gray-600"
+                          style={{ fontSize: "14px" }}
+                        >
                           Unit Price:
                         </span>
 
@@ -417,7 +450,8 @@ export default function CartPanel({ cart, setCart, triggerRefresh }) {
                                 }))
                               }
                               onKeyDown={(e) => {
-                                if (e.key === "Enter") confirmPriceOverride(item);
+                                if (e.key === "Enter")
+                                  confirmPriceOverride(item);
                                 if (e.key === "Escape") cancelPriceEdit(item);
                               }}
                               style={{
@@ -473,8 +507,15 @@ export default function CartPanel({ cart, setCart, triggerRefresh }) {
                             }}
                           >
                             ₹{Number(item.selling_price).toFixed(2)}
-                            <span className="text-xs ml-1" style={{ fontWeight: 400, color: "#6b7280" }}>
-                              ({Number(item.gst_inclusive) === 1 ? "Incl." : "Excl."} GST)
+                            <span
+                              className="text-xs ml-1"
+                              style={{ fontWeight: 400, color: "#6b7280" }}
+                            >
+                              (
+                              {Number(item.gst_inclusive) === 1
+                                ? "Incl."
+                                : "Excl."}{" "}
+                              GST)
                             </span>
                           </span>
                         )}
@@ -518,8 +559,12 @@ export default function CartPanel({ cart, setCart, triggerRefresh }) {
                         )}
                       </div>
 
-                      <p className="text-gray-500 mt-1" style={{ fontSize: "13px" }}>
-                        GST ({item.gst_percent}%): ₹{(gstAmount * item.qty).toFixed(2)}
+                      <p
+                        className="text-gray-500 mt-1"
+                        style={{ fontSize: "13px" }}
+                      >
+                        GST ({item.gst_percent}%): ₹
+                        {(gstAmount * item.qty).toFixed(2)}
                       </p>
                       <p className="font-bold text-green-700 mt-1">
                         Subtotal: ₹{(finalPrice * item.qty).toFixed(2)}
@@ -527,9 +572,8 @@ export default function CartPanel({ cart, setCart, triggerRefresh }) {
                     </div>
                   </div>
                 </div>
-              )
+              );
             })
-
           )}
           {/* Total + Checkout */}
           <div className="pt-8 border-t mt-8">
@@ -540,13 +584,20 @@ export default function CartPanel({ cart, setCart, triggerRefresh }) {
             <button
               onClick={() => setShowPayment(true)}
               disabled={cart.length === 0}
-              className={`w-full bg-gradient-to-r from-green-500 to-green-700 hover:from-green-600 hover:to-green-800 text-white p-6 rounded-3xl text-4xl font-extrabold shadow-2xl ${cart.length === 0 ? "cursor-not-allowed" : ""
-                }`}
+              className={`w-full bg-gradient-to-r from-green-500 to-green-700 hover:from-green-600 hover:to-green-800 text-white p-6 rounded-3xl text-4xl font-extrabold shadow-2xl ${
+                cart.length === 0 ? "cursor-not-allowed" : ""
+              }`}
             >
               Checkout
             </button>
-          </div>
 
+            <button
+              onClick={() => history.push("/customer-dues")}
+              className={`w-full bg-gradient-to-r bg-blue-600 hover:bg-blue-700 hover:from-blue-600 hover:to-blue-800 text-white p-6 rounded-3xl text-4xl font-extrabold shadow-2xl mt-6`}
+            >
+              Customer Dues
+            </button>
+          </div>
 
           {showPayment && (
             <PaymentModal
@@ -571,6 +622,5 @@ export default function CartPanel({ cart, setCart, triggerRefresh }) {
         </div>
       </div>
     </>
-  )
+  );
 }
-

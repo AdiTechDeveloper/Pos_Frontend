@@ -202,116 +202,116 @@ export default function PaymentModal({ total, onClose, onConfirm, cart_data }) {
       <div className="row bg-white rounded-3xl shadow-2xl w-full cart-max-width p-5">
         {/* LEFT SIDE – METHOD LIST */}
         <div className="col-md-7  flex flex-col gap-4">
-          <div className="col-span-1 flex flex-col gap-4">
-            <h2
-              className="text-xl font-bold mb-2"
-              style={{ fontSize: "2.5rem" }}
-            >
+          <div className="col-span-1 flex flex-col gap-4 w-full">
+            {/* Section Header */}
+            <h2 className="text-3xl font-extrabold text-slate-800 tracking-tight">
               Payment Options
             </h2>
-            <button
-              onClick={() => handleMethod("cash")}
-              className={`p-5 rounded-2xl text-left transition-all border ${
-                paymentType === "cash"
-                  ? "bg-blue-600 text-white shadow-xl scale-105"
-                  : "bg-gray-100 hover:bg-gray-200"
-              }`}
-              style={{ width: "90%" }}
-            >
-              <div
-                className="text-xl font-semibold text-center mb-5"
-                style={{ fontSize: "25px" }}
-              >
-                Cash
-              </div>
-              <div className="text-sm opacity-70 text-center">
-                Take cash from customer
-              </div>
-            </button>
 
-            <button
-              onClick={() => handleMethod("online")}
-              className={`p-5 rounded-2xl text-center transition-all border ${
-                paymentType === "online"
-                  ? "bg-blue-600 text-white shadow-xl scale-105"
-                  : "bg-gray-100 hover:bg-gray-200"
-              }`}
-              style={{ marginBottom: "20px", width: "90%" }}
-            >
-              <div
-                className="text-xl font-semibold text-center mb-5"
-                style={{ fontSize: "25px" }}
+            {/* 2x2 Responsive Grid */}
+            <div className="grid grid-cols-2 gap-3.5 w-full">
+              {/* Cash Button */}
+              <button
+                type="button"
+                onClick={() => handleMethod("cash")}
+                className={`p-4 rounded-xl text-center transition-all duration-200 border flex flex-col items-center justify-center gap-1.5 ${
+                  paymentType === "cash"
+                    ? "bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-100 scale-[1.02]"
+                    : "bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100 hover:border-slate-300"
+                }`}
               >
-                Online
-              </div>
-              <div className="text-sm opacity-70 text-center">
-                Pay with online method
-              </div>
-            </button>
+                {/* Cash Icon */}
+                <div>
+                  <div className="text-2xl font-bold leading-tight">Cash</div>
+                  <div
+                    className={`text-xl mt-0.5 leading-normal ${paymentType === "cash" ? "text-blue-100" : "text-slate-400"}`}
+                  >
+                    Take cash from customer
+                  </div>
+                </div>
+              </button>
 
-            <button
-              onClick={() => handleMethod("split")}
-              className={`p-5 rounded-2xl text-center transition-all border ${
-                paymentType === "split"
-                  ? "bg-blue-600 text-white shadow-xl scale-105"
-                  : "bg-gray-100 hover:bg-gray-200"
-              }`}
-              style={{ width: "90%" }}
-            >
-              <div
-                className="text-xl font-semibold text-center mb-5"
-                style={{ fontSize: "25px" }}
+              {/* Online Button */}
+              <button
+                type="button"
+                onClick={() => handleMethod("online")}
+                className={`p-4 rounded-xl text-center transition-all duration-200 border flex flex-col items-center justify-center gap-1.5 ${
+                  paymentType === "online"
+                    ? "bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-100 scale-[1.02]"
+                    : "bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100 hover:border-slate-300"
+                }`}
               >
-                Split Payment
-              </div>
-              <div className="text-sm opacity-70 text-center">
-                Cash + Online
-              </div>
-            </button>
+                {/* Online Icon */}
+                <div>
+                  <div className="text-2xl font-bold leading-tight">Online</div>
+                  <div
+                    className={`text-xl mt-0.5 leading-normal ${paymentType === "online" ? "text-blue-100" : "text-slate-400"}`}
+                  >
+                    Pay with online method
+                  </div>
+                </div>
+              </button>
 
-            <button
-              onClick={() => handleMethod("credit")}
-              className={`p-5 rounded-2xl text-center transition-all border ${
-                paymentType === "credit"
-                  ? "bg-blue-600 text-white shadow-xl scale-105"
-                  : "bg-gray-100 hover:bg-gray-200"
-              }`}
-              style={{ width: "90%" }}
-            >
-              <div
-                className="text-xl font-semibold text-center mb-5"
-                style={{ fontSize: "25px" }}
+              {/* Split Button */}
+              <button
+                type="button"
+                onClick={() => handleMethod("split")}
+                className={`p-4 rounded-xl text-center transition-all duration-200 border flex flex-col items-center justify-center gap-1.5 ${
+                  paymentType === "split"
+                    ? "bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-100 scale-[1.02]"
+                    : "bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100 hover:border-slate-300"
+                }`}
               >
-                Pay Later
-              </div>
-              <div className="text-sm opacity-70 text-center">
-                Create credit bill
-              </div>
-            </button>
+                {/* Split Icon */}
+                <div>
+                  <div className="text-2xl font-bold leading-tight">
+                    Split Payment
+                  </div>
+                  <div
+                    className={`text-xl mt-0.5 leading-normal ${paymentType === "split" ? "text-blue-100" : "text-slate-400"}`}
+                  >
+                    Cash + Online
+                  </div>
+                </div>
+              </button>
+
+              {/* Pay Later (Credit) Button */}
+              <button
+                type="button"
+                onClick={() => handleMethod("credit")}
+                className={`p-4 rounded-xl text-center transition-all duration-200 border flex flex-col items-center justify-center gap-1.5 ${
+                  paymentType === "credit"
+                    ? "bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-100 scale-[1.02]"
+                    : "bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100 hover:border-slate-300"
+                }`}
+              >
+                {/* Credit Icon */}
+                <div>
+                  <div className="text-2xl font-bold leading-tight">
+                    Pay Later
+                  </div>
+                  <div
+                    className={`text-xl mt-0.5 leading-normal ${paymentType === "credit" ? "text-blue-100" : "text-slate-400"}`}
+                  >
+                    Create credit bill
+                  </div>
+                </div>
+              </button>
+            </div>
           </div>
 
           {/* MIDDLE AREA */}
-          <div className="col-span-1 space-y-6">
+          <div className="col-span-1">
             {(paymentType === "cash" || paymentType === "split") && (
               <>
-                <h2
-                  className="text-xl font-bold mb-20"
-                  style={{ fontSize: "2.4rem" }}
-                >
+                <h2 className="text-3xl font-extrabold text-slate-800 tracking-tight">
                   Enter Amount
                 </h2>
 
                 <div>
-                  {/* <input
-                    type="number"
-                    className="payment-cash p-5 text-3xl text-center border rounded-xl shadow mb-20"
-                    value={cashGiven}
-                    onChange={(e) => setCashGiven(Number(e.target.value))}
-                    placeholder="Cash Received"
-                  /> */}
                   <input
                     type="number"
-                    className="payment-cash p-5 text-3xl text-center border rounded-xl shadow mb-20"
+                    className="payment-cash p-4 text-2xl text-center border rounded-xl shadow mb-20"
                     placeholder="Cash Received"
                     value={cashGiven ?? ""}
                     onChange={(e) =>

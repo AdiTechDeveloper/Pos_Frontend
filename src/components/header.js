@@ -3,6 +3,9 @@ import { Link, useHistory } from "react-router-dom";
 import useStockExpiryAlerts from "../hooks/useStockExpiryAlerts";
 import ExpiryAlertBadge from "./ExpiryAlertBadge";
 import ExpiryAlertModal from "./ExpiryAlertModal";
+import axios from "axios";
+
+const BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
 const Header = () => {
   const user_data = JSON.parse(localStorage.getItem("user_detail"));
@@ -16,7 +19,25 @@ const Header = () => {
     setShowMenu(!showMenu);
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      const user_detail = localStorage.getItem("user_detail");
+      const user = user_detail ? JSON.parse(user_detail) : null;
+
+      await axios.post(
+        `${BASE_URL}/api/logout`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${user?.token}`,
+            Accept: "application/json",
+          },
+        },
+      );
+    } catch (error) {
+      console.error("Logout API error:", error);
+    }
+
     document.cookie.split(";").forEach((c) => {
       document.cookie = c
         .replace(/^ +/, "")
@@ -28,6 +49,7 @@ const Header = () => {
 
     history.push("/");
   };
+
   return (
     <div className="header-dashboard">
       <div className="wrap">
