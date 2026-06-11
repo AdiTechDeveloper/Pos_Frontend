@@ -28,6 +28,7 @@ export default function CartPanel({ cart, setCart, triggerRefresh }) {
   const [showReceipt, setShowReceipt] = useState(false);
   const [printData, setPrintData] = useState(null);
 
+
   // Price override state: { [cart_key]: { editing: bool, tempValue: string } }
   const [priceOverrides, setPriceOverrides] = useState({});
 
@@ -128,11 +129,11 @@ export default function CartPanel({ cart, setCart, triggerRefresh }) {
       prev.map((i) =>
         i.cart_key === item.cart_key
           ? {
-              ...i,
-              selling_price: newPrice,
-              original_price: i.original_price || i.selling_price, // preserve first original
-              is_price_overridden: true,
-            }
+            ...i,
+            selling_price: newPrice,
+            original_price: i.original_price || i.selling_price, // preserve first original
+            is_price_overridden: true,
+          }
           : i
       )
     );
@@ -153,10 +154,10 @@ export default function CartPanel({ cart, setCart, triggerRefresh }) {
       prev.map((i) =>
         i.cart_key === item.cart_key
           ? {
-              ...i,
-              selling_price: i.original_price,
-              is_price_overridden: false,
-            }
+            ...i,
+            selling_price: i.original_price,
+            is_price_overridden: false,
+          }
           : i
       )
     );
@@ -325,248 +326,251 @@ export default function CartPanel({ cart, setCart, triggerRefresh }) {
                         ⚠ Price Overridden
                       </span>
                     )}
+                    <div className="flex items-center justify-end gap-2 mt-3">
+                      <button
+                        onClick={() => decreaseQty(item)}
+                        className="bg-gray-200 hover:bg-gray-300 rounded-full w-12 h-12 text-3xl flex items-center justify-center"
+                      >
+                        -
+                      </button>
+
+                      <input
+                        type="text"
+                        min="1"
+                        value={item.qty}
+                        onFocus={(e) => e.target.select()}
+                        onChange={(e) => {
+                          let val = e.target.value;
+                          if (val === "") {
+                            setCart((prev) =>
+                              prev.map((i) =>
+                                i.inventory_id === item.inventory_id ? { ...i, qty: "" } : i
+                              )
+                            );
+                            return;
+                          }
+                          const newQty = Math.max(1, Number(val));
+                          setCart((prev) =>
+                            prev.map((i) =>
+                              i.inventory_id === item.inventory_id ? { ...i, qty: newQty } : i
+                            )
+                          );
+                        }}
+                        className="w-12 text-center text-3xl font-bold border rounded-xl p-2"
+                        style={{ appearance: "textfield" }}
+                      />
+
+                      <button
+                        onClick={() => increaseQty(item)}
+                        className="bg-gray-200 hover:bg-gray-300 rounded-full w-12 h-12 text-3xl text-bold flex items-center justify-center"
+                      >
+                        +
+                      </button>
+
+                      <button
+                        onClick={() => removeItem(item)}
+                        className="bg-red-100 hover:bg-red-200 rounded-full w-12 h-12 text-red-600 flex items-center justify-center text-xl"
+                      >
+                        ✕
+                      </button>
+                    </div>
                   </div>
 
+
                   {/* Price row */}
-                  <div className="mb-3">
-                    {/* Unit price — editable */}
-                    <div className="flex items-center gap-3 flex-wrap">
-                      <span className="text-gray-600" style={{ fontSize: "14px" }}>
-                        Unit Price:
-                      </span>
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {/* Unit price — editable */}
 
-                      {/* Original price crossed out if overridden */}
-                      {isOverridden && (
-                        <span
-                          style={{
-                            textDecoration: "line-through",
-                            color: "#9ca3af",
-                            fontSize: "14px",
-                          }}
-                        >
-                          ₹{Number(item.original_price).toFixed(2)}
+                        <span className="text-gray-600" style={{ fontSize: "14px" }}>
+                          Unit Price:
                         </span>
-                      )}
 
-                      {/* Editable price input or display */}
-                      {isEditing ? (
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="number"
-                            value={override.tempValue}
-                            autoFocus
-                            onChange={(e) =>
-                              setPriceOverrides((prev) => ({
-                                ...prev,
-                                [item.cart_key]: {
-                                  ...prev[item.cart_key],
-                                  tempValue: e.target.value,
-                                },
-                              }))
-                            }
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter") confirmPriceOverride(item);
-                              if (e.key === "Escape") cancelPriceEdit(item);
-                            }}
+                        {/* Original price crossed out if overridden */}
+                        {isOverridden && (
+                          <span
                             style={{
-                              width: "100px",
-                              border: "2px solid #f59e0b",
-                              borderRadius: "8px",
-                              padding: "4px 8px",
-                              fontSize: "15px",
-                              fontWeight: 600,
-                              color: "#92400e",
-                              outline: "none",
-                            }}
-                          />
-                          {/* Confirm */}
-                          <button
-                            onClick={() => confirmPriceOverride(item)}
-                            style={{
-                              background: "#10b981",
-                              color: "#fff",
-                              border: "none",
-                              borderRadius: "6px",
-                              padding: "4px 10px",
+                              textDecoration: "line-through",
+                              color: "#9ca3af",
                               fontSize: "14px",
-                              cursor: "pointer",
-                              fontWeight: 600,
                             }}
                           >
-                            ✓
-                          </button>
-                          {/* Cancel */}
-                          <button
-                            onClick={() => cancelPriceEdit(item)}
-                            style={{
-                              background: "#ef4444",
-                              color: "#fff",
-                              border: "none",
-                              borderRadius: "6px",
-                              padding: "4px 10px",
-                              fontSize: "14px",
-                              cursor: "pointer",
-                              fontWeight: 600,
-                            }}
-                          >
-                            ✕
-                          </button>
-                        </div>
-                      ) : (
-                        <span
-                          style={{
-                            fontWeight: 700,
-                            fontSize: "15px",
-                            color: isOverridden ? "#b45309" : "#111",
-                          }}
-                        >
-                          ₹{Number(item.selling_price).toFixed(2)}
-                          <span className="text-xs ml-1" style={{ fontWeight: 400, color: "#6b7280" }}>
-                            ({Number(item.gst_inclusive) === 1 ? "Incl." : "Excl."} GST)
+                            ₹{Number(item.original_price).toFixed(2)}
                           </span>
-                        </span>
-                      )}
+                        )}
 
-                      {/* Edit / Reset button — only for admin/manager */}
-                      {canOverridePrice && !isEditing && (
-                        <>
-                          <button
-                            onClick={() => startPriceEdit(item)}
-                            title="Override price"
+                        {/* Editable price input or display */}
+                        {isEditing ? (
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="number"
+                              value={override.tempValue}
+                              autoFocus
+                              onChange={(e) =>
+                                setPriceOverrides((prev) => ({
+                                  ...prev,
+                                  [item.cart_key]: {
+                                    ...prev[item.cart_key],
+                                    tempValue: e.target.value,
+                                  },
+                                }))
+                              }
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") confirmPriceOverride(item);
+                                if (e.key === "Escape") cancelPriceEdit(item);
+                              }}
+                              style={{
+                                width: "100px",
+                                border: "2px solid #f59e0b",
+                                borderRadius: "8px",
+                                padding: "4px 8px",
+                                fontSize: "15px",
+                                fontWeight: 600,
+                                color: "#92400e",
+                                outline: "none",
+                              }}
+                            />
+                            {/* Confirm */}
+                            <button
+                              onClick={() => confirmPriceOverride(item)}
+                              style={{
+                                background: "#10b981",
+                                color: "#fff",
+                                border: "none",
+                                borderRadius: "6px",
+                                padding: "4px 10px",
+                                fontSize: "14px",
+                                cursor: "pointer",
+                                fontWeight: 600,
+                              }}
+                            >
+                              ✓
+                            </button>
+                            {/* Cancel */}
+                            <button
+                              onClick={() => cancelPriceEdit(item)}
+                              style={{
+                                background: "#ef4444",
+                                color: "#fff",
+                                border: "none",
+                                borderRadius: "6px",
+                                padding: "4px 10px",
+                                fontSize: "14px",
+                                cursor: "pointer",
+                                fontWeight: 600,
+                              }}
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        ) : (
+                          <span
                             style={{
-                              background: "none",
-                              border: "1px solid #d1d5db",
-                              borderRadius: "6px",
-                              padding: "2px 8px",
-                              fontSize: "13px",
-                              cursor: "pointer",
-                              color: "#6b7280",
+                              fontWeight: 700,
+                              fontSize: "15px",
+                              color: isOverridden ? "#b45309" : "#111",
                             }}
                           >
-                            ✏️ Edit
-                          </button>
-                          {isOverridden && (
+                            ₹{Number(item.selling_price).toFixed(2)}
+                            <span className="text-xs ml-1" style={{ fontWeight: 400, color: "#6b7280" }}>
+                              ({Number(item.gst_inclusive) === 1 ? "Incl." : "Excl."} GST)
+                            </span>
+                          </span>
+                        )}
+
+                        {/* Edit / Reset button — only for admin/manager */}
+                        {canOverridePrice && !isEditing && (
+                          <>
                             <button
-                              onClick={() => resetPrice(item)}
-                              title="Reset to original price"
+                              onClick={() => startPriceEdit(item)}
+                              title="Override price"
                               style={{
                                 background: "none",
-                                border: "1px solid #fcd34d",
+                                border: "1px solid #d1d5db",
                                 borderRadius: "6px",
                                 padding: "2px 8px",
                                 fontSize: "13px",
                                 cursor: "pointer",
-                                color: "#b45309",
+                                color: "#6b7280",
                               }}
                             >
-                              ↺ Reset
+                              ✏️ Edit
                             </button>
-                          )}
-                        </>
-                      )}
+                            {isOverridden && (
+                              <button
+                                onClick={() => resetPrice(item)}
+                                title="Reset to original price"
+                                style={{
+                                  background: "none",
+                                  border: "1px solid #fcd34d",
+                                  borderRadius: "6px",
+                                  padding: "2px 8px",
+                                  fontSize: "13px",
+                                  cursor: "pointer",
+                                  color: "#b45309",
+                                }}
+                              >
+                                ↺ Reset
+                              </button>
+                            )}
+                          </>
+                        )}
+                      </div>
+
+                      <p className="text-gray-500 mt-1" style={{ fontSize: "13px" }}>
+                        GST ({item.gst_percent}%): ₹{(gstAmount * item.qty).toFixed(2)}
+                      </p>
+                      <p className="font-bold text-green-700 mt-1">
+                        Subtotal: ₹{(finalPrice * item.qty).toFixed(2)}
+                      </p>
                     </div>
-
-                    <p className="text-gray-500 mt-1" style={{ fontSize: "13px" }}>
-                      GST ({item.gst_percent}%): ₹{(gstAmount * item.qty).toFixed(2)}
-                    </p>
-                    <p className="font-bold text-green-700 mt-1">
-                      Subtotal: ₹{(finalPrice * item.qty).toFixed(2)}
-                    </p>
-                  </div>
-
-                  {/* Qty controls */}
-                  <div className="flex items-center gap-6 mt-4">
-                    <button
-                      onClick={() => decreaseQty(item)}
-                      className="bg-gray-200 hover:bg-gray-300 rounded-full w-16 h-16 text-3xl flex items-center justify-center"
-                    >
-                      -
-                    </button>
-
-                    <input
-                      type="text"
-                      min="1"
-                      value={item.qty}
-                      onFocus={(e) => e.target.select()}
-                      onChange={(e) => {
-                        let val = e.target.value;
-                        if (val === "") {
-                          setCart((prev) =>
-                            prev.map((i) =>
-                              i.inventory_id === item.inventory_id ? { ...i, qty: "" } : i
-                            )
-                          );
-                          return;
-                        }
-                        const newQty = Math.max(1, Number(val));
-                        setCart((prev) =>
-                          prev.map((i) =>
-                            i.inventory_id === item.inventory_id ? { ...i, qty: newQty } : i
-                          )
-                        );
-                      }}
-                      className="w-20 text-center text-3xl font-bold border rounded-xl p-2"
-                      style={{ appearance: "textfield" }}
-                    />
-
-                    <button
-                      onClick={() => increaseQty(item)}
-                      className="bg-gray-200 hover:bg-gray-300 rounded-full w-16 h-16 text-3xl flex items-center justify-center"
-                    >
-                      +
-                    </button>
-
-                    <button
-                      onClick={() => removeItem(item)}
-                      className="bg-red-100 hover:bg-red-200 rounded-full w-16 h-16 text-red-600 flex items-center justify-center text-3xl"
-                    >
-                      ✕
-                    </button>
                   </div>
                 </div>
-              );
+              )
             })
+
+          )}
+          {/* Total + Checkout */}
+          <div className="pt-8 border-t mt-8">
+            <div className="flex justify-between text-4xl font-extrabold mb-8">
+              <span>Total (Incl. GST)</span>
+              <span>₹{total.toFixed(2)}</span>
+            </div>
+            <button
+              onClick={() => setShowPayment(true)}
+              disabled={cart.length === 0}
+              className={`w-full bg-gradient-to-r from-green-500 to-green-700 hover:from-green-600 hover:to-green-800 text-white p-6 rounded-3xl text-4xl font-extrabold shadow-2xl ${cart.length === 0 ? "cursor-not-allowed" : ""
+                }`}
+            >
+              Checkout
+            </button>
+          </div>
+
+
+          {showPayment && (
+            <PaymentModal
+              total={total}
+              onClose={() => setShowPayment(false)}
+              onConfirm={handlePayment}
+              cart_data={cart}
+            />
+          )}
+
+          {showReceipt && printData && (
+            <ReceiptModal
+              ref={receiptRef}
+              isOpen={showReceipt}
+              onClose={() => setShowReceipt(false)}
+              onPrint={printReceipt}
+              data={printData}
+              cart_detail={printData.items}
+              cart_total={printData.total}
+            />
           )}
         </div>
-
-        {/* Total + Checkout */}
-        <div className="pt-8 border-t mt-8">
-          <div className="flex justify-between text-4xl font-extrabold mb-8">
-            <span>Total (Incl. GST)</span>
-            <span>₹{total.toFixed(2)}</span>
-          </div>
-          <button
-            onClick={() => setShowPayment(true)}
-            disabled={cart.length === 0}
-            className={`w-full bg-gradient-to-r from-green-500 to-green-700 hover:from-green-600 hover:to-green-800 text-white p-6 rounded-3xl text-4xl font-extrabold shadow-2xl ${
-              cart.length === 0 ? "cursor-not-allowed" : ""
-            }`}
-          >
-            Checkout
-          </button>
-        </div>
       </div>
-
-      {showPayment && (
-        <PaymentModal
-          total={total}
-          onClose={() => setShowPayment(false)}
-          onConfirm={handlePayment}
-          cart_data={cart}
-        />
-      )}
-
-      {showReceipt && printData && (
-        <ReceiptModal
-          ref={receiptRef}
-          isOpen={showReceipt}
-          onClose={() => setShowReceipt(false)}
-          onPrint={printReceipt}
-          data={printData}
-          cart_detail={printData.items}
-          cart_total={printData.total}
-        />
-      )}
     </>
-  );
+  )
 }
+

@@ -1,6 +1,19 @@
 import React, { useState, useEffect } from "react";
 import { Link, useHistory } from "react-router-dom";
 import axios from "axios";
+import { 
+  Layers, 
+  ShoppingCart, 
+  Bookmark, 
+  Folder, 
+  Users, 
+  Box, 
+  FileText, 
+  Clipboard, 
+  Edit, 
+  Cast,
+  Briefcase
+} from 'lucide-react';
 
 const BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
@@ -177,6 +190,7 @@ const Navbar = () => {
                       >
                         <div className="icon">
                           <i className="icon-bookmark"></i>
+                          {/* <MdBookmark />  */}
                         </div>
                         <div className="text">Purchase Bill</div>
                       </Link>
@@ -454,7 +468,8 @@ const Navbar = () => {
                         onClick={closeSidebar}
                       >
                         <div className="icon">
-                          <i className="icon-layers"></i>
+                          {/* <i className="icon-layers"></i> */}
+                          <Briefcase size={18} />
                         </div>
                         <div className="text">GSTR1 Summary</div>
                       </Link>
@@ -467,7 +482,8 @@ const Navbar = () => {
                         onClick={closeSidebar}
                       >
                         <div className="icon">
-                          <i className="icon-shopping-cart"></i>
+                          {/* <i className="icon-shopping-cart"></i> */}
+                          <ShoppingCart size={18} />
                         </div>
                         <div className="text">POS</div>
                       </Link>

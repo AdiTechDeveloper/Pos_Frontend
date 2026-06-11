@@ -3,6 +3,10 @@ import axios from "axios";
 import DataTable from "react-data-table-component";
 import { Link } from "react-router-dom";
 import Layout from "../layout";
+import { CSVLink } from "react-csv"; // For Excel/CSV
+import jsPDF from "jspdf"; // For PDF
+import "jspdf-autotable"; // For PDF table formatting
+import autoTable from "jspdf-autotable"; // <--- Ensure this is here
 
 const BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
@@ -26,6 +30,32 @@ const PriceOverride = () => {
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const perPage = 10;
+
+
+  const exportToPDF = () => {
+  const doc = new jsPDF();
+  const data = getExportData(); // Your existing helper function
+  
+  const tableColumn = ["Date", "Bill No", "Product", "Original", "Override", "Total Loss", "Done By", "Branch"];
+  const tableRows = data.map(item => [
+    item.Date,
+    item["Bill No"],
+    item.Product,
+    item["Original Price"],
+    item["Override Price"],
+    item["Total Loss"],
+    item["Done By"],
+    item.Branch
+  ]);
+
+  // Use the imported autoTable function here
+  autoTable(doc, { 
+    head: [tableColumn], 
+    body: tableRows 
+  });
+
+  doc.save("price-override-report.pdf");
+};
 
   const fetchReport = useCallback(async () => {
     setLoading(true);
@@ -232,6 +262,23 @@ const PriceOverride = () => {
     },
   ];
 
+  // Create a formatted version of the data for both PDF and Excel
+const getExportData = () => {
+  return filteredRecords.map((r) => ({
+    Date: new Date(r.created_at).toLocaleDateString(),
+    // Add a space or a character to force Excel to treat it as Text
+    "Bill No": `\t${r.bill?.bill_no || "—"}`, 
+    Product: r.product?.name || "—",
+    "Original Price": r.original_price,
+    "Override Price": r.override_price,
+    "Total Loss": r.total_loss,
+    "Done By": r.overridden_by?.name || "—",
+    Branch: r.branch?.name || "—"
+  }));
+};
+// Now use this in your components:
+const exportData = getExportData();
+
   return (
     <Layout>
       <div className="main-content-inner">
@@ -401,6 +448,26 @@ const PriceOverride = () => {
               </div>
 
             </div>
+            <div className="flex gap-2">
+  {/* CSV/Excel Export */}
+  <CSVLink 
+    data={exportData}
+    filename={"price-override-report.csv"}
+    className="btn btn-primary"
+    style={{ padding: "10px 20px", background: "#3b82f6", color: "#fff", borderRadius: "6px" }}
+  >
+    Export Excel
+  </CSVLink>
+
+  {/* PDF Export */}
+  <button 
+    onClick={exportToPDF}
+    className="btn btn-danger"
+    style={{ padding: "10px 20px", background: "#ef4444", color: "#fff", borderRadius: "6px" }}
+  >
+    Export PDF
+  </button>
+</div>
           </div>
 
           {/* Table Container Area */}
