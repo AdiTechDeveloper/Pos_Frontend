@@ -6,7 +6,7 @@ const Footer = () => {
       <div className="body-text">
         © 2025 All rights reserved. | Design & Developed by{" "}
         <a
-          href="https://theaditech.in/"
+          href="https://theaditech.com/"
           target="_blank"
           rel="noopener noreferrer"
         >

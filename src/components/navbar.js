@@ -257,7 +257,7 @@ const Navbar = () => {
 
                     <li className="menu-item">
                       <Link
-                        to="/reports/gst-analytics"
+                        to="/reports/gst-output-sales"
                         className="menu-item-button"
                         onClick={closeSidebar}
                       >
@@ -443,7 +443,7 @@ const Navbar = () => {
 
                     <li className="menu-item">
                       <Link
-                        to="/reports/price_overridden"
+                        to="/reports/price-override"
                         className="menu-item-button"
                         onClick={closeSidebar}
                       >

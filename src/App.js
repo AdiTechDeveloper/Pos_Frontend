@@ -237,7 +237,7 @@ function App() {
             component={SalesAnalytics}
           />
           <ProtectedRoute
-            path="/reports/price_overridden"
+            path="/reports/price-override"
             component={PriceOverride}
           />
           <ProtectedRoute
