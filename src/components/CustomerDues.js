@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import { toast } from "react-toastify";
 
 const BASE_URL = process.env.REACT_APP_API_BASE_URL || "";
 
@@ -111,7 +112,7 @@ export default function CustomerDues() {
         },
       );
 
-      alert("Payment successful");
+      toast.success("Payment successful");
 
       setShowModal(false);
       setAmount("");

@@ -22,7 +22,7 @@ const ReceiptModal = forwardRef(
     };
 
     // Check if any item has a price override
-    const hasAnyOverride = items.some((item) => item.is_price_overridden);  
+    const hasAnyOverride = items.some((item) => item.is_price_overridden);
 
     const metaRows = [
       ["Bill No", bill?.number],
@@ -42,22 +42,16 @@ const ReceiptModal = forwardRef(
               <div>Phone: {store?.phone}</div>
               {store?.gst && <div>GST: {store?.gst}</div>}
             </div>
-
             <div style={styles.dash} />
-
             <div style={styles.taxInvoice}>Tax Invoice</div>
-
             <div style={styles.dash} />
-
             {/* ================= SAVINGS ================= */}
             {bill?.total_saved > 0 && (
               <div style={styles.savedBanner}>
                 You have saved Rs.{format(bill?.total_saved)}
               </div>
             )}
-
             <div style={styles.dash} />
-
             {/* ================= META ================= */}
             {metaRows.map(([k, v], i) => (
               <div key={i} style={styles.row}>
@@ -65,9 +59,7 @@ const ReceiptModal = forwardRef(
                 <span>{v}</span>
               </div>
             ))}
-
             <div style={styles.dash} />
-
             {/* ================= ITEMS ================= */}
             <div style={styles.tableHeader}>
               <span style={{ flex: 2 }}>Item</span>
@@ -76,9 +68,7 @@ const ReceiptModal = forwardRef(
               <span style={{ flex: 1, textAlign: "center" }}>Qty</span>
               <span style={{ flex: 1, textAlign: "right" }}>Amt</span>
             </div>
-
             <div style={styles.dash} />
-
             {items.map((item, i) => (
               <div key={i} style={styles.itemRow}>
                 <span style={{ flex: 2 }}>{item.name}</span>
@@ -88,44 +78,36 @@ const ReceiptModal = forwardRef(
                 <span style={{ flex: 1, textAlign: "right" }}>
                   {format(item.amount)}
                 </span>
-        
 
-              {/* Price override note — only shown if overridden */}
+                {/* Price override note — only shown if overridden */}
                 {item.is_price_overridden && (
                   <div style={styles.overrideNote}>
-                    * Price: ₹{format(item.original_price)} → ₹{format(item.selling)}
+                    * Price: ₹{format(item.original_price)} → ₹
+                    {format(item.selling)}
                   </div>
                 )}
               </div>
             ))}
-
             <div style={styles.dash} />
-
             {/* ================= TOTALS ================= */}
             <div style={styles.row}>
               <span>Gross</span>
               <span>{format(bill?.subtotal)}</span>
             </div>
-
             <div style={styles.row}>
               <span>Taxable</span>
               <span>{format(bill?.subtotal - bill?.total_gst)}</span>
             </div>
-
             <div style={styles.row}>
               <span>GST</span>
               <span>{format(bill?.total_gst)}</span>
             </div>
-
             <div style={{ ...styles.row, fontWeight: "bold", fontSize: 16 }}>
               <span>Total</span>
               <span>{format(bill?.total_amount)}</span>
-            </div>0
-
+            </div>
             <div style={styles.dash} />
-
-
-              {/* ── PRICE OVERRIDE SUMMARY ── only shown if any override exists */}
+            {/* ── PRICE OVERRIDE SUMMARY ── only shown if any override exists */}
             {hasAnyOverride && (
               <>
                 <div style={styles.overrideSummaryBox}>
@@ -137,7 +119,13 @@ const ReceiptModal = forwardRef(
                     .map((item, i) => (
                       <div key={i} style={styles.overrideSummaryRow}>
                         <span style={{ flex: 2 }}>{item.name}</span>
-                        <span style={{ flex: 1, textDecoration: "line-through", color: "#999" }}>
+                        <span
+                          style={{
+                            flex: 1,
+                            textDecoration: "line-through",
+                            color: "#999",
+                          }}
+                        >
                           ₹{format(item.original_price)}
                         </span>
                         <span style={{ flex: 1, textAlign: "right" }}>
@@ -149,27 +137,21 @@ const ReceiptModal = forwardRef(
                 <div style={styles.dash} />
               </>
             )}
-
             {/* ================= GST BREAKUP ================= */}
             <div style={styles.sectionTitle}>GST Breakup</div>
-
             <div style={styles.row}>
               <span>CGST</span>
               <span>{format(bill?.cgst_total)}</span>
             </div>
-
             <div style={styles.row}>
               <span>SGST</span>
               <span>{format(bill?.sgst_total)}</span>
             </div>
-
             <div style={styles.row}>
               <span>CESS</span>
               <span>{format(bill?.cess)}</span>
             </div>
-
             <div style={styles.dash} />
-
             {/* ================= BARCODE ================= */}
             {barcode && (
               <div>
@@ -180,7 +162,6 @@ const ReceiptModal = forwardRef(
                 />
               </div>
             )}
-
             {/* ================= FOOTER ================= */}
             <div style={styles.footer}>
               {(footer || "Thank you for shopping with us")
@@ -201,12 +182,6 @@ const ReceiptModal = forwardRef(
             </button>
           </div>
         </div>
-
-           {/* ── ACTIONS ── */}
-          <div style={styles.actions}>
-            <button onClick={onPrint} style={styles.printBtn}>Print</button>
-            <button onClick={onClose} style={styles.closeBtn}>Close</button>
-          </div>
       </div>
     );
   },
@@ -278,7 +253,7 @@ const styles = {
     margin: "2px 0",
   },
 
-   // Override note below item line
+  // Override note below item line
   overrideNote: {
     fontSize: 11,
     color: "#555",
@@ -286,7 +261,7 @@ const styles = {
     marginBottom: 3,
     fontStyle: "italic",
   },
- 
+
   // Override summary section
   overrideSummaryBox: {
     marginBottom: 4,

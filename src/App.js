@@ -249,7 +249,7 @@ function App() {
             path="/reports/GSTR1-Summary"
             component={GSTR1Summary}
           />
-          <ProtectedRoute path="/customer-dues" component={CustomerDues} />
+          <Route path="/customer-dues" component={CustomerDues} />
           <Route path="*" component={Login} />
         </Switch>
       </Router>
