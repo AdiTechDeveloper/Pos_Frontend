@@ -19,6 +19,8 @@ const Home = () => {
   const [purchaseBills, setPurchaseBills] = useState([]);
   const [saleBills, setSaleBills] = useState([]);
   const [purchaseReturnBill, setPurchaseReturnBill] = useState([]);
+  const [customerDues, setCustomerDues] = useState([]);
+
   const user_data = JSON.parse(localStorage.getItem("user_detail"));
   const role = user_data?.user?.role;
 
@@ -167,6 +169,19 @@ const Home = () => {
       console.error("Error fetching categories:", error);
     }
   };
+  const fetchCustomerDue = async () => {
+    try {
+      const response = await axios.get(`${BASE_URL}/api/customer/due`, {
+        headers: {
+          Accept: "application/json",
+          Authorization: `Bearer ${user_data.token}`,
+        },
+      });
+      setCustomerDues(response.data.data);
+    } catch (error) {
+      console.error("Error fetching customer dues:", error);
+    }
+  };
   useEffect(() => {
     fetchStore();
     fetchCategory();
@@ -179,6 +194,7 @@ const Home = () => {
     fetchPurchaseBills();
     fetchSaleBills();
     fetchPurchaseReturnBills();
+    fetchCustomerDue();
   }, []);
 
   return (
@@ -228,7 +244,7 @@ const Home = () => {
               )}
               {role === "manager" && (
                 <>
-                  <div className="wg-chart-default">
+                  {/* <div className="wg-chart-default">
                     <Link
                       to="/category"
                       style={{ textDecoration: "none", color: "inherit" }}
@@ -262,10 +278,9 @@ const Home = () => {
                     <div className="wrap-chart">
                       <div id="line-chart-1"></div>
                     </div>
-                  </div>
-                  {/* <!-- /chart-default --> */}
-                  {/* <!-- chart-default --> */}
-                  <div className="wg-chart-default">
+                  </div> */}
+
+                  {/* <div className="wg-chart-default">
                     <Link
                       to="/brand"
                       style={{ textDecoration: "none", color: "inherit" }}
@@ -297,10 +312,9 @@ const Home = () => {
                     <div className="wrap-chart">
                       <div id="line-chart-2"></div>
                     </div>
-                  </div>
-                  {/* <!-- /chart-default --> */}
-                  {/* <!-- chart-default --> */}
-                  <div className="wg-chart-default">
+                  </div> */}
+
+                  {/* <div className="wg-chart-default">
                     <Link
                       to="/suppliers"
                       style={{ textDecoration: "none", color: "inherit" }}
@@ -334,8 +348,9 @@ const Home = () => {
                     <div className="wrap-chart">
                       <div id="line-chart-3"></div>
                     </div>
-                  </div>
-                  <div className="wg-chart-default">
+                  </div> */}
+
+                  {/* <div className="wg-chart-default">
                     <Link
                       to="/gst-rates"
                       style={{ textDecoration: "none", color: "inherit" }}
@@ -369,9 +384,8 @@ const Home = () => {
                     <div className="wrap-chart">
                       <div id="line-chart-3"></div>
                     </div>
-                  </div>
-                  {/* <!-- /chart-default --> */}
-                  {/* <!-- chart-default --> */}
+                  </div> */}
+
                   <div className="wg-chart-default">
                     <Link
                       to="/product"
@@ -440,6 +454,7 @@ const Home = () => {
                       <div id="line-chart-4"></div>
                     </div>
                   </div>
+
                   <div className="wg-chart-default">
                     <Link
                       to="/sale-bill"
@@ -475,7 +490,8 @@ const Home = () => {
                       <div id="line-chart-4"></div>
                     </div>
                   </div>
-                  <div className="wg-chart-default">
+                  
+                  {/* <div className="wg-chart-default">
                     <Link
                       to="/purchase-return-bill"
                       style={{ textDecoration: "none", color: "inherit" }}
@@ -502,6 +518,42 @@ const Home = () => {
                               Total Purchase Return Bills
                             </div>
                             <h4>{purchaseReturnBill.length}</h4>
+                          </div>
+                        </div>
+                      </div>
+                    </Link>
+                    <div className="wrap-chart">
+                      <div id="line-chart-4"></div>
+                    </div>
+                  </div> */}
+
+                  <div className="wg-chart-default">
+                    <Link
+                      to="/customer-dues"
+                      style={{ textDecoration: "none", color: "inherit" }}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap14">
+                          <div className="image type-white">
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              width="48"
+                              height="52"
+                              viewBox="0 0 48 52"
+                              fill="none"
+                            >
+                              <path
+                                d="M19.1094 2.12943C22.2034 0.343099 26.0154 0.343099 29.1094 2.12943L42.4921 9.85592C45.5861 11.6423 47.4921 14.9435 47.4921 18.5162V33.9692C47.4921 37.5418 45.5861 40.8431 42.4921 42.6294L29.1094 50.3559C26.0154 52.1423 22.2034 52.1423 19.1094 50.3559L5.72669 42.6294C2.63268 40.8431 0.726688 37.5418 0.726688 33.9692V18.5162C0.726688 14.9435 2.63268 11.6423 5.72669 9.85592L19.1094 2.12943Z"
+                                fill="#22C55E"
+                              />
+                            </svg>
+                            <i className="icon-edit"></i>
+                          </div>
+                          <div>
+                            <div className="body-text mb-2">
+                              Total Customer Dues
+                            </div>
+                            <h4>{customerDues.length}</h4>
                           </div>
                         </div>
                       </div>
@@ -549,7 +601,7 @@ const Home = () => {
                   </div>
                   <div className="wg-chart-default">
                     <Link
-                      to="/staff"
+                      to="/customer-dues"
                       style={{ textDecoration: "none", color: "inherit" }}
                     >
                       <div className="flex items-center justify-between">
@@ -572,6 +624,42 @@ const Home = () => {
                           <div>
                             <div className="body-text mb-2">Total Staff</div>
                             <h4>{staffs.length}</h4>
+                          </div>
+                        </div>
+                      </div>
+                    </Link>
+                    <div className="wrap-chart">
+                      <div id="line-chart-4"></div>
+                    </div>
+                  </div>
+
+                  <div className="wg-chart-default">
+                    <Link
+                      to="/customer-dues"
+                      style={{ textDecoration: "none", color: "inherit" }}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap14">
+                          <div className="image type-white">
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              width="48"
+                              height="52"
+                              viewBox="0 0 48 52"
+                              fill="none"
+                            >
+                              <path
+                                d="M19.1094 2.12943C22.2034 0.343099 26.0154 0.343099 29.1094 2.12943L42.4921 9.85592C45.5861 11.6423 47.4921 14.9435 47.4921 18.5162V33.9692C47.4921 37.5418 45.5861 40.8431 42.4921 42.6294L29.1094 50.3559C26.0154 52.1423 22.2034 52.1423 19.1094 50.3559L5.72669 42.6294C2.63268 40.8431 0.726688 37.5418 0.726688 33.9692V18.5162C0.726688 14.9435 2.63268 11.6423 5.72669 9.85592L19.1094 2.12943Z"
+                                fill="#22C55E"
+                              />
+                            </svg>
+                            <i className="icon-edit"></i>
+                          </div>
+                          <div>
+                            <div className="body-text mb-2">
+                              Total Customer Dues
+                            </div>
+                            <h4>{customerDues.length}</h4>
                           </div>
                         </div>
                       </div>

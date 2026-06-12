@@ -1,69 +1,79 @@
 import React, { useState, useEffect } from "react";
-import { Link, useHistory } from "react-router-dom";
+import { Link, useHistory, useLocation } from "react-router-dom";
 import axios from "axios";
-import {
-  Layers,
-  ShoppingCart,
-  Bookmark,
-  Folder,
-  Users,
-  Box,
-  FileText,
-  Clipboard,
-  Edit,
-  Cast,
-  Briefcase,
-} from "lucide-react";
+import { ChevronDown, ChevronUp } from "lucide-react";
 
 const BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
 const Navbar = () => {
   const history = useHistory();
   const [isOpen, setIsOpen] = useState(false);
-  const user_detail = JSON.parse(localStorage.getItem("user_detail"));
+  const [reportsOpen, setReportsOpen] = useState(false);
 
+  const user_detail = JSON.parse(localStorage.getItem("user_detail"));
   const role = user_detail?.user?.role;
   const store_id = user_detail?.user?.store_id;
 
   const [store, setStore] = useState(null);
 
-  const fetchStore = async () => {
-    try {
-      const response = await axios.get(`${BASE_URL}/api/stores/${store_id}`, {
-        headers: {
-          Accept: "application/json",
-          Authorization: `Bearer ${user_detail.token}`,
-        },
-      });
-      setStore(response.data.data);
-    } catch (error) {
-      console.error("Error fetching store details:", error);
-    }
-  };
+  const reportLinks = [
+    { name: "Stock Summary", path: "/reports/stock-summary" },
+    { name: "Purchase Summary", path: "/reports/purchase-summary" },
+    { name: "Sales Analytics", path: "/reports/sales-analytics" },
+    { name: "GST Output", path: "/reports/gst-output-sales" },
+    { name: "GSTR - 3B", path: "/reports/GSTR3B" },
+    { name: "GSTR1 Summary", path: "/reports/GSTR1-Summary" },
+    { name: "Price Override", path: "/reports/price-override" },
+  ];
+
+  const location = useLocation();
+  const reportPaths = reportLinks.map((item) => item.path);
+  const isReportPath = reportPaths.includes(location.pathname);
+  const isActive = (path) => location.pathname === path;
 
   useEffect(() => {
-    fetchStore();
+    const fetchStore = async () => {
+      try {
+        const response = await axios.get(`${BASE_URL}/api/stores/${store_id}`, {
+          headers: {
+            Accept: "application/json",
+            Authorization: `Bearer ${user_detail.token}`,
+          },
+        });
+        setStore(response.data.data);
+      } catch (error) {
+        console.error("Error fetching store:", error);
+      }
+    };
+
+    if (store_id) fetchStore();
   }, [store_id]);
 
-  const logoUrl = store?.logo ? `${BASE_URL}/storage/${store.logo}` : null;
+  useEffect(() => {
+    if (isReportPath) {
+      setReportsOpen(true);
+    }
+  }, [isReportPath]);
+
+  const DEFAULT_LOGO = "/assets/images/logo/TheAdiTechColour.svg";
+
+  const logoUrl =
+    role === "superadmin" || !store?.logo
+      ? DEFAULT_LOGO
+      : `${BASE_URL}/storage/${store.logo}`;
 
   const closeSidebar = () => {
-    if (window.innerWidth <= 768) {
-      setIsOpen(false);
-    }
+    if (window.innerWidth <= 768) setIsOpen(false);
   };
 
   const handleLogout = async () => {
     try {
-      const user_detail = localStorage.getItem("user_detail");
-      const user = user_detail ? JSON.parse(user_detail) : null;
-
       await axios.post(
         `${BASE_URL}/api/logout`,
         {},
         {
           headers: {
-            Authorization: `Bearer ${user?.token}`,
+            Authorization: `Bearer ${user_detail?.token}`,
             Accept: "application/json",
           },
         },
@@ -72,65 +82,167 @@ const Navbar = () => {
       console.error("Logout API error:", error);
     }
 
-    document.cookie.split(";").forEach((c) => {
-      document.cookie = c
-        .replace(/^ +/, "")
-        .replace(/=.*/, "=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/");
-    });
-
     localStorage.clear();
     sessionStorage.clear();
-
     history.push("/");
   };
 
+  // Shared menus for admin + manager
+  const sharedMenus = (
+    <>
+      <li className="menu-item">
+        <Link
+          to="/suppliers"
+          className={`menu-item-button ${isActive("/suppliers") ? "active" : ""}`}
+          onClick={closeSidebar}
+        >
+          <div className="icon">
+            <i className="icon-users"></i>
+          </div>
+          <div className="text">Suppliers</div>
+        </Link>
+      </li>
+
+      <li className="menu-item">
+        <Link
+          to="/product"
+          className={`menu-item-button ${isActive("/product") ? "active" : ""}`}
+          onClick={closeSidebar}
+        >
+          <div className="icon">
+            <i className="icon-tag"></i>
+          </div>
+          <div className="text">Products</div>
+        </Link>
+      </li>
+
+      <li className="menu-item">
+        <Link
+          to="/purchase-bill"
+          className={`menu-item-button ${isActive("/purchase-bill") ? "active" : ""}`}
+          onClick={closeSidebar}
+        >
+          <div className="icon">
+            <i className="icon-bookmark"></i>
+          </div>
+          <div className="text">Purchase Bills</div>
+        </Link>
+      </li>
+
+      <li className="menu-item">
+        <Link
+          to="/purchase-return-bill"
+          className={`menu-item-button ${isActive("/purchase-return-bill") ? "active" : ""}`}
+          onClick={closeSidebar}
+        >
+          <div className="icon">
+            <i className="icon-log-out"></i>
+          </div>
+          <div className="text">Purchase Return Bills</div>
+        </Link>
+      </li>
+
+      <li className="menu-item">
+        <Link
+          to="/sale-bill"
+          className={`menu-item-button ${isActive("/sale-bill") ? "active" : ""}`}
+          onClick={closeSidebar}
+        >
+          <div className="icon">
+            <i className="icon-printer"></i>
+          </div>
+          <div className="text">Sales Bills</div>
+        </Link>
+      </li>
+
+      {/* Reports Dropdown - Cleaned up to ensure proper horizontal row centering */}
+      <li className={`menu-item has-children ${reportsOpen ? "active" : ""}`}>
+        <a
+          href="#toggle-reports"
+          onClick={(e) => {
+            e.preventDefault();
+            setReportsOpen((prev) => !prev);
+          }}
+          className="menu-item-button"
+          style={{ display: "flex", alignItems: "center", width: "100%" }}
+        >
+          <div
+            className="icon"
+            style={{ display: "flex", alignItems: "center" }}
+          >
+            <i className="icon-folder"></i>
+          </div>
+          <div className="text">Reports</div>
+          <div
+            style={{
+              marginLeft: "auto",
+              display: "flex",
+              alignItems: "center",
+            }}
+          >
+            {reportsOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+          </div>
+        </a>
+
+        <ul
+          className="sub-menu"
+          style={{ display: reportsOpen ? "block" : "none" }}
+        >
+          {[
+            { name: "Stock Summary", path: "/reports/stock-summary" },
+            { name: "Purchase Summary", path: "/reports/purchase-summary" },
+            { name: "Sales Analytics", path: "/reports/sales-analytics" },
+            { name: "GST Output", path: "/reports/gst-output-sales" },
+            { name: "GSTR - 3B", path: "/reports/GSTR3B" },
+            { name: "GSTR1 Summary", path: "/reports/GSTR1-Summary" },
+            { name: "Price Override Summary", path: "/reports/price-override" },
+          ].map((item, index) => (
+            <li key={index} className="sub-menu-item">
+              <Link
+                to={item.path}
+                onClick={closeSidebar}
+                className={isActive(item.path) ? "active" : ""}
+              >
+                <div className="text">{item.name}</div>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </li>
+    </>
+  );
+
   return (
     <>
-      {/* Mobile Menu Button */}
+      {/* Mobile Button */}
       <button className="mobile-menu-btn" onClick={() => setIsOpen(!isOpen)}>
         <i className="icon-menu-left"></i>
       </button>
 
-      {/* Sidebar */}
       <div className={`section-menu-left ${isOpen ? "open" : ""}`}>
+        {/* Logo */}
         <div className="box-logo">
-          <Link to="/dashboard" id="site-logo-inner" onClick={closeSidebar}>
+          <Link to="/dashboard" onClick={closeSidebar}>
             {logoUrl && (
               <img
-                id="logo_header"
-                alt="Store Logo"
                 src={logoUrl}
-                style={{
-                  height: "52px",
-                  marginLeft: "20px",
-                  objectFit: "contain",
-                }}
+                alt="logo"
+                style={{ height: "52px", marginLeft: "20px" }}
               />
             )}
-            {/* close */}
           </Link>
-
-          {/* Close button (mobile) */}
-          <div
-            className="button-show-hide"
-            onClick={() => setIsOpen(false)}
-            style={{ display: "none" }}
-          >
-            <i className="icon-menu-left"></i>
-          </div>
         </div>
 
         <div className="section-menu-left-wrap">
           <div className="center">
-            {/* MAIN HOME */}
+            {/* Dashboard */}
             <div className="center-item">
               <div className="center-heading">Main Home</div>
               <ul className="menu-list">
                 <li className="menu-item">
                   <Link
                     to="/dashboard"
-                    className="menu-item-button"
-                    onClick={closeSidebar}
+                    className={`menu-item-button ${isActive("/dashboard") ? "active" : ""}`}
                   >
                     <div className="icon">
                       <i className="icon-grid"></i>
@@ -141,7 +253,7 @@ const Navbar = () => {
               </ul>
             </div>
 
-            {/* ALL PAGE */}
+            {/* Pages */}
             <div className="center-item">
               <div className="center-heading">All Page</div>
               <ul className="menu-list">
@@ -149,8 +261,7 @@ const Navbar = () => {
                   <li className="menu-item">
                     <Link
                       to="/store"
-                      className="menu-item-button"
-                      onClick={closeSidebar}
+                      className={`menu-item-button ${isActive("/store") ? "active" : ""}`}
                     >
                       <div className="icon">
                         <i className="icon-briefcase"></i>
@@ -165,11 +276,10 @@ const Navbar = () => {
                     <li className="menu-item">
                       <Link
                         to="/branch"
-                        className="menu-item-button"
-                        onClick={closeSidebar}
+                        className={`menu-item-button ${isActive("/branch") ? "active" : ""}`}
                       >
                         <div className="icon">
-                          <i className="icon-clipboard"></i>
+                          <i className="icon-briefcase"></i>
                         </div>
                         <div className="text">Branches</div>
                       </Link>
@@ -178,121 +288,16 @@ const Navbar = () => {
                     <li className="menu-item">
                       <Link
                         to="/staff"
-                        className="menu-item-button"
-                        onClick={closeSidebar}
+                        className={`menu-item-button ${isActive("/staff") ? "active" : ""}`}
                       >
                         <div className="icon">
-                          <i className="icon-edit"></i>
+                          <i className="icon-user"></i>
                         </div>
                         <div className="text">Staff</div>
                       </Link>
                     </li>
 
-                    <li className="menu-item">
-                      <Link
-                        to="/product"
-                        className="menu-item-button"
-                        onClick={closeSidebar}
-                      >
-                        <div className="icon">
-                          <i className="icon-cast"></i>
-                        </div>
-                        <div className="text">Products</div>
-                      </Link>
-                    </li>
-
-                    <li className="menu-item">
-                      <Link
-                        to="/purchase-bill"
-                        className="menu-item-button"
-                        onClick={closeSidebar}
-                      >
-                        <div className="icon">
-                          <i className="icon-bookmark"></i>
-                          {/* <MdBookmark />  */}
-                        </div>
-                        <div className="text">Purchase Bill</div>
-                      </Link>
-                    </li>
-
-                    <li className="menu-item">
-                      <Link
-                        to="/sale-bill"
-                        className="menu-item-button"
-                        onClick={closeSidebar}
-                      >
-                        <div className="icon">
-                          <i className="icon-box"></i>
-                        </div>
-                        <div className="text">Sale Bill</div>
-                      </Link>
-                    </li>
-
-                    <li className="menu-item">
-                      <Link
-                        to="/reports/sales-analytics"
-                        className="menu-item-button"
-                        onClick={closeSidebar}
-                      >
-                        <div className="icon">
-                          <i className="icon-layers"></i>
-                        </div>
-                        <div className="text">Sales Analytics</div>
-                      </Link>
-                    </li>
-
-                    <li className="menu-item">
-                      <Link
-                        to="/reports/gst-output-sales"
-                        to="/reports/price_override"
-                        className="menu-item-button"
-                        onClick={closeSidebar}
-                      >
-                        <div className="icon">
-                          <i className="icon-layers"></i>
-                        </div>
-                        <div className="text">Price Override Report</div>
-                      </Link>
-                    </li>
-
-                    <li className="menu-item">
-                      <Link
-                        to="/reports/gst-output-sales"
-                        className="menu-item-button"
-                        onClick={closeSidebar}
-                      >
-                        <div className="icon">
-                          <i className="icon-layers"></i>
-                        </div>
-                        <div className="text">GST Output (Sales)</div>
-                      </Link>
-                    </li>
-
-                    <li className="menu-item">
-                      <Link
-                        to="/reports/stock-summary"
-                        className="menu-item-button"
-                        onClick={closeSidebar}
-                      >
-                        <div className="icon">
-                          <i className="icon-layers"></i>
-                        </div>
-                        <div className="text">Stock Summury</div>
-                      </Link>
-                    </li>
-
-                    <li className="menu-item">
-                      <Link
-                        to="/reports/purchase-summary"
-                        className="menu-item-button"
-                        onClick={closeSidebar}
-                      >
-                        <div className="icon">
-                          <i className="icon-layers"></i>
-                        </div>
-                        <div className="text">Purchase Summury</div>
-                      </Link>
-                    </li>
+                    {sharedMenus}
                   </>
                 )}
 
@@ -301,11 +306,10 @@ const Navbar = () => {
                     <li className="menu-item">
                       <Link
                         to="/category"
-                        className="menu-item-button"
-                        onClick={closeSidebar}
+                        className={`menu-item-button ${isActive("/category") ? "active" : ""}`}
                       >
                         <div className="icon">
-                          <i className="icon-layers"></i>
+                          <i className="icon-settings"></i>
                         </div>
                         <div className="text">Categories</div>
                       </Link>
@@ -314,8 +318,7 @@ const Navbar = () => {
                     <li className="menu-item">
                       <Link
                         to="/brand"
-                        className="menu-item-button"
-                        onClick={closeSidebar}
+                        className={`menu-item-button ${isActive("/brand") ? "active" : ""}`}
                       >
                         <div className="icon">
                           <i className="icon-book"></i>
@@ -326,201 +329,43 @@ const Navbar = () => {
 
                     <li className="menu-item">
                       <Link
-                        to="/suppliers"
-                        className="menu-item-button"
-                        onClick={closeSidebar}
-                      >
-                        <div className="icon">
-                          <i className="icon-users"></i>
-                        </div>
-                        <div className="text">Supplier</div>
-                      </Link>
-                    </li>
-
-                    <li className="menu-item">
-                      <Link
                         to="/gst-rates"
-                        className="menu-item-button"
+                        className={`menu-item-button ${isActive("/gst-rates") ? "active" : ""}`}
                         onClick={closeSidebar}
                       >
                         <div className="icon">
-                          <i className="icon-folder"></i>
+                          <i className="icon-percent"></i>{" "}
                         </div>
                         <div className="text">GST Rates</div>
                       </Link>
                     </li>
 
-                    <li className="menu-item">
-                      <Link
-                        to="/product"
-                        className="menu-item-button"
-                        onClick={closeSidebar}
-                      >
-                        <div className="icon">
-                          <i className="icon-cast"></i>
-                        </div>
-                        <div className="text">Products</div>
-                      </Link>
-                    </li>
-
-                    <li className="menu-item">
-                      <Link
-                        to="/purchase-bill"
-                        className="menu-item-button"
-                        onClick={closeSidebar}
-                      >
-                        <div className="icon">
-                          <i className="icon-bookmark"></i>
-                        </div>
-                        <div className="text">Purchase Bill</div>
-                      </Link>
-                    </li>
-
-                    <li className="menu-item">
-                      <Link
-                        to="/purchase-return-bill"
-                        className="menu-item-button"
-                        onClick={closeSidebar}
-                      >
-                        <div className="icon">
-                          <i className="icon-bookmark"></i>
-                        </div>
-                        <div className="text">Purchase Return Bill</div>
-                      </Link>
-                    </li>
-
-                    <li className="menu-item">
-                      <Link
-                        to="/sale-bill"
-                        className="menu-item-button"
-                        onClick={closeSidebar}
-                      >
-                        <div className="icon">
-                          <i className="icon-box"></i>
-                        </div>
-                        <div className="text">Sale Bill</div>
-                      </Link>
-                    </li>
-
-                    <li className="menu-item">
-                      <Link
-                        to="/reports/stock-summary"
-                        className="menu-item-button"
-                        onClick={closeSidebar}
-                      >
-                        <div className="icon">
-                          <i className="icon-layers"></i>
-                        </div>
-                        <div className="text">Stock Summury</div>
-                      </Link>
-                    </li>
-
-                    <li className="menu-item">
-                      <Link
-                        to="/reports/purchase-summary"
-                        className="menu-item-button"
-                        onClick={closeSidebar}
-                      >
-                        <div className="icon">
-                          <i className="icon-layers"></i>
-                        </div>
-                        <div className="text">Purchase Summury</div>
-                      </Link>
-                    </li>
-
-                    <li className="menu-item">
-                      <Link
-                        to="/reports/sales-analytics"
-                        className="menu-item-button"
-                        onClick={closeSidebar}
-                      >
-                        <div className="icon">
-                          <i className="icon-layers"></i>
-                        </div>
-                        <div className="text">Sales Analytics</div>
-                      </Link>
-                    </li>
-
-                    <li className="menu-item">
-                      <Link
-                        to="/reports/price-override"
-                        className="menu-item-button"
-                        onClick={closeSidebar}
-                      >
-                        <div className="icon">
-                          <i className="icon-layers"></i>
-                        </div>
-                        <div className="text">Price Overridden Report</div>
-                      </Link>
-                    </li>
-
-                    <li className="menu-item">
-                      <Link
-                        to="/reports/gst-output-sales"
-                        className="menu-item-button"
-                        onClick={closeSidebar}
-                      >
-                        <div className="icon">
-                          <i className="icon-layers"></i>
-                        </div>
-                        <div className="text">GST Output (Sales)</div>
-                      </Link>
-                    </li>
-
-                    <li className="menu-item">
-                      <Link
-                        to="/reports/GSTR3B"
-                        className="menu-item-button"
-                        onClick={closeSidebar}
-                      >
-                        <div className="icon">
-                          <i className="icon-layers"></i>
-                        </div>
-                        <div className="text">GSTR-3B Report</div>
-                      </Link>
-                    </li>
-
-                    <li className="menu-item">
-                      <Link
-                        to="/reports/GSTR1-Summary"
-                        className="menu-item-button"
-                        onClick={closeSidebar}
-                      >
-                        <div className="icon">
-                          {/* <i className="icon-layers"></i> */}
-                          <Briefcase size={18} />
-                        </div>
-                        <div className="text">GSTR1 Summary</div>
-                      </Link>
-                    </li>
+                    {sharedMenus}
 
                     <li className="menu-item">
                       <Link
                         to="/pos"
-                        className="menu-item-button"
-                        onClick={closeSidebar}
+                        className={`menu-item-button ${isActive("/pos") ? "active" : ""}`}
                       >
                         <div className="icon">
-                          {/* <i className="icon-shopping-cart"></i> */}
-                          <ShoppingCart size={18} />
+                          <i className="icon-shopping-cart"></i>
                         </div>
                         <div className="text">POS</div>
                       </Link>
                     </li>
-                    {isOpen && (
-                      <li className="menu-item">
-                        <Link
-                          to="#"
-                          className="menu-item-button"
-                          onClick={handleLogout}
-                        >
-                          <div className="icon">
-                            <i className="icon-box"></i>
-                          </div>
-                          <div className="text">Logout</div>
-                        </Link>
-                      </li>
-                    )}
+
+                    <li className="menu-item">
+                      <Link
+                        to="#"
+                        onClick={handleLogout}
+                        className="menu-item-button"
+                      >
+                        <div className="icon">
+                          <i className="icon-power"></i>
+                        </div>
+                        <div className="text">Logout</div>
+                      </Link>
+                    </li>
                   </>
                 )}
               </ul>
@@ -531,4 +376,5 @@ const Navbar = () => {
     </>
   );
 };
+
 export default Navbar;

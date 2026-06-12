@@ -116,7 +116,7 @@ const Header = () => {
                 <li>
                   <Link to="#" className="user-item" onClick={handleLogout}>
                     <div className="icon">
-                      <i className="icon-log-out"></i>
+                      <i className="icon-power"></i>
                     </div>
                     <span className="body-title-2">Logout</span>
                   </Link>

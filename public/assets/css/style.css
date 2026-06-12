@@ -3670,6 +3670,16 @@ select.h40 {
   justify-content: start;
   gap: 10px;
 }
+.layout-wrap .section-menu-left .center .menu-item a.menu-item-button,
+.layout-wrap .section-menu-left .center .menu-item.has-children > a.menu-item-button {
+  width: 100%;
+}
+.layout-wrap .section-menu-left .center .menu-item.has-children > a.menu-item-button {
+  cursor: pointer;
+}
+.layout-wrap .section-menu-left .center .menu-item.has-children > a.menu-item-button .text {
+  flex: 1;
+}
 .layout-wrap .section-menu-left .center .menu-item a .icon {
   width: 20px;
   height: 20px;
