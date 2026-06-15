@@ -51,6 +51,8 @@ import GSTR3BReport from "./components/reports/GSTR3BReport";
 import GSTR1Summary from "./components/reports/GSTR1Summary";
 import CreatePurchaseReplace from "./components/createPurchaseReplace";
 import CustomerDues from "./components/CustomerDues";
+import SalesReport from "./components/reports/SalesReport";
+import PurchaseReport from "./components/reports/PurchaseReport";
 
 const isAuthenticated = () => {
   const storedData = localStorage.getItem("user_detail");
@@ -248,6 +250,14 @@ function App() {
           <ProtectedRoute
             path="/reports/GSTR1-Summary"
             component={GSTR1Summary}
+          />
+          <ProtectedRoute
+            path="/reports/sales-report"
+            component={SalesReport}
+          />
+          <ProtectedRoute
+            path="/reports/purchase-report"
+            component={PurchaseReport}
           />
           <Route path="/customer-dues" component={CustomerDues} />
           <Route path="*" component={Login} />
