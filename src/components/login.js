@@ -102,7 +102,7 @@ const Login = () => {
                 <small className="text-red">{errors.password}</small>
               )}
             </fieldset>
-            <button type="submit" className="tf-button w-full">
+            <button type="submit" className="tf-button w-full text-white">
               Login
             </button>
             <div className="body-text text-center">

@@ -195,7 +195,7 @@ const CreateEditProduct = () => {
             {isEdit ? "Edit Product" : "Create Product"}
           </h3>
 
-          
+
           <div className="wg-box">
             <Formik
               enableReinitialize
@@ -417,27 +417,38 @@ const CreateEditProduct = () => {
 
                       <Field name="gst_inclusive">
                         {({ field, form }) => {
-                          const isLocked =
+                          const isIncluded =
                             field.value === true || field.value === 1;
 
                           return (
-                            <label
-                              className={`gst-toggle ${isLocked ? "locked" : ""}`}
-                            >
-                              <input
-                                type="checkbox"
-                                checked={!!field.value}
-                                onChange={() => {
-                                  if (!isLocked) {
+                            <div className="gst-checkbox-wrapper">
+
+                              {/* GST Included */}
+                              <label>
+                                <input
+                                  type="checkbox"
+                                  checked={isIncluded}
+                                  onChange={() => {
                                     form.setFieldValue("gst_inclusive", true);
-                                  }
-                                }}
-                              />
-                              <span className="slider" />
-                              <span className="state-text">
-                                {isLocked ? "GST Included" : "GST Excluded"}
-                              </span>
-                            </label>
+                                  }}
+                                />
+                                <span>Included</span>
+                              </label>
+
+
+                              {/* GST Excluded */}
+                              <label>
+                                <input
+                                  type="checkbox"
+                                  checked={!isIncluded}
+                                  onChange={() => {
+                                    form.setFieldValue("gst_inclusive", false);
+                                  }}
+                                />
+                                <span>Excluded</span>
+                              </label>
+
+                            </div>
                           );
                         }}
                       </Field>
@@ -467,9 +478,8 @@ const CreateEditProduct = () => {
                 <div className="modal-body">
                   <input
                     type="text"
-                    className={`form-control model-form-control ${
-                      error ? "is-invalid" : ""
-                    }`}
+                    className={`form-control model-form-control ${error ? "is-invalid" : ""
+                      }`}
                     placeholder="Category Name"
                     value={newCategory}
                     onChange={(e) => {
@@ -517,9 +527,8 @@ const CreateEditProduct = () => {
                 <div className="modal-body">
                   <input
                     type="text"
-                    className={`form-control model-form-control ${
-                      error ? "is-invalid" : ""
-                    }`}
+                    className={`form-control model-form-control ${error ? "is-invalid" : ""
+                      }`}
                     placeholder="Brand Name"
                     value={newBrand}
                     onChange={(e) => {

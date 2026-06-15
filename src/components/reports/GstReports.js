@@ -2,6 +2,9 @@ import React, { useEffect, useState, useCallback } from "react";
 import DataTable from "react-data-table-component";
 import axios from "axios";
 import { Link } from "react-router-dom";
+import { CSVLink } from "react-csv";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 import Layout from "../layout";
 
 const GstReports = () => {
@@ -12,6 +15,98 @@ const GstReports = () => {
   const [salesData, setSalesData] = useState([]);
   const [branchList, setBranchList] = useState([]);
   const [loading, setLoading] = useState(false);
+
+  const exportPDF = () => {
+  if (!salesData.length) {
+    alert("No data available to export");
+    return;
+  }
+
+  const doc = new jsPDF();
+
+  doc.text("GST Sales Report", 14, 15);
+
+  const tableRows = salesData.map((row) => [
+    row.bill_no,
+    row.invoice_date,
+    row.taxable_value,
+    row.total_cgst,
+    row.total_sgst,
+    row.total_igst,
+    row.total_amount,
+  ]);
+
+  autoTable(doc, {
+    head: [
+      [
+        "Invoice",
+        "Date",
+        "Taxable",
+        "CGST",
+        "SGST",
+        "IGST",
+        "Net Amount",
+      ],
+    ],
+    body: tableRows,
+    startY: 25,
+  });
+
+  doc.save("GST-Sales-Report.pdf");
+};
+
+const exportCSV = () => {
+  if (!salesData.length) {
+    alert("No data available to export");
+    return;
+  }
+
+  const headers = [
+    "Invoice",
+    "Date",
+    "Taxable",
+    "CGST",
+    "SGST",
+    "IGST",
+    "Net Amount",
+  ];
+
+  const rows = salesData.map((row) => [
+  `\t${row.bill_no}`,
+    row.invoice_date,
+    row.taxable_value,
+    row.total_cgst,
+    row.total_sgst,
+    row.total_igst,
+    row.total_amount,
+  ]);
+
+  const csvContent = [
+    headers,
+    ...rows,
+  ]
+    .map((row) => row.join(","))
+    .join("\n");
+
+
+  const blob = new Blob([csvContent], {
+    type: "text/csv;charset=utf-8;",
+  });
+
+
+  const url = URL.createObjectURL(blob);
+
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "GST-Sales-Report.csv";
+
+  document.body.appendChild(link);
+  link.click();
+
+  document.body.removeChild(link);
+
+  URL.revokeObjectURL(url);
+};
 
   // Filter States
   const [filters, setFilters] = useState({
@@ -171,7 +266,7 @@ const GstReports = () => {
 
           {/* FILTER PANEL - Styled like your Analytics page */}
           <div className="wg-box mb-6 shadow-lg rounded-3xl p-8 border border-slate-200 bg-white">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-6 gap-6">
               {/* Branch Selection */}
               <div className="flex flex-col">
                 <label className="text-xl font-bold text-slate-500 uppercase mb-2 ml-1 tracking-wide">
@@ -242,6 +337,20 @@ const GstReports = () => {
                   className="bg-green-600 text-white w-full h-[55px] text-2xl font-bold rounded-xl shadow-md"
                 >
                   {loading ? "Loading..." : "Refresh"}
+                </button>
+              </div>
+               <div className="flex items-end">
+                <button
+                  onClick={exportCSV}
+                  className="bg-green-500 text-white w-full h-[55px] text-2xl font-bold rounded-xl shadow-md mr-4 hover:bg-green-700"
+                >
+                 Export CSV
+                </button>
+                <button
+                  onClick={exportPDF}
+                  className="bg-red-500 text-white w-full h-[55px] text-2xl font-bold rounded-xl shadow-md hover:bg-red-700"
+                >
+                  Export PDF
                 </button>
               </div>
             </div>

@@ -13,11 +13,14 @@ const BASE_URL = process.env.REACT_APP_API_BASE_URL;
 const PriceOverride = () => {
   const user_data = JSON.parse(localStorage.getItem("user_detail"));
   const today = new Date().toISOString().split("T")[0];
+  const [products, setProducts] = useState([]);
+  const [staffList, setStaffList] = useState([]);
 
   const [records, setRecords] = useState([]);
   const [filteredRecords, setFilteredRecords] = useState([]);
   const [totalLoss, setTotalLoss] = useState(0);
   const [loading, setLoading] = useState(false);
+
 
   const [filters, setFilters] = useState({
     from_date: today,
@@ -33,29 +36,29 @@ const PriceOverride = () => {
 
 
   const exportToPDF = () => {
-  const doc = new jsPDF();
-  const data = getExportData(); // Your existing helper function
-  
-  const tableColumn = ["Date", "Bill No", "Product", "Original", "Override", "Total Loss", "Done By", "Branch"];
-  const tableRows = data.map(item => [
-    item.Date,
-    item["Bill No"],
-    item.Product,
-    item["Original Price"],
-    item["Override Price"],
-    item["Total Loss"],
-    item["Done By"],
-    item.Branch
-  ]);
+    const doc = new jsPDF();
+    const data = getExportData(); // Your existing helper function
 
-  // Use the imported autoTable function here
-  autoTable(doc, { 
-    head: [tableColumn], 
-    body: tableRows 
-  });
+    const tableColumn = ["Date", "Bill No", "Product", "Original", "Override", "Total Loss", "Done By", "Branch"];
+    const tableRows = data.map(item => [
+      item.Date,
+      item["Bill No"],
+      item.Product,
+      item["Original Price"],
+      item["Override Price"],
+      item["Total Loss"],
+      item["Done By"],
+      item.Branch
+    ]);
 
-  doc.save("price-override-report.pdf");
-};
+    // Use the imported autoTable function here
+    autoTable(doc, {
+      head: [tableColumn],
+      body: tableRows
+    });
+
+    doc.save("price-override-report.pdf");
+  };
 
   const fetchReport = useCallback(async () => {
     setLoading(true);
@@ -65,7 +68,7 @@ const PriceOverride = () => {
       if (filters.to_date) params.to_date = filters.to_date;
       if (filters.product_id) params.product_id = filters.product_id;
       if (filters.overridden_by) params.overridden_by = filters.overridden_by;
-    //   if (filters.branch_id) params.branch_id = filters.branch_id;
+      //   if (filters.branch_id) params.branch_id = filters.branch_id;
 
       const response = await axios.get(`${BASE_URL}/api/price-override-report`, {
         headers: {
@@ -90,7 +93,7 @@ const PriceOverride = () => {
 
   useEffect(() => {
     fetchReport();
-  }, []);
+  }, [filters]);
 
   // Client-side quick search bar handling
   useEffect(() => {
@@ -116,7 +119,7 @@ const PriceOverride = () => {
       to_date: today,
       product_id: "",
       overridden_by: "",
-    //   branch_id: "",
+      //   branch_id: "",
     };
     setFilters(cleared);
     // Explicitly pass cleared state to fetch immediate results
@@ -136,6 +139,54 @@ const PriceOverride = () => {
       }
     }).catch(err => console.error(err)).finally(() => setLoading(false));
   };
+
+  const fetchProducts = async () => {
+    try {
+      const response = await axios.get(`${BASE_URL}/api/products`, {
+        headers: {
+          Accept: "application/json",
+          Authorization: `Bearer ${user_data?.token}`,
+        },
+      });
+
+      console.log("Products Response:", response.data);
+
+      setProducts(response.data.products || []);
+
+    } catch (error) {
+      console.error("Products Error:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+
+  const fetchStaff = async () => {
+    try {
+      const response = await axios.get(`${BASE_URL}/api/staff`, {
+        headers: {
+          Accept: "application/json",
+          Authorization: `Bearer ${user_data?.token}`,
+        },
+      });
+
+      console.log("Staff Response:", response.data);
+
+      setStaffList(response.data.data || []);
+
+    } catch (error) {
+      console.error(
+        "Staff Error:",
+        error.response?.data || error.message
+      );
+    }
+  };
+
+  useEffect(() => {
+    fetchStaff();
+  }, []);
 
   const columns = [
     {
@@ -263,27 +314,27 @@ const PriceOverride = () => {
   ];
 
   // Create a formatted version of the data for both PDF and Excel
-const getExportData = () => {
-  return filteredRecords.map((r) => ({
-    Date: new Date(r.created_at).toLocaleDateString(),
-    // Add a space or a character to force Excel to treat it as Text
-    "Bill No": `\t${r.bill?.bill_no || "—"}`, 
-    Product: r.product?.name || "—",
-    "Original Price": r.original_price,
-    "Override Price": r.override_price,
-    "Total Loss": r.total_loss,
-    "Done By": r.overridden_by?.name || "—",
-    Branch: r.branch?.name || "—"
-  }));
-};
-// Now use this in your components:
-const exportData = getExportData();
+  const getExportData = () => {
+    return filteredRecords.map((r) => ({
+      Date: new Date(r.created_at).toLocaleDateString(),
+      // Add a space or a character to force Excel to treat it as Text
+      "Bill No": `\t${r.bill?.bill_no || "—"}`,
+      Product: r.product?.name || "—",
+      "Original Price": r.original_price,
+      "Override Price": r.override_price,
+      "Total Loss": r.total_loss,
+      "Done By": r.overridden_by?.name || "—",
+      Branch: r.branch?.name || "—"
+    }));
+  };
+  // Now use this in your components:
+  const exportData = getExportData();
 
   return (
     <Layout>
       <div className="main-content-inner">
         <div className="main-content-wrap">
-          
+
           {/* Title Area */}
           <div className="flex items-center flex-wrap justify-between gap20 mb-27">
             <h3>Price Override Report</h3>
@@ -323,9 +374,9 @@ const exportData = getExportData();
           {/* HORIZONTAL FILTER ROW - Styled perfectly like your reference image */}
           <div className="wg-box mb-20" style={{ padding: "16px 20px" }}>
             <div style={{ fontSize: "14px", fontWeight: "700", color: "#1e293b", marginBottom: "12px" }}>Filters</div>
-            
+
             <div style={{ display: "flex", flexDirection: "row", gap: "12px", alignItems: "flex-end", width: "100%", flexWrap: "nowrap" }}>
-              
+
               {/* From Date */}
               <div style={{ flex: 1, minWidth: "120px" }}>
                 <label style={{ fontSize: "10px", fontWeight: "700", color: "#64748b", display: "block", marginBottom: "6px", textTransform: "uppercase" }}>
@@ -356,53 +407,55 @@ const exportData = getExportData();
                 />
               </div>
 
-              {/* Branch */}
-              {/* <div style={{ flex: 1, minWidth: "130px" }}>
-                <label style={{ fontSize: "10px", fontWeight: "700", color: "#64748b", display: "block", marginBottom: "6px", textTransform: "uppercase" }}>
-                  BRANCH
-                </label>
-                <select
-                  name="branch_id"
-                  className="form-control"
-                  style={{ height: "40px", borderRadius: "6px", border: "1px solid #cbd5e1", fontSize: "13px", padding: "0 10px", width: "100%", backgroundColor: "#fff" }}
-                  value={filters.branch_id}
-                  onChange={handleFilterChange}
-                >
-                  <option value="">All Branches</option>
-                  <option value="1">Branch 1</option>
-                </select>
-              </div> */}
-
               {/* Product ID Input */}
               <div style={{ flex: 1, minWidth: "110px" }}>
                 <label style={{ fontSize: "10px", fontWeight: "700", color: "#64748b", display: "block", marginBottom: "6px", textTransform: "uppercase" }}>
-                  PRODUCT ID
+                  PRODUCTS
                 </label>
-                <input
-                  type="number"
+                <select
                   name="product_id"
                   className="form-control"
-                  placeholder="All Products"
-                  style={{ height: "40px", borderRadius: "6px", border: "1px solid #cbd5e1", fontSize: "13px", padding: "0 10px", width: "100%" }}
                   value={filters.product_id}
                   onChange={handleFilterChange}
-                />
+                  style={{
+                    height: "40px",
+                    borderRadius: "6px",
+                    border: "1px solid #cbd5e1",
+                    fontSize: "13px",
+                    width: "100%"
+                  }}
+                >
+                  <option value="">All Products</option>
+
+                  {products.map((product) => (
+                    <option key={product.id} value={product.id}>
+                      {product.name}
+                    </option>
+                  ))}
+
+                </select>
               </div>
 
               {/* Staff ID Input */}
               <div style={{ flex: 1, minWidth: "110px" }}>
                 <label style={{ fontSize: "10px", fontWeight: "700", color: "#64748b", display: "block", marginBottom: "6px", textTransform: "uppercase" }}>
-                  STAFF ID
+                  STAFFS
                 </label>
-                <input
-                  type="number"
+                <select
                   name="overridden_by"
                   className="form-control"
-                  placeholder="All Staff"
-                  style={{ height: "40px", borderRadius: "6px", border: "1px solid #cbd5e1", fontSize: "13px", padding: "0 10px", width: "100%" }}
                   value={filters.overridden_by}
                   onChange={handleFilterChange}
-                />
+                >
+                  <option value="">All Staff</option>
+
+                  {staffList.map((staff) => (
+                    <option key={staff.id} value={staff.id}>
+                      {staff.name}
+                    </option>
+                  ))}
+
+                </select>
               </div>
 
               {/* Action Buttons: Unified into the layout alignment */}
@@ -449,25 +502,25 @@ const exportData = getExportData();
 
             </div>
             <div className="flex gap-2">
-  {/* CSV/Excel Export */}
-  <CSVLink 
-    data={exportData}
-    filename={"price-override-report.csv"}
-    className="btn btn-primary"
-    style={{ padding: "10px 20px", background: "#3b82f6", color: "#fff", borderRadius: "6px" }}
-  >
-    Export Excel
-  </CSVLink>
+              {/* CSV/Excel Export */}
+              <CSVLink
+                data={exportData}
+                filename={"price-override-report.csv"}
+                className="btn btn-primary"
+                style={{ padding: "10px 20px", background: "#3b82f6", color: "#fff", borderRadius: "6px" }}
+              >
+                Export Excel
+              </CSVLink>
 
-  {/* PDF Export */}
-  <button 
-    onClick={exportToPDF}
-    className="btn btn-danger"
-    style={{ padding: "10px 20px", background: "#ef4444", color: "#fff", borderRadius: "6px" }}
-  >
-    Export PDF
-  </button>
-</div>
+              {/* PDF Export */}
+              <button
+                onClick={exportToPDF}
+                className="btn btn-danger"
+                style={{ padding: "10px 20px", background: "#ef4444", color: "#fff", borderRadius: "6px" }}
+              >
+                Export PDF
+              </button>
+            </div>
           </div>
 
           {/* Table Container Area */}

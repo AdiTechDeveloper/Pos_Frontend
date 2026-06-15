@@ -2,6 +2,9 @@ import React, { useEffect, useState, useCallback } from "react";
 import DataTable from "react-data-table-component";
 import axios from "axios";
 import { Link } from "react-router-dom";
+import { CSVLink } from "react-csv";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 import Layout from "../layout";
 
 const PurchaseSummary = () => {
@@ -32,6 +35,84 @@ const PurchaseSummary = () => {
   const [brands, setBrands] = useState([]);
   const [branch, setbranch] = useState([]);
   const [products, setProducts] = useState([]);
+
+  const exportPDF = () => {
+    if (!reportData.length) {
+      alert("No data available to export");
+      return;
+    }
+
+    const doc = new jsPDF();
+
+    doc.text("Purchase Summary Report", 14, 15);
+
+    const tableRows = reportData.map((row) => [
+      row.label,
+      row.total_qty,
+      row.total_taxable,
+      row.total_gst,
+      row.total_amount,
+    ]);
+
+    autoTable(doc, {
+      head: [
+        [
+          "Analysis",
+          "Qty",
+          "Taxable",
+          "GST",
+          "Net Amount",
+        ],
+      ],
+      body: tableRows,
+      startY: 25,
+    });
+
+    doc.save("purchase-summary.pdf");
+  };
+
+  const exportCSV = () => {
+    if (!reportData.length) {
+      alert("No data available to export");
+      return;
+    }
+
+    const headers = [
+      "Analysis",
+      "Quantity",
+      "Taxable",
+      "GST",
+      "Net Amount",
+    ];
+
+    const rows = reportData.map((row) => [
+      row.label,
+      row.total_qty,
+      row.total_taxable,
+      row.total_gst,
+      row.total_amount,
+    ]);
+
+    const csvContent = [
+      headers,
+      ...rows,
+    ]
+      .map((e) => e.join(","))
+      .join("\n");
+
+    const blob = new Blob([csvContent], {
+      type: "text/csv;charset=utf-8;",
+    });
+
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "purchase-summary.csv";
+    link.click();
+
+    URL.revokeObjectURL(url);
+  };
 
   useEffect(() => {
     const loadDropdowns = async () => {
@@ -235,7 +316,7 @@ const PurchaseSummary = () => {
           </div>
 
           {/* TOP SUMMARY CARDS */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
             <StatCard label="Total Units" value={totals.qty} />
             <StatCard
               label="Taxable Value"
@@ -381,6 +462,22 @@ const PurchaseSummary = () => {
                   {loading ? "Loading..." : "Refresh"}
                 </button>
               </div>
+
+              <div className="flex items-end ">
+                <button
+                  onClick={exportCSV}
+                  className="bg-green-500 text-white text-2xl font-bold px-4 h-[48px] mr-4 rounded-xl hover:bg-green-700 shadow-md"
+                >
+                  Export CSV
+                </button>
+
+                <button
+                  onClick={exportPDF}
+                  className="bg-red-500 text-white text-2xl font-bold px-4 h-[48px] rounded-xl hover:bg-red-700 shadow-md"
+                >
+                  Export PDF
+                </button>
+              </div>
             </div>
           </div>
 
@@ -450,7 +547,7 @@ const PurchaseSummary = () => {
 };
 
 const StatCard = ({ label, value, icon }) => (
-  <div className="bg-gradient-to-br from-indigo-500 to-blue-600 text-white p-6 rounded-3xl shadow-[0_8px_30px_rgba(30,64,175,0.25)] flex items-center gap-5 transform hover:scale-[1.02] transition">
+  <div className="bg-gradient-to-br from-pink-500 to-blue-400 text-white p-6 rounded-3xl shadow-[0_8px_30px_rgba(30,64,175,0.25)] flex items-center gap-5 transform hover:scale-[1.02] transition">
     <div className="bg-white/20 p-4 rounded-2xl backdrop-blur-sm">
       <div className="text-3xl">{icon}</div>
     </div>

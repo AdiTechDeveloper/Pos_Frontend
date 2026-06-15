@@ -2,6 +2,9 @@ import React, { useEffect, useState, useRef, useCallback } from "react";
 import DataTable from "react-data-table-component";
 import { Link } from "react-router-dom";
 import axios from "axios";
+import { CSVLink } from "react-csv";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 import Layout from "../layout";
 
 const StockSummury = () => {
@@ -13,6 +16,44 @@ const StockSummury = () => {
   const user_data = JSON.parse(localStorage.getItem("user_detail"));
   const [branch, setbranch] = useState([]);
   const [loading, setLoading] = useState(false);
+
+  const formatStockData = (data) => {
+    return data.map((row) => ({
+      ...row,
+      // Force Text Format in Excel
+      barcode: row.barcode ? `'${row.barcode}` : '',
+      // Ensure other fields are clean
+      opening_stock: row.opening_stock || 0,
+      closing_stock: row.closing_stock || 0,
+    }));
+  };
+
+
+  // Add this function inside your component
+  const exportPDF = () => {
+    const doc = new jsPDF();
+    doc.text("Stock Summary Report", 14, 15);
+
+    // Map your data strictly to the columns
+  const tableBody = filteredData.map(row => [
+    row.id || "N/A",
+    row.product_name || "N/A",
+    row.purchased || 0, // Ensure these match your API response keys
+    row.sold || 0,
+    row.closing_stock || 0,
+    row.health_status || "N/A"
+  ]);
+
+     autoTable(doc,{
+    startY: 20,
+    head: [['ID', 'Product Name', 'Purchased', 'Sold', 'Closing Stock', 'Status']],
+    body: tableBody,
+    // Add theme to make it look professional
+    theme: 'grid', 
+    styles: { fontSize: 10 },
+  });
+    doc.save("stock_summary.pdf");
+  };
 
   const [filters, setFilters] = useState({
     start_date: (() => {
@@ -116,11 +157,10 @@ const StockSummury = () => {
         const isLow = row.closing_stock < 10;
         return (
           <div
-            className={`relative px-6 py-2 rounded-2xl font-black text-2xl shadow-sm border-2 transition-all ${
-              isLow
-                ? "bg-red-50 border-red-200 text-red-600 animate-pulse"
-                : "bg-emerald-50 border-emerald-100 text-emerald-700"
-            }`}
+            className={`relative px-6 py-2 rounded-2xl font-black text-2xl shadow-sm border-2 transition-all ${isLow
+              ? "bg-red-50 border-red-200 text-red-600 animate-pulse"
+              : "bg-emerald-50 border-emerald-100 text-emerald-700"
+              }`}
           >
             {row.closing_stock}
             {isLow && (
@@ -148,11 +188,10 @@ const StockSummury = () => {
           </div>
           <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden shadow-inner">
             <div
-              className={`h-full rounded-full transition-all duration-1000 shadow-[0_0_10px_rgba(59,130,246,0.5)] ${
-                row.sales_percentage > 70
-                  ? "bg-gradient-to-r from-blue-400 to-indigo-600"
-                  : "bg-gradient-to-r from-slate-400 to-slate-600"
-              }`}
+              className={`h-full rounded-full transition-all duration-1000 shadow-[0_0_10px_rgba(59,130,246,0.5)] ${row.sales_percentage > 70
+                ? "bg-gradient-to-r from-blue-400 to-indigo-600"
+                : "bg-gradient-to-r from-slate-400 to-slate-600"
+                }`}
               style={{ width: `${row.sales_percentage}%` }}
             />
           </div>
@@ -212,7 +251,6 @@ const StockSummury = () => {
             </div>
           );
         }
-
         const health = {
           fast_moving: {
             bg: "bg-emerald-500",
@@ -431,7 +469,7 @@ const StockSummury = () => {
               <div className="flex items-end">
                 <button
                   onClick={fetchStockSummury}
-                  className="bg-green-600 text-white w-full h-[55px] text-2xl font-bold rounded-xl shadow-md"
+                  className=" bg-green-600 text-white w-full h-[55px] text-2xl font-bold rounded-xl shadow-md"
                 >
                   {loading ? "Loading..." : "Refresh"}
                 </button>
@@ -463,6 +501,25 @@ const StockSummury = () => {
                     </button>
                   </div>
                 </form>
+              </div>
+
+              {/* Buttons Container - This will be pushed to the RIGHT side */}
+              <div className="flex items-center gap-2">
+                <CSVLink
+                  // Call the function here, passing your current filtered state
+                  data={formatStockData(filteredData)}
+                  filename={"stock_summary.csv"}
+                  className="px-4 py-4 bg-green-600 text-xl text-white rounded hover:bg-green-700 hover:text-white"
+                >
+                  Export CSV
+                </CSVLink>
+
+                <button
+                  onClick={exportPDF}
+                  className="px-4 py-4 bg-red-600 text-xl text-white rounded hover:bg-red-700 flex items-center gap-1 hover:text-white"
+                >
+                  <i className="icon-file-text"></i> Export PDF
+                </button>
               </div>
             </div>
 

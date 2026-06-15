@@ -2,6 +2,9 @@ import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import DataTable from "react-data-table-component";
 import { Link } from "react-router-dom";
+import { CSVLink } from "react-csv";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 import Layout from "../layout";
 
 const BASE_URL = process.env.REACT_APP_API_BASE_URL;
@@ -149,6 +152,104 @@ const GSTR1Reports = () => {
     },
   ];
 
+
+  const exportCSV = () => {
+  const data = allData[activeTab];
+
+  if (!data || !data.length) {
+    alert("No data available to export");
+    return;
+  }
+
+  const headers = [
+    "Invoice No",
+    "Taxable Value",
+    "CGST",
+    "SGST",
+    "IGST",
+    "Total Amount",
+  ];
+
+  const rows = data.map((row) => [
+    `\t${row.invoice_no || row.bill_no || ""}`,
+    row.taxable_value || 0,
+    row.cgst || 0,
+    row.sgst || 0,
+    row.igst || 0,
+    row.total || row.total_amount || 0,
+  ]);
+
+  const csvContent = [
+    headers,
+    ...rows,
+  ]
+    .map((e) => e.join(","))
+    .join("\n");
+
+
+  const blob = new Blob([csvContent], {
+    type: "text/csv;charset=utf-8;",
+  });
+
+
+  const url = URL.createObjectURL(blob);
+
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `GSTR1-${activeTab}.csv`;
+
+  document.body.appendChild(link);
+  link.click();
+
+  document.body.removeChild(link);
+
+  URL.revokeObjectURL(url);
+};
+
+const exportPDF = () => {
+  const data = allData[activeTab];
+
+  if (!data || !data.length) {
+    alert("No data available to export");
+    return;
+  }
+
+  const doc = new jsPDF();
+
+  doc.text(`GSTR-1 ${activeTab.toUpperCase()} Report`, 14, 15);
+
+
+  const rows = data.map((row) => [
+    row.invoice_no || row.bill_no || "",
+    row.taxable_value || 0,
+    row.cgst || 0,
+    row.sgst || 0,
+    row.igst || 0,
+    row.total || row.total_amount || 0,
+  ]);
+
+
+  autoTable(doc, {
+    head: [
+      [
+        "Invoice",
+        "Taxable",
+        "CGST",
+        "SGST",
+        "IGST",
+        "Total",
+      ],
+    ],
+    body: rows,
+    startY: 25,
+  });
+
+
+  doc.save(`GSTR1-${activeTab}.pdf`);
+};
+
+
+
   return (
     <Layout>
       <div className="p-8 bg-slate-50 min-h-screen">
@@ -191,7 +292,7 @@ const GSTR1Reports = () => {
 
         {/* MODERN FILTER BAR */}
         <div className="wg-box mb-8 shadow-xl rounded-3xl p-8 border border-slate-200 bg-white">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-6 gap-6">
             {/* Branch, Start Date, End Date Inputs same as before... */}
             {/* ... */}
             <div className="flex flex-col">
@@ -253,6 +354,20 @@ const GSTR1Reports = () => {
                 className="bg-green-600 text-white w-full h-[55px] text-2xl font-bold rounded-xl shadow-md"
               >
                 {loading ? "Loading..." : "Refresh"}
+              </button>
+            </div>
+             <div className="flex items-end">
+              <button
+                onClick={exportCSV}
+                className="bg-green-500 text-white w-full h-[55px] text-2xl font-bold rounded-xl shadow-md mr-4 hover:bg-green-700"
+              >
+                Export CSV
+              </button>
+              <button
+                onClick={exportPDF}
+                className="bg-red-500 text-white w-full h-[55px] text-2xl font-bold rounded-xl shadow-md hover:bg-red-700"
+              >
+                Export PDF
               </button>
             </div>
           </div>

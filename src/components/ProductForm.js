@@ -314,25 +314,59 @@ const ProductForm = ({ onSuccess, onCancel, initialData = null }) => {
               {/* GST Toggle */}
               <div className="flex flex-col justify-end mb-20">
                 <Field name="gst_inclusive">
-                  {({ field, form }) => (
-                    <label
-                      className={`flex items-center gap-3 p-2 rounded-lg border cursor-pointer transition-all ${field.value ? "bg-indigo-50 border-indigo-200" : "bg-gray-50 border-gray-100"}`}
-                    >
-                      <input
-                        type="checkbox"
-                        className="w-4 h-4 accent-indigo-600"
-                        checked={!!field.value}
-                        onChange={() =>
-                          form.setFieldValue("gst_inclusive", !field.value)
-                        }
-                      />
-                      <span className="text-[10px] font-bold text-gray-600">
-                        {field.value
-                          ? "PRICES ARE GST INCLUSIVE"
-                          : "PRICES ARE GST EXCLUSIVE"}
-                      </span>
-                    </label>
-                  )}
+                  {({ field, form }) => {
+                    const isIncluded =
+                      field.value === true || field.value === 1;
+
+                    return (
+                      <div className="flex gap-3">
+
+                        {/* GST Included */}
+                        <label
+                          className={`flex items-center gap-3 p-2 rounded-lg border cursor-pointer transition-all ${isIncluded
+                              ? "bg-indigo-50 border-indigo-200"
+                              : "bg-gray-50 border-gray-100"
+                            }`}
+                        >
+                          <input
+                            type="checkbox"
+                            className="w-4 h-4 accent-indigo-600"
+                            checked={isIncluded}
+                            onChange={() =>
+                              form.setFieldValue("gst_inclusive", true)
+                            }
+                          />
+
+                          <span className="text-[10px] font-bold text-gray-600">
+                            GST INCLUSIVE
+                          </span>
+                        </label>
+
+
+                        {/* GST Excluded */}
+                        <label
+                          className={`flex items-center gap-3 p-2 rounded-lg border cursor-pointer transition-all ${!isIncluded
+                              ? "bg-indigo-50 border-indigo-200"
+                              : "bg-gray-50 border-gray-100"
+                            }`}
+                        >
+                          <input
+                            type="checkbox"
+                            className="w-4 h-4 accent-indigo-600"
+                            checked={!isIncluded}
+                            onChange={() =>
+                              form.setFieldValue("gst_inclusive", false)
+                            }
+                          />
+
+                          <span className="text-[10px] font-bold text-gray-600">
+                            GST EXCLUSIVE
+                          </span>
+                        </label>
+
+                      </div>
+                    );
+                  }}
                 </Field>
               </div>
             </div>
@@ -342,14 +376,14 @@ const ProductForm = ({ onSuccess, onCancel, initialData = null }) => {
               <button
                 type="button"
                 onClick={onCancel}
-                className="px-6 py-2.5 text-sm font-bold text-gray-400 hover:text-gray-600"
+                className="px-6 py-2.5 text-sm font-bold text-gray-400 text-xl hover:text-white-600"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="px-10 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-bold shadow-md disabled:opacity-50 transition-all"
+                className="px-10 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-xl text-white rounded-lg text-sm font-bold shadow-md disabled:opacity-50 transition-all hover:text-white"
               >
                 {isSubmitting
                   ? "..."

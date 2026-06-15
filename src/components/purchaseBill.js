@@ -54,11 +54,34 @@ const PurchaseBill = () => {
     cell: (row, index) => (currentPage - 1) * perPage + index + 1,
     width: "60px",
   },
-  {
-    name: "Branch Name",
-    selector: (row) => row.branch?.name,
-    sortable: true,
-    width: "180px",
+  // {
+  //   name: "Branch Name",
+  //   selector: (row) => row.branch?.name,
+  //   sortable: true,
+  //   width: "180px",
+  // },
+   {
+    name: "Action",
+    width: "120px",
+    cell: (row) => (
+      <div className="list-icon-function">
+        <span className="item edit" title="Edit">
+          <Link
+            to={`/purchase-bill/edit/${row.id}`}
+            onClick={() => handleEdit(row)}
+          >
+            <i className="icon-edit-3" />
+          </Link>
+        </span>
+        <span
+          className="item trash"
+          title="Delete"
+          onClick={() => handleDeleteConfirm(row.id)}
+        >
+          <i className="icon-trash-2" />
+        </span>
+      </div>
+    ),
   },
   {
     name: "Supplier Name",
@@ -146,29 +169,6 @@ const PurchaseBill = () => {
     selector: (row) => row.lines?.[0]?.expiry_date ?? "—",
     sortable: true,
     width: "110px",
-  },
-  {
-    name: "Action",
-    width: "120px",
-    cell: (row) => (
-      <div className="list-icon-function">
-        <span className="item edit" title="Edit">
-          <Link
-            to={`/purchase-bill/edit/${row.id}`}
-            onClick={() => handleEdit(row)}
-          >
-            <i className="icon-edit-3" />
-          </Link>
-        </span>
-        <span
-          className="item trash"
-          title="Delete"
-          onClick={() => handleDeleteConfirm(row.id)}
-        >
-          <i className="icon-trash-2" />
-        </span>
-      </div>
-    ),
   },
 ];
 

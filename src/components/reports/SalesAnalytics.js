@@ -2,6 +2,9 @@ import React, { useEffect, useState, useCallback } from "react";
 import DataTable from "react-data-table-component";
 import axios from "axios";
 import Layout from "../layout";
+import { CSVLink } from "react-csv";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 import { Link } from "react-router-dom";
 
 const SalesAnalytics = () => {
@@ -29,6 +32,94 @@ const SalesAnalytics = () => {
   const [brandSales, setBrandSales] = useState([]);
   const [branch, setbranch] = useState([]);
   const [loading, setLoading] = useState(false);
+
+ const exportPDF = () => {
+  if (!summary.length) {
+    alert("No data available to export");
+    return;
+  }
+
+  const doc = new jsPDF();
+
+  doc.text("Sales Analytics Report", 14, 15);
+
+  const tableRows = summary.map((row) => [
+    row.date,
+    row.bills,
+    row.total_taxable,
+    row.total_gst,
+    row.total_amount,
+    row.total_profit,
+  ]);
+
+  autoTable(doc, {
+    head: [
+      [
+        "Date",
+        "Bills",
+        "Taxable",
+        "GST",
+        "Net Sales",
+        "Profit",
+      ],
+    ],
+    body: tableRows,
+    startY: 25,
+  });
+
+  doc.save("sales-analytics.pdf");
+};
+  
+  const exportCSV = () => {
+  if (!summary.length) {
+    alert("No data available to export");
+    return;
+  }
+
+  const headers = [
+    "Date",
+    "Bills",
+    "Taxable",
+    "GST",
+    "Net Sales",
+    "Profit",
+  ];
+
+  const rows = summary.map((row) => [
+    row.date,
+    row.bills,
+    row.total_taxable,
+    row.total_gst,
+    row.total_amount,
+    row.total_profit,
+  ]);
+
+  const csvContent = [
+    headers,
+    ...rows,
+  ]
+    .map((row) => row.join(","))
+    .join("\n");
+
+
+  const blob = new Blob([csvContent], {
+    type: "text/csv;charset=utf-8;",
+  });
+
+
+  const url = URL.createObjectURL(blob);
+
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "sales-analytics.csv";
+
+  document.body.appendChild(link);
+  link.click();
+
+  document.body.removeChild(link);
+
+  URL.revokeObjectURL(url);
+};
 
   const fetchBrach = async () => {
     try {
@@ -172,7 +263,7 @@ const SalesAnalytics = () => {
           <div className="wg-box mb-6 shadow-lg rounded-2xl p-6 border border-slate-200">
             <h5 className="text-2xl font-extrabold text-slate-800">Filters</h5>
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
               <FilterField label="Start Date">
                 <input
                   type="date"
@@ -214,6 +305,20 @@ const SalesAnalytics = () => {
                   className="bg-green-600 text-white w-full h-[55px] text-2xl font-bold rounded-xl shadow-md"
                 >
                   {loading ? "Loading..." : "Refresh"}
+                </button>
+              </div>
+              <div className="flex items-end">
+                <button
+                  onClick={exportCSV}
+                  className="bg-green-500 text-white w-full h-[55px] text-2xl font-bold rounded-xl shadow-md mr-4 hover:bg-green-700"
+                >
+                  Export CSV
+                </button>
+                <button
+                  onClick={exportPDF}
+                  className="bg-red-500 text-white w-full h-[55px] text-2xl font-bold rounded-xl shadow-md hover:bg-red-700"
+                >
+                  Export PDF
                 </button>
               </div>
             </div>

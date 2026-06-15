@@ -1,7 +1,10 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useMemo } from "react";
 import DataTable from "react-data-table-component";
 import { Link } from "react-router-dom";
 import axios from "axios";
+import { CSVLink } from "react-csv";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable"
 import Layout from "./layout";
 import ReceiptModal from "./ReceiptModal";
 
@@ -27,17 +30,84 @@ const SaleBill = () => {
   const [filteredData, setFilteredData] = useState(saleBills);
   const user_data = JSON.parse(localStorage.getItem("user_detail"));
 
+  // 2. Export Functions
+  const exportPDF = () => {
+  const doc = new jsPDF();
+
+  // If it still fails, use this approach:
+  autoTable(doc,{
+    head: [['Bill No', 'Subtotal', 'GST', 'Amount', 'Profit']],
+    body: filteredData.map(row => [
+      row.bill_no, 
+      row.subtotal, 
+      row.total_gst, 
+      row.total_amount, 
+      row.total_profit
+    ]),
+  });
+
+  doc.save("sales_report.pdf");
+};
+
+  const formatExportData = (data) => {
+    return data.map((row) => ({
+      ...row,
+      // 1. Force Bill No to Text by prepending a single quote
+      bill_no: `'${row.bill_no}`,
+      // 2. Format Currency to 2 decimal places
+      subtotal: parseFloat(row.subtotal).toFixed(2),
+      total_gst: parseFloat(row.total_gst).toFixed(2),
+      total_amount: parseFloat(row.total_amount).toFixed(2),
+      total_profit: parseFloat(row.total_profit).toFixed(2),
+      // 3. Format Date into a readable string
+      created_at: new Date(row.created_at).toLocaleString('en-IN')
+    }));
+  };
+
+  // 1. Define csvHeaders HERE (inside the component)
+  const csvHeaders = [
+    { label: "Bill No", key: "bill_no" },
+    { label: "Subtotal", key: "subtotal" },
+    { label: "Total GST", key: "total_gst" },
+    { label: "Total Amount", key: "total_amount" },
+    { label: "Total Profit", key: "total_profit" },
+    { label: "Date", key: "created_at" }
+  ];
+
+  // 1. Calculate Summary Stats
+  const stats = useMemo(() => {
+    return filteredData.reduce((acc, curr) => ({
+      totalBills: acc.totalBills + 1,
+      // Ensure you are using Number() to prevent string concatenation issues
+      totalProfit: acc.totalProfit + Number(curr.total_profit || 0),
+      totalRevenue: acc.totalRevenue + Number(curr.total_amount || 0),
+    }), { totalBills: 0, totalProfit: 0, totalRevenue: 0 });
+  }, [filteredData])
+
   const columns = [
     {
       name: "Id",
       selector: (row) => row.id,
       sortable: true,
-      width: "100px",
+      width: "70px",
     },
-    {
-      name: "Branch Name",
-      selector: (row) => row.branch.name,
-      sortable: true,
+    // {
+    //   name: "Branch Name",
+    //   selector: (row) => row.branch.name,
+    //   sortable: true,
+    // },
+     {
+      name: "Action",
+      button: true,
+      
+      cell: (row) => (
+        <button
+          onClick={() => handlePrint(row.id)}
+          className="px-3 py-1 text-2xl bg-blue-600 text-white rounded hover:bg-blue-700"
+        >
+          Print
+        </button>
+      ),
     },
     {
       name: "User Name",
@@ -104,18 +174,6 @@ const SaleBill = () => {
       selector: (row) => row.created_at,
       sortable: true,
     },
-    {
-      name: "Action",
-      button: true,
-      cell: (row) => (
-        <button
-          onClick={() => handlePrint(row.id)}
-          className="px-3 py-1 text-2xl bg-blue-600 text-white rounded hover:bg-blue-700"
-        >
-          Print
-        </button>
-      ),
-    },
   ];
 
   const handlePrint = async (billId) => {
@@ -153,6 +211,7 @@ const SaleBill = () => {
       console.error("Error fetching categories:", error);
     }
   };
+
 
   useEffect(() => {
     fetchSaleBill();
@@ -269,6 +328,29 @@ const SaleBill = () => {
               </li>
             </ul>
           </div>
+
+          {/* Summary Cards */}
+          <div className="grid grid-cols-3 gap-4 mb-6">
+            <div className="wg-box bg-blue-50 p-4" style={{
+                background: "#e9efa8",
+                border: "1px solid #d4d770"}} >
+              <h6>Total Bills</h6>
+              <h3>{stats.totalBills}</h3>
+            </div>
+            <div className="wg-box p-4 mb-4" style={{
+                background: "#fef2f2",
+                border: "1px solid #fecaca"}}>
+              <h6>Total Revenue</h6>
+              {/* Change '₹' to your currency symbol or remove if not needed */}
+              <h3>₹{stats.totalRevenue.toFixed(2)}</h3>
+            </div>
+            <div className="wg-box p-4" style={{
+                background: "#97e99b",
+                border: "1px solid #99bb8e"}}>
+              <h6>Total Profit</h6>
+              <h3>₹{stats.totalProfit.toFixed(2)}</h3>
+            </div>
+          </div>
           {/* <!-- all-user --> */}
           <div className="wg-box">
             <div className="flex items-center justify-between gap10 flex-wrap mb-3">
@@ -293,6 +375,24 @@ const SaleBill = () => {
                   </div>
                 </form>
               </div>
+            </div>
+            <div className="flex gap-2 mb-3">
+              {/* CSV Export Button */}
+              <CSVLink
+                data={formatExportData(filteredData)}
+                headers={csvHeaders}
+                filename={"sales_bills.csv"}
+                className="px-3 py-3 bg-green-600 text-2xl text-white rounded hover:bg-green-700"
+              >
+                Export CSV
+              </CSVLink>
+              {/* PDF Export Button */}
+              <button
+                onClick={exportPDF}
+                className="px-3 py-3 bg-red-600 text-2xl text-white rounded hover:bg-red-700"
+              >
+                Export PDF
+              </button>
             </div>
 
             <DataTable
