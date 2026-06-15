@@ -196,6 +196,8 @@ const Navbar = () => {
             { name: "GSTR - 3B", path: "/reports/GSTR3B" },
             { name: "GSTR1 Summary", path: "/reports/GSTR1-Summary" },
             { name: "Price Override Summary", path: "/reports/price-override" },
+            { name: "Sales Report", path: "/reports/sales-report" },
+            { name: "Purchase Report", path: "/reports/purchase-report" },
           ].map((item, index) => (
             <li key={index} className="sub-menu-item">
               <Link
