@@ -466,13 +466,13 @@ const BillsTable = ({ data }) => (
             Total
           </td>
           <td className="px-6 py-5 text-right text-2xl font-bold">
-            ₹{data.totals.taxable_value}
+            ₹{(Number(data.totals.taxable_value) || 0).toFixed(2)}
           </td>
           <td className="px-6 py-5 text-right text-2xl font-bold">
-            ₹{data.totals.total_tax}
+            ₹{(Number(data.totals.total_tax) || 0).toFixed(2)}
           </td>
           <td className="px-6 py-5 text-right text-2xl font-bold">
-            ₹{data.totals.total_amount}
+            ₹{(Number(data.totals.total_amount) || 0).toFixed(2)}
           </td>
           <td className="px-6 py-5"></td>
         </tr>
