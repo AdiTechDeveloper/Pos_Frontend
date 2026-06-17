@@ -40,7 +40,7 @@ const CreateEditPurchaseReturn = () => {
       },
     ],
   });
-  
+
   useEffect(() => {
     if (incomingReturnBill) {
       setInitialValues({
@@ -356,7 +356,7 @@ const CreateEditPurchaseReturn = () => {
                                 <label style={{ fontSize: "15px" }}>Qty</label>
                                 <Field
                                   type="number"
-                                  // name={`lines.${index}.qty`}
+                                  name={`lines.${index}.qty`}
                                   placeholder="Enter quantity to return"
                                 />
                                 <ErrorMessage
