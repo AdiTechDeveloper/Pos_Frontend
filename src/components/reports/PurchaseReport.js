@@ -1,5 +1,8 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import { CSVLink } from "react-csv";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 import Layout from "../layout";
 
 export default function PurchaseReport() {
@@ -22,6 +25,37 @@ export default function PurchaseReport() {
   const [filters, setFilters] = useState(defaultFilters);
   const [branches, setBranches] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
+
+  // Logic for CSV Data Preparation
+  const getCsvData = () => {
+    if (!report) return [];
+    // Select the current tab's data for export
+    const data = activeTab === "bills" ? report.bills.rows :
+      activeTab === "products" ? report.products.rows :
+        report.supplier_breakdown.rows;
+    return data;
+  };
+
+  // Logic for PDF Generation
+  const exportPDF = () => {
+    const doc = new jsPDF();
+    doc.text(`Purchase Report - ${activeTab.toUpperCase()}`, 14, 15);
+
+    const tableData = activeTab === "bills" ? report.bills.rows.map(b => [b.bill_date, b.bill_no, b.supplier_name, b.taxable_value, b.total_amount]) :
+      activeTab === "products" ? report.products.rows.map(p => [p.product_name, p.total_qty, p.taxable_value, p.avg_purchase_rate]) :
+        report.supplier_breakdown.rows.map(s => [s.supplier_name, s.bill_count, s.total_amount, s.share_pct]);
+
+    const headers = activeTab === "bills" ? [["Date", "Bill No", "Supplier", "Taxable", "Total"]] :
+      activeTab === "products" ? [["Name", "Qty", "Taxable", "Avg Rate"]] :
+        [["Supplier", "Bills", "Amount", "Share %"]];
+
+    autoTable(doc, {
+      head: headers,
+      body: tableData,
+      startY: 25,
+    });
+    doc.save(`purchase_report_${activeTab}.pdf`);
+  };
 
   const fetchBranches = async () => {
     const token = user_data?.token;
@@ -161,7 +195,7 @@ export default function PurchaseReport() {
         </p>
 
         <div className="bg-white rounded-3xl shadow-xl border border-gray-200 p-6 mb-10">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
             <div>
               <label className="text-2xl font-semibold text-gray-900">
                 Date Range
@@ -282,6 +316,21 @@ export default function PurchaseReport() {
               >
                 Reset
               </button>
+              {/* CSVLink acts as a clickable element itself */}
+              <CSVLink
+                data={getCsvData()}
+                filename={`purchase_report_${activeTab}.csv`}
+                style={{ color:'white' }}
+                className="bg-green-500 px-8 py-4 rounded-2xl text-2xl font-semibold hover:bg-green-700 transition-all text-center"
+              >
+                Export CSV
+              </CSVLink>
+              <button
+                onClick={exportPDF}
+                className="bg-red-500 px-8 py-4 rounded-2xl text-white text-2xl font-semibold hover:bg-red-700 transition-all"
+              >
+                Export PDF
+              </button>
             </div>
           </div>
         </div>
@@ -341,11 +390,10 @@ export default function PurchaseReport() {
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
-              className={`px-6 py-4 rounded-t-2xl font-semibold text-2xl transition-all ${
-                activeTab === tab.key
+              className={`px-6 py-4 rounded-t-2xl font-semibold text-2xl transition-all ${activeTab === tab.key
                   ? "bg-blue-600 text-white border-b-2 border-blue-600"
                   : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
-              }`}
+                }`}
             >
               {tab.label}
             </button>
