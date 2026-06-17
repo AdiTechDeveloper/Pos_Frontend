@@ -198,6 +198,7 @@ const Navbar = () => {
             { name: "Price Override Summary", path: "/reports/price-override" },
             { name: "Sales Report", path: "/reports/sales-report" },
             { name: "Purchase Report", path: "/reports/purchase-report" },
+            { name: "Financial Report", path: "/reports/financial-report" },
           ].map((item, index) => (
             <li key={index} className="sub-menu-item">
               <Link

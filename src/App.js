@@ -53,6 +53,7 @@ import CreatePurchaseReplace from "./components/createPurchaseReplace";
 import CustomerDues from "./components/CustomerDues";
 import SalesReport from "./components/reports/SalesReport";
 import PurchaseReport from "./components/reports/PurchaseReport";
+import FinancialReport from "./components/reports/FinancialReport";
 
 const isAuthenticated = () => {
   const storedData = localStorage.getItem("user_detail");
@@ -258,6 +259,10 @@ function App() {
           <ProtectedRoute
             path="/reports/purchase-report"
             component={PurchaseReport}
+          />
+          <ProtectedRoute
+            path="/reports/financial-report"
+            component={FinancialReport}
           />
           <Route path="/customer-dues" component={CustomerDues} />
           <Route path="*" component={Login} />
