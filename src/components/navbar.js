@@ -155,6 +155,19 @@ const Navbar = () => {
         </Link>
       </li>
 
+      <li className="menu-item">
+        <Link
+          to="/sales-bill/return"
+          className={`menu-item-button ${isActive("/sales-bill/return") ? "active" : ""}`}
+          onClick={closeSidebar}
+        >
+          <div className="icon">
+            <i className="icon-printer"></i>
+          </div>
+          <div className="text">Sales Return</div>
+        </Link>
+      </li>
+
       {/* Reports Dropdown - Cleaned up to ensure proper horizontal row centering */}
       <li className={`menu-item has-children ${reportsOpen ? "active" : ""}`}>
         <a
@@ -198,6 +211,7 @@ const Navbar = () => {
             { name: "Price Override Summary", path: "/reports/price-override" },
             { name: "Sales Report", path: "/reports/sales-report" },
             { name: "Purchase Report", path: "/reports/purchase-report" },
+            { name: "Financial Report", path: "/reports/financial-report" },
           ].map((item, index) => (
             <li key={index} className="sub-menu-item">
               <Link
