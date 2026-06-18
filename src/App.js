@@ -54,6 +54,7 @@ import CustomerDues from "./components/CustomerDues";
 import SalesReport from "./components/reports/SalesReport";
 import PurchaseReport from "./components/reports/PurchaseReport";
 import FinancialReport from "./components/reports/FinancialReport";
+import SalesReturn from "./components/SalesReturn";
 
 const isAuthenticated = () => {
   const storedData = localStorage.getItem("user_detail");
@@ -186,6 +187,11 @@ function App() {
             exact
             path="/create-sale-bill"
             component={CreateEditSaleBill}
+          />
+          <ProtectedRoute
+            exact
+            path="/sales-bill/return"
+            component={SalesReturn}
           />
           <ProtectedRoute exact path="/suppliers" component={SupplierBill} />
           <ProtectedRoute
