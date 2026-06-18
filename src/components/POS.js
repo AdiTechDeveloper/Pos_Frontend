@@ -1,8 +1,10 @@
-import React, { useState } from "react";
+import axios from "axios";
+import React, { useState, useEffect } from "react";
 import LeftSidebar from "./LeftSidebar";
 import ProductList from "./ProductList";
 import CartPanel from "./CartPanel";
 import { toast } from "react-toastify";
+import RegisterModal from "./OpenRegisterModal";
 
 export default function POSApp() {
   const [selectedCategory, setSelectedCategory] = useState(null);
@@ -11,6 +13,68 @@ export default function POSApp() {
   const [refreshProducts, setRefreshProducts] = useState(false);
   const [showPopup, setShowPopup] = useState(false);
   const [popupData, setPopupData] = useState([]);
+  const [showModal, setShowModal] = useState(false);
+  const [selectedBranchId, setSelectedBranchId] = useState(null);
+
+  const BASE_URL = process.env.REACT_APP_API_BASE_URL;
+
+  // Single source of truth: read user_detail once, normalize the shape
+  const getUserDetail = () => {
+    const raw = localStorage.getItem("user_detail");
+    if (!raw) return null;
+
+    const parsed = JSON.parse(raw);
+    // Handle both flat ({ role, branch_ids, token }) and nested ({ user: { role, branch_ids }, token }) shapes
+    const userObj = parsed.user || parsed;
+
+    return {
+      role: userObj.role,
+      branchIds: userObj.branch_ids || userObj.branches?.map((b) => b.id) || [],
+      token: parsed.token || userObj.token,
+    };
+  };
+
+  useEffect(() => {
+    const userDetail = getUserDetail();
+
+    if (!userDetail) {
+      console.warn("No user_detail found in localStorage!");
+      return;
+    }
+
+    const { role, branchIds, token } = userDetail;
+
+    if (!branchIds || branchIds.length === 0) {
+      console.error("Could not find a valid branch_ids array in user_detail!");
+      return;
+    }
+
+    const branchId = branchIds[0];
+    setSelectedBranchId(branchId);
+
+    // Only cashiers need to open a register/shift before using POS
+    if (role !== "cashier") {
+      return;
+    }
+
+    const checkStatus = async () => {
+      try {
+        const res = await axios.get(`${BASE_URL}/api/staff/register-status`, {
+          params: { branch_id: branchId },
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (res.data.active === false) {
+          setShowModal(true);
+        }
+      } catch (err) {
+        console.error("Register status check failed:", err);
+        toast.error("Could not verify register status.");
+      }
+    };
+
+    checkStatus();
+  }, []);
 
   const triggerRefresh = () => {
     setRefreshProducts((prev) => !prev);
@@ -74,6 +138,12 @@ export default function POSApp() {
 
   return (
     <div className="pos-flex h-screen bg-gray-100">
+      <RegisterModal
+        isOpen={showModal}
+        branchId={selectedBranchId}
+        onRegisterOpened={() => setShowModal(false)}
+      />
+
       <LeftSidebar
         selectedCategory={selectedCategory}
         selectedBrand={selectedBrand}

@@ -7076,7 +7076,6 @@ form.form-style-1 > * {
   inset: 0;
   background: rgba(0, 0, 0, 0.45);
   z-index: 9999;
-
   display: flex;
   align-items: center;
   justify-content: center;

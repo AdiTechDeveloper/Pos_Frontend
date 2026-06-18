@@ -5,6 +5,7 @@ import { toast } from "react-toastify";
 import { Link, useHistory } from "react-router-dom";
 import axios from "axios";
 import ReceiptModal from "./ReceiptModal";
+import EndShiftModal from "./EndShiftModal";
 
 const BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
@@ -29,6 +30,7 @@ export default function CartPanel({ cart, setCart, triggerRefresh }) {
   const [printData, setPrintData] = useState(null);
 
   const [priceOverrides, setPriceOverrides] = useState({});
+  const [showEndShift, setShowEndShift] = useState(false);
 
   const canOverridePrice = role === "admin" || role === "manager";
 
@@ -126,11 +128,11 @@ export default function CartPanel({ cart, setCart, triggerRefresh }) {
       prev.map((i) =>
         i.cart_key === item.cart_key
           ? {
-              ...i,
-              selling_price: newPrice,
-              original_price: i.original_price || i.selling_price, 
-              is_price_overridden: true,
-            }
+            ...i,
+            selling_price: newPrice,
+            original_price: i.original_price || i.selling_price,
+            is_price_overridden: true,
+          }
           : i,
       ),
     );
@@ -151,10 +153,10 @@ export default function CartPanel({ cart, setCart, triggerRefresh }) {
       prev.map((i) =>
         i.cart_key === item.cart_key
           ? {
-              ...i,
-              selling_price: i.original_price,
-              is_price_overridden: false,
-            }
+            ...i,
+            selling_price: i.original_price,
+            is_price_overridden: false,
+          }
           : i,
       ),
     );
@@ -218,7 +220,9 @@ export default function CartPanel({ cart, setCart, triggerRefresh }) {
     }
   };
 
-  const handleLogout = async () => {
+  // Final step after the shift is successfully closed on the backend —
+  // clears the session and sends the cashier back to the login screen.
+  const finishLogout = async () => {
     try {
       const user_detail = localStorage.getItem("user_detail");
       const user = user_detail ? JSON.parse(user_detail) : null;
@@ -247,6 +251,53 @@ export default function CartPanel({ cart, setCart, triggerRefresh }) {
     sessionStorage.clear();
 
     history.push("/cashier_login");
+  };
+
+  // Break: lock the screen without closing the shift.
+  // Clears only the UI session — the shift record stays open on the backend.
+  const handleBreak = async () => {
+    try {
+      const user_detail = localStorage.getItem("user_detail");
+      const user = user_detail ? JSON.parse(user_detail) : null;
+
+      await axios.post(
+        `${BASE_URL}/api/logout`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${user?.token}`,
+            Accept: "application/json",
+          },
+        },
+      );
+    } catch (error) {
+      // Ignore logout API errors — still lock the screen
+    }
+
+    localStorage.clear();
+    sessionStorage.clear();
+    history.push("/cashier_login");
+  };
+
+
+  const handleEndShiftClick = (e) => {
+    e.preventDefault();
+
+    const branchId =
+      user_data?.user?.branch_ids?.[0] || user_data?.branch_ids?.[0];
+
+    if (!branchId) {
+      toast.error("No branch assigned to your account. Please contact admin.");
+      return;
+    }
+
+    setShowEndShift(true);
+  };
+
+  // Called by EndShiftModal once /close-register succeeds.
+  const handleShiftClosed = () => {
+    setShowEndShift(false);
+    finishLogout();
   };
 
   const printReceipt = () => {
@@ -282,7 +333,36 @@ export default function CartPanel({ cart, setCart, triggerRefresh }) {
       <div className="w-1/3 bg-gray-50 border-l shadow-2xl p-10 flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between mb-10">
-          <h2 className="font-extrabold text-5xl">Cart</h2>
+          <div className="flex flex-col gap-2">
+    <h2 className="font-extrabold text-5xl">Cart</h2>
+    {/* Shift status badge — only shown for cashiers */}
+    {role === "cashier" && (
+      <span style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: "6px",
+        background: "#f0fdf4",
+        border: "1px solid #bbf7d0",
+        color: "#15803d",
+        borderRadius: "20px",
+        padding: "3px 12px",
+        fontSize: "13px",
+        fontWeight: 600,
+        width: "fit-content",
+      }}>
+        <span style={{
+          width: "8px", height: "8px",
+          borderRadius: "50%",
+          background: "#22c55e",
+          display: "inline-block",
+          boxShadow: "0 0 0 2px rgba(34,197,94,0.3)",
+          animation: "pulse 2s infinite",
+        }} />
+        Shift Open
+      </span>
+    )}
+  </div>
+
           {role !== "cashier" ? (
             <Link
               to="/dashboard"
@@ -291,13 +371,22 @@ export default function CartPanel({ cart, setCart, triggerRefresh }) {
               Dashboard
             </Link>
           ) : (
-            <Link
-              to="#"
-              className="px-8 py-4 text-2xl rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-md transition"
-              onClick={handleLogout}
-            >
-              Logout
-            </Link>
+            <div className="flex flex-row gap-2 items-end">
+              {/* Break — locks screen, shift stays open */}
+              <button
+                onClick={handleBreak}
+                className="px-6 py-3 text-2xl rounded-xl bg-red-500 hover:bg-yellow-600 text-white font-semibold shadow-md transition"
+              >
+                🔒 Break
+              </button>
+              {/* End Shift — opens modal to close shift + logout */}
+              <button
+                onClick={handleEndShiftClick}
+                className="px-6 py-3 text-2xl rounded-xl bg-green-600 hover:bg-red-700 text-white font-semibold shadow-md transition"
+              >
+                End Shift
+              </button>
+            </div>
           )}
         </div>
 
@@ -584,9 +673,8 @@ export default function CartPanel({ cart, setCart, triggerRefresh }) {
             <button
               onClick={() => setShowPayment(true)}
               disabled={cart.length === 0}
-              className={`w-full bg-gradient-to-r from-green-500 to-green-700 hover:from-green-600 hover:to-green-800 text-white p-6 rounded-3xl text-4xl font-extrabold shadow-2xl ${
-                cart.length === 0 ? "cursor-not-allowed" : ""
-              }`}
+              className={`w-full bg-gradient-to-r from-green-500 to-green-700 hover:from-green-600 hover:to-green-800 text-white p-6 rounded-3xl text-4xl font-extrabold shadow-2xl ${cart.length === 0 ? "cursor-not-allowed" : ""
+                }`}
             >
               Checkout
             </button>
@@ -617,6 +705,17 @@ export default function CartPanel({ cart, setCart, triggerRefresh }) {
               data={printData}
               cart_detail={printData.items}
               cart_total={printData.total}
+            />
+          )}
+
+          {showEndShift && (
+            <EndShiftModal
+              isOpen={showEndShift}
+              branchId={
+                user_data?.user?.branch_ids?.[0] || user_data?.branch_ids?.[0]
+              }
+              onClose={() => setShowEndShift(false)}
+              onShiftClosed={handleShiftClosed}
             />
           )}
         </div>

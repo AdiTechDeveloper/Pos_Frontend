@@ -1,6 +1,16 @@
 import React, { useEffect, useState } from "react";
 import { getCategories, getBrands } from "../utils/api";
 
+const getAuthHeader = () => {
+  const user_detail = localStorage.getItem("user_detail");
+  const user = user_detail ? JSON.parse(user_detail) : null;
+  const token = user?.token;
+  return token
+    ? { "Content-Type": "application/json", Authorization: `Bearer ${token}` }
+    : {};
+};
+
+
 export default function LeftSidebar({
   selectedCategory,
   selectedBrand,
@@ -13,6 +23,10 @@ export default function LeftSidebar({
   const [activeCategory, setActiveCategory] = useState(null);
   const [activeBrand, setActiveBrand] = useState(null);
 
+  const user_detail = localStorage.getItem("user_detail");
+  const role = user_detail?.user?.role;
+
+  console.log(role)
   const handleCategory = (id) => {
     setActiveCategory(id);
     setCategory(id);
@@ -39,11 +53,14 @@ export default function LeftSidebar({
   return (
     <div className="w-80 bg-gray-50 h-screen border-r shadow-lg flex flex-col">
       {/* HEADER */}
-     <div className="p-8 border-b ">
-        <a href="/dashboard">
-          <p className="font-size-24px font-bold text-gray-800"> ⬅️ Back To Dashboard</p>
-        </a>
-      </div>
+    {role !== "cashier" && (
+  <div className="p-8 border-b">
+    <a href="/dashboard">
+      <p className="font-size-24px font-bold text-gray-800"> ⬅️ Back To Dashboard</p>
+    </a>
+  </div>
+)}
+
       <div className="p-8 border-b">
         <h2 className="text-4xl font-bold text-gray-800">Filters</h2>
         <p className="text-2xl text-gray-500 mt-1">Categories & Brands</p>
@@ -69,6 +86,7 @@ export default function LeftSidebar({
                   }
                 `}
               >
+                
                 {c.name}
               </button>
             ))}
