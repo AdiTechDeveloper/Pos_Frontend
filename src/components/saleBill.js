@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import axios from "axios";
 import { CSVLink } from "react-csv";
 import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable"
+import autoTable from "jspdf-autotable";
 import Layout from "./layout";
 import ReceiptModal from "./ReceiptModal";
 
@@ -32,22 +32,21 @@ const SaleBill = () => {
 
   // 2. Export Functions
   const exportPDF = () => {
-  const doc = new jsPDF();
+    const doc = new jsPDF();
 
-  // If it still fails, use this approach:
-  autoTable(doc,{
-    head: [['Bill No', 'Subtotal', 'GST', 'Amount', 'Profit']],
-    body: filteredData.map(row => [
-      row.bill_no, 
-      row.subtotal, 
-      row.total_gst, 
-      row.total_amount, 
-      row.total_profit
-    ]),
-  });
+    autoTable(doc, {
+      head: [["Bill No", "Subtotal", "GST", "Amount", "Profit"]],
+      body: filteredData.map((row) => [
+        row.bill_no,
+        row.subtotal,
+        row.total_gst,
+        row.total_amount,
+        row.total_profit,
+      ]),
+    });
 
-  doc.save("sales_report.pdf");
-};
+    doc.save("sales_report.pdf");
+  };
 
   const formatExportData = (data) => {
     return data.map((row) => ({
@@ -60,7 +59,7 @@ const SaleBill = () => {
       total_amount: parseFloat(row.total_amount).toFixed(2),
       total_profit: parseFloat(row.total_profit).toFixed(2),
       // 3. Format Date into a readable string
-      created_at: new Date(row.created_at).toLocaleString('en-IN')
+      created_at: new Date(row.created_at).toLocaleString("en-IN"),
     }));
   };
 
@@ -71,18 +70,21 @@ const SaleBill = () => {
     { label: "Total GST", key: "total_gst" },
     { label: "Total Amount", key: "total_amount" },
     { label: "Total Profit", key: "total_profit" },
-    { label: "Date", key: "created_at" }
+    { label: "Date", key: "created_at" },
   ];
 
   // 1. Calculate Summary Stats
   const stats = useMemo(() => {
-    return filteredData.reduce((acc, curr) => ({
-      totalBills: acc.totalBills + 1,
-      // Ensure you are using Number() to prevent string concatenation issues
-      totalProfit: acc.totalProfit + Number(curr.total_profit || 0),
-      totalRevenue: acc.totalRevenue + Number(curr.total_amount || 0),
-    }), { totalBills: 0, totalProfit: 0, totalRevenue: 0 });
-  }, [filteredData])
+    return filteredData.reduce(
+      (acc, curr) => ({
+        totalBills: acc.totalBills + 1,
+        // Ensure you are using Number() to prevent string concatenation issues
+        totalProfit: acc.totalProfit + Number(curr.total_profit || 0),
+        totalRevenue: acc.totalRevenue + Number(curr.total_amount || 0),
+      }),
+      { totalBills: 0, totalProfit: 0, totalRevenue: 0 },
+    );
+  }, [filteredData]);
 
   const columns = [
     {
@@ -96,10 +98,10 @@ const SaleBill = () => {
     //   selector: (row) => row.branch.name,
     //   sortable: true,
     // },
-     {
+    {
       name: "Action",
       button: true,
-      
+
       cell: (row) => (
         <button
           onClick={() => handlePrint(row.id)}
@@ -181,7 +183,7 @@ const SaleBill = () => {
       const res = await axios.post(
         `${BASE_URL}/api/sales-bill/print-data`,
         { id: [billId] },
-        { headers: getAuthHeader() }
+        { headers: getAuthHeader() },
       );
 
       if (res.data?.status && res.data?.data?.length > 0) {
@@ -212,7 +214,6 @@ const SaleBill = () => {
     }
   };
 
-
   useEffect(() => {
     fetchSaleBill();
   }, []);
@@ -222,7 +223,7 @@ const SaleBill = () => {
 
     const result = saleBills.filter((item) => {
       const formattedDate = new Date(item.created_at).toLocaleDateString(
-        "en-CA"
+        "en-CA",
       );
       const searchable = `
       ${item.id}
@@ -331,22 +332,34 @@ const SaleBill = () => {
 
           {/* Summary Cards */}
           <div className="grid grid-cols-3 gap-4 mb-6">
-            <div className="wg-box bg-blue-50 p-4" style={{
+            <div
+              className="wg-box bg-blue-50 p-4"
+              style={{
                 background: "#e9efa8",
-                border: "1px solid #d4d770"}} >
+                border: "1px solid #d4d770",
+              }}
+            >
               <h6>Total Bills</h6>
               <h3>{stats.totalBills}</h3>
             </div>
-            <div className="wg-box p-4 mb-4" style={{
+            <div
+              className="wg-box p-4 mb-4"
+              style={{
                 background: "#fef2f2",
-                border: "1px solid #fecaca"}}>
+                border: "1px solid #fecaca",
+              }}
+            >
               <h6>Total Revenue</h6>
               {/* Change '₹' to your currency symbol or remove if not needed */}
               <h3>₹{stats.totalRevenue.toFixed(2)}</h3>
             </div>
-            <div className="wg-box p-4" style={{
+            <div
+              className="wg-box p-4"
+              style={{
                 background: "#97e99b",
-                border: "1px solid #99bb8e"}}>
+                border: "1px solid #99bb8e",
+              }}
+            >
               <h6>Total Profit</h6>
               <h3>₹{stats.totalProfit.toFixed(2)}</h3>
             </div>

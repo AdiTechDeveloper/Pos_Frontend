@@ -2,6 +2,21 @@ import React, { useState, useEffect } from "react";
 import { Link, useHistory, useLocation } from "react-router-dom";
 import axios from "axios";
 import { ChevronDown, ChevronUp } from "lucide-react";
+import {
+  IoHomeOutline,
+  IoReturnUpBack,
+  IoCubeOutline,
+  IoReceiptOutline,
+  IoCartOutline,
+  IoBarChartOutline,
+  IoCalculatorOutline,
+  IoPricetagsOutline,
+  IoDesktopOutline,
+  IoGridOutline,
+  IoStorefrontOutline,
+  IoWalletOutline,
+  IoLockOpenOutline,
+} from "react-icons/io5";
 
 const BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
@@ -97,7 +112,7 @@ const Navbar = () => {
           onClick={closeSidebar}
         >
           <div className="icon">
-            <i className="icon-users"></i>
+            <IoStorefrontOutline size={22} />
           </div>
           <div className="text">Suppliers</div>
         </Link>
@@ -110,7 +125,7 @@ const Navbar = () => {
           onClick={closeSidebar}
         >
           <div className="icon">
-            <i className="icon-tag"></i>
+            <IoCubeOutline size={22} />
           </div>
           <div className="text">Products</div>
         </Link>
@@ -123,7 +138,7 @@ const Navbar = () => {
           onClick={closeSidebar}
         >
           <div className="icon">
-            <i className="icon-bookmark"></i>
+            <IoReceiptOutline size={22} />
           </div>
           <div className="text">Purchase Bills</div>
         </Link>
@@ -136,7 +151,7 @@ const Navbar = () => {
           onClick={closeSidebar}
         >
           <div className="icon">
-            <i className="icon-log-out"></i>
+            <IoReturnUpBack size={22} />
           </div>
           <div className="text">Purchase Return Bills</div>
         </Link>
@@ -149,13 +164,13 @@ const Navbar = () => {
           onClick={closeSidebar}
         >
           <div className="icon">
-            <i className="icon-printer"></i>
+            <IoCartOutline size={22} />
           </div>
           <div className="text">Sales Bills</div>
         </Link>
       </li>
 
-      <li className="menu-item">
+      {/* <li className="menu-item">
         <Link
           to="/sales-bill/return"
           className={`menu-item-button ${isActive("/sales-bill/return") ? "active" : ""}`}
@@ -163,6 +178,19 @@ const Navbar = () => {
         >
           <div className="icon">
             <i className="icon-printer"></i>
+          </div>
+          <div className="text">Sales Return</div>
+        </Link>
+      </li> */}
+
+      <li className="menu-item">
+        <Link
+          to="/sales-return/list"
+          className={`menu-item-button ${isActive("/sales-return/list") ? "active" : ""}`}
+          onClick={closeSidebar}
+        >
+          <div className="icon">
+            <IoReturnUpBack size={22} />
           </div>
           <div className="text">Sales Return</div>
         </Link>
@@ -183,7 +211,7 @@ const Navbar = () => {
             className="icon"
             style={{ display: "flex", alignItems: "center" }}
           >
-            <i className="icon-folder"></i>
+            <IoBarChartOutline size={22} />
           </div>
           <div className="text">Reports</div>
           <div
@@ -261,7 +289,7 @@ const Navbar = () => {
                     className={`menu-item-button ${isActive("/dashboard") ? "active" : ""}`}
                   >
                     <div className="icon">
-                      <i className="icon-grid"></i>
+                      <IoHomeOutline size={22} />
                     </div>
                     <div className="text">Dashboard</div>
                   </Link>
@@ -325,7 +353,7 @@ const Navbar = () => {
                         className={`menu-item-button ${isActive("/category") ? "active" : ""}`}
                       >
                         <div className="icon">
-                          <i className="icon-settings"></i>
+                          <IoGridOutline size={22} />
                         </div>
                         <div className="text">Categories</div>
                       </Link>
@@ -337,7 +365,7 @@ const Navbar = () => {
                         className={`menu-item-button ${isActive("/brand") ? "active" : ""}`}
                       >
                         <div className="icon">
-                          <i className="icon-book"></i>
+                          <IoPricetagsOutline size={22} />
                         </div>
                         <div className="text">Brands</div>
                       </Link>
@@ -350,7 +378,7 @@ const Navbar = () => {
                         onClick={closeSidebar}
                       >
                         <div className="icon">
-                          <i className="icon-percent"></i>{" "}
+                          <IoWalletOutline size={22} />
                         </div>
                         <div className="text">GST Rates</div>
                       </Link>
@@ -364,7 +392,7 @@ const Navbar = () => {
                         className={`menu-item-button ${isActive("/pos") ? "active" : ""}`}
                       >
                         <div className="icon">
-                          <i className="icon-shopping-cart"></i>
+                          <IoDesktopOutline size={22} />
                         </div>
                         <div className="text">POS</div>
                       </Link>
@@ -377,7 +405,7 @@ const Navbar = () => {
                         className="menu-item-button"
                       >
                         <div className="icon">
-                          <i className="icon-power"></i>
+                          <IoLockOpenOutline size={22} />
                         </div>
                         <div className="text">Logout</div>
                       </Link>
