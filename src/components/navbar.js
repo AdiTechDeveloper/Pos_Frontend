@@ -24,6 +24,7 @@ const Navbar = () => {
     { name: "GSTR - 3B", path: "/reports/GSTR3B" },
     { name: "GSTR1 Summary", path: "/reports/GSTR1-Summary" },
     { name: "Price Override", path: "/reports/price-override" },
+    { name: "Register Shift" , path:"/reports/shift-report"},
   ];
 
   const location = useLocation();
@@ -212,6 +213,7 @@ const Navbar = () => {
             { name: "Sales Report", path: "/reports/sales-report" },
             { name: "Purchase Report", path: "/reports/purchase-report" },
             { name: "Financial Report", path: "/reports/financial-report" },
+            { name: "Shift History Report" , path:"/reports/shift-report"},
           ].map((item, index) => (
             <li key={index} className="sub-menu-item">
               <Link

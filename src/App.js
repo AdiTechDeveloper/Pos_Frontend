@@ -55,6 +55,7 @@ import SalesReport from "./components/reports/SalesReport";
 import PurchaseReport from "./components/reports/PurchaseReport";
 import FinancialReport from "./components/reports/FinancialReport";
 import SalesReturn from "./components/SalesReturn";
+import ShiftHistory from "./components/reports/ShiftHistoryReport";
 
 const isAuthenticated = () => {
   const storedData = localStorage.getItem("user_detail");
@@ -269,6 +270,10 @@ function App() {
           <ProtectedRoute
             path="/reports/financial-report"
             component={FinancialReport}
+          />
+          <ProtectedRoute
+            path="/reports/shift-report"
+            component={ShiftHistory}
           />
           <Route path="/customer-dues" component={CustomerDues} />
           <Route path="*" component={Login} />
