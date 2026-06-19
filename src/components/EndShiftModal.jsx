@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
+import { Rows } from "lucide-react";
 
 const BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
@@ -104,14 +105,24 @@ export default function EndShiftModal({ isOpen, branchId, onClose, onShiftClosed
           padding: "8px 16px",
           display: "flex", alignItems: "center", justifyContent: "space-between",
         }}>
-          <div>
-            <h2 style={{ color: "#fff", margin: 0, padding:0 , fontSize: "20px", fontWeight: 700 }}>
-              🏁 End Shift
-            </h2>
-            <p style={{ color: "#ffffff", margin: "0 0 0", fontSize: "13px" ,fontWeight:600 }}>
-              Close your register and submit cash count
-            </p>
-          </div>
+         <div style={{ display: "flex", flexDirection: "column" }}>
+  {/* Row container for Icon and H2 */}
+  <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "10px" }}>
+    <img 
+      src="/assets/images/logo/dismissal.png" 
+      style={{ width: "40px", height: "40px" }} 
+      alt="End Shift Icon"
+    />
+    <h2 style={{ color: "#fff", margin: 0, fontSize: "20px", fontWeight: 700 }}>
+      End Shift
+    </h2>
+  </div>
+  
+  {/* Paragraph below the row */}
+  <p style={{ color: "#ffffff", margin: "5px 0 0 0", fontSize: "13px", fontWeight: 600 }}>
+    Close your register and submit cash count
+  </p>
+</div>
           <button onClick={onClose} style={{
             background: "rgba(255,255,255)", border: "none",
             color: "#000000", borderRadius: "8px", width: "32px", height: "32px",

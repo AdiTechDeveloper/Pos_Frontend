@@ -331,10 +331,8 @@ const SaleBill = () => {
           </div>
 
           {/* Summary Cards */}
-          <div className="grid grid-cols-3 gap-4 mb-6">
-            <div
-              className="wg-box bg-blue-50 p-4"
-              style={{
+          <div className="grid grid-cols-3 gap-4 mb-8">
+            <div className="wg-box bg-blue-50 p-4" style={{
                 background: "#e9efa8",
                 border: "1px solid #d4d770",
               }}

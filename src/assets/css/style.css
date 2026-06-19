@@ -2911,7 +2911,7 @@ a:focus {
   width: max-content;
   height: 50px;
   padding: 15px 22px;
-  color: #000 !important;
+  /* color: #000 !important; */
   display: -webkit-box;
   display: -moz-box;
   display: -ms-flexbox;
@@ -2947,7 +2947,7 @@ a:focus {
 }
 .tf-button.style-1 {
   color: var(--Main);
-  background-color: var(--White);
+  background-color: var(--Main);
 }
 .tf-button.style-1:hover {
   color: #fff;
