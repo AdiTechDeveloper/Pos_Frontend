@@ -8,7 +8,6 @@ import Layout from "./layout";
 import { toast } from "react-toastify";
 import ProductForm from "./ProductForm";
 
-
 const ledgerStyles = `
   :root {
     --pb-navy: #6B5B45;
@@ -823,7 +822,11 @@ const CreateEditPurchaseBill = () => {
       return;
     }
     setError("");
-    const supplier = { id: Date.now(), name: newSupplier.trim() , state: supplierState };
+    const supplier = {
+      id: Date.now(),
+      name: newSupplier.trim(),
+      state: supplierState,
+    };
     await axios({
       method: "post",
       url: `${BASE_URL}/api/suppliers`,
@@ -951,8 +954,12 @@ const CreateEditPurchaseBill = () => {
             {/* Header strip */}
             <div className="pb-header-strip">
               <div>
-                <p className="pb-header-eyebrow">Purchases &amp; Stock Inward</p>
-                <h3>{isEdit ? "Edit Purchase Bill" : "Create Purchase Bill"}</h3>
+                <p className="pb-header-eyebrow">
+                  Purchases &amp; Stock Inward
+                </p>
+                <h3>
+                  {isEdit ? "Edit Purchase Bill" : "Create Purchase Bill"}
+                </h3>
               </div>
             </div>
 
@@ -1015,7 +1022,6 @@ const CreateEditPurchaseBill = () => {
                                 <option value="add_new">
                                   + Add New Supplier
                                 </option>
-
                               )}
                             </select>
                           )}
@@ -1144,202 +1150,206 @@ const CreateEditPurchaseBill = () => {
                                 key={index}
                                 className={`pb-line-row${line.is_opening ? " is-opening" : ""}`}
                               >
-                              {/* Product */}
-                              <div className="field-col">
-                                <small className="field-label">Product</small>
-                                <Field name={`lines.${index}.product_id`}>
-                                  {({ field, form }) => (
-                                    <select
-                                      {...field}
-                                      onChange={(e) => {
-                                        const value = e.target.value;
-                                        if (value === "add_new") {
-                                          setShowProductModal(true);
-                                          setActiveRowIndex(index);
-                                          return;
-                                        }
-                                        form.setFieldValue(field.name, value);
-                                      }}
-                                    >
-                                      <option value="">Select</option>
-                                      {products.map((p) => (
-                                        <option key={p.id} value={p.id}>
-                                          {p.name}
+                                {/* Product */}
+                                <div className="field-col">
+                                  <small className="field-label">Product</small>
+                                  <Field name={`lines.${index}.product_id`}>
+                                    {({ field, form }) => (
+                                      <select
+                                        {...field}
+                                        onChange={(e) => {
+                                          const value = e.target.value;
+                                          if (value === "add_new") {
+                                            setShowProductModal(true);
+                                            setActiveRowIndex(index);
+                                            return;
+                                          }
+                                          form.setFieldValue(field.name, value);
+                                        }}
+                                      >
+                                        <option value="">Select</option>
+                                        {products.map((p) => (
+                                          <option key={p.id} value={p.id}>
+                                            {p.name}
+                                          </option>
+                                        ))}
+                                        <option value="add_new">
+                                          + Add New Product
                                         </option>
-                                      ))}
-                                      <option value="add_new">
-                                        + Add New Product
+                                      </select>
+                                    )}
+                                  </Field>
+                                  <ErrorMessage
+                                    name={`lines.${index}.product_id`}
+                                    component="div"
+                                    className="field-error"
+                                  />
+                                </div>
+
+                                {/* Qty */}
+                                <div className="field-col">
+                                  <small className="field-label">Qty</small>
+                                  <Field
+                                    type="number"
+                                    name={`lines.${index}.qty`}
+                                  />
+                                  <ErrorMessage
+                                    name={`lines.${index}.qty`}
+                                    component="div"
+                                    className="field-error"
+                                  />
+                                </div>
+
+                                {/* Free */}
+                                <div className="field-col">
+                                  <small className="field-label">Free</small>
+                                  <Field
+                                    type="number"
+                                    name={`lines.${index}.free_qty`}
+                                  />
+                                  <ErrorMessage
+                                    name={`lines.${index}.free_qty`}
+                                    component="div"
+                                    className="field-error"
+                                  />
+                                </div>
+
+                                {/* Rate */}
+                                <div className="field-col">
+                                  <small className="field-label">Rate</small>
+                                  <Field
+                                    type="number"
+                                    name={`lines.${index}.purchase_rate`}
+                                  />
+                                  <ErrorMessage
+                                    name={`lines.${index}.purchase_rate`}
+                                    component="div"
+                                    className="field-error"
+                                  />
+                                </div>
+
+                                {/* MRP */}
+                                <div className="field-col">
+                                  <small className="field-label">MRP</small>
+                                  <Field
+                                    type="number"
+                                    name={`lines.${index}.mrp`}
+                                  />
+                                  <ErrorMessage
+                                    name={`lines.${index}.mrp`}
+                                    component="div"
+                                    className="field-error"
+                                  />
+                                </div>
+
+                                {/* Selling Price */}
+                                <div className="field-col">
+                                  <small className="field-label">SP</small>
+                                  <Field
+                                    type="number"
+                                    name={`lines.${index}.selling_price`}
+                                  />
+                                  <ErrorMessage
+                                    name={`lines.${index}.selling_price`}
+                                    component="div"
+                                    className="field-error"
+                                  />
+                                </div>
+
+                                {/* Discount Type */}
+                                <div className="field-col">
+                                  <small className="field-label">
+                                    Disc Type
+                                  </small>
+                                  <Field
+                                    as="select"
+                                    name={`lines.${index}.discount_type`}
+                                  >
+                                    <option value="">–</option>
+                                    <option value="percent">%</option>
+                                    <option value="fixed">₹</option>
+                                  </Field>
+                                  <ErrorMessage
+                                    name={`lines.${index}.discount_type`}
+                                    component="div"
+                                    className="field-error"
+                                  />
+                                </div>
+
+                                {/* Discount */}
+                                <div className="field-col">
+                                  <small className="field-label">
+                                    Discount
+                                  </small>
+                                  <Field
+                                    type="number"
+                                    name={`lines.${index}.discount`}
+                                  />
+                                  <ErrorMessage
+                                    name={`lines.${index}.discount`}
+                                    component="div"
+                                    className="field-error"
+                                  />
+                                </div>
+
+                                {/* GST */}
+                                <div className="field-col">
+                                  <small className="field-label">GST %</small>
+                                  <Field
+                                    as="select"
+                                    name={`lines.${index}.gst_rate_id`}
+                                  >
+                                    <option value="">–</option>
+                                    {gstRates.map((g) => (
+                                      <option key={g.id} value={g.id}>
+                                        {g.rate}%
                                       </option>
-                                    </select>
-                                  )}
-                                </Field>
-                                <ErrorMessage
-                                  name={`lines.${index}.product_id`}
-                                  component="div"
-                                  className="field-error"
-                                />
-                              </div>
+                                    ))}
+                                  </Field>
+                                  <ErrorMessage
+                                    name={`lines.${index}.gst_rate_id`}
+                                    component="div"
+                                    className="field-error"
+                                  />
+                                </div>
 
-                              {/* Qty */}
-                              <div className="field-col">
-                                <small className="field-label">Qty</small>
-                                <Field
-                                  type="number"
-                                  name={`lines.${index}.qty`}
-                                />
-                                <ErrorMessage
-                                  name={`lines.${index}.qty`}
-                                  component="div"
-                                  className="field-error"
-                                />
-                              </div>
+                                {/* Expiry */}
+                                <div className="field-col">
+                                  <small className="field-label">Expiry</small>
+                                  <Field
+                                    type="date"
+                                    name={`lines.${index}.expiry_date`}
+                                  />
+                                  <ErrorMessage
+                                    name={`lines.${index}.expiry_date`}
+                                    component="div"
+                                    className="field-error"
+                                  />
+                                </div>
 
-                              {/* Free */}
-                              <div className="field-col">
-                                <small className="field-label">Free</small>
-                                <Field
-                                  type="number"
-                                  name={`lines.${index}.free_qty`}
-                                />
-                                <ErrorMessage
-                                  name={`lines.${index}.free_qty`}
-                                  component="div"
-                                  className="field-error"
-                                />
-                              </div>
+                                {/* HSN */}
+                                <div className="field-col">
+                                  <small className="field-label">HSN</small>
+                                  <Field
+                                    type="text"
+                                    name={`lines.${index}.hsn_code`}
+                                  />
+                                  <ErrorMessage
+                                    name={`lines.${index}.hsn_code`}
+                                    component="div"
+                                    className="field-error"
+                                  />
+                                </div>
 
-                              {/* Rate */}
-                              <div className="field-col">
-                                <small className="field-label">Rate</small>
-                                <Field
-                                  type="number"
-                                  name={`lines.${index}.purchase_rate`}
-                                />
-                                <ErrorMessage
-                                  name={`lines.${index}.purchase_rate`}
-                                  component="div"
-                                  className="field-error"
-                                />
-                              </div>
-
-                              {/* MRP */}
-                              <div className="field-col">
-                                <small className="field-label">MRP</small>
-                                <Field
-                                  type="number"
-                                  name={`lines.${index}.mrp`}
-                                />
-                                <ErrorMessage
-                                  name={`lines.${index}.mrp`}
-                                  component="div"
-                                  className="field-error"
-                                />
-                              </div>
-
-                              {/* Selling Price */}
-                              <div className="field-col">
-                                <small className="field-label">SP</small>
-                                <Field
-                                  type="number"
-                                  name={`lines.${index}.selling_price`}
-                                />
-                                <ErrorMessage
-                                  name={`lines.${index}.selling_price`}
-                                  component="div"
-                                  className="field-error"
-                                />
-                              </div>
-
-                              {/* Discount Type */}
-                              <div className="field-col">
-                                <small className="field-label">Disc Type</small>
-                                <Field
-                                  as="select"
-                                  name={`lines.${index}.discount_type`}
+                                {/* Remove */}
+                                <button
+                                  type="button"
+                                  className="pb-remove-btn"
+                                  onClick={() => remove(index)}
+                                  title="Remove line"
                                 >
-                                  <option value="">–</option>
-                                  <option value="percent">%</option>
-                                  <option value="fixed">₹</option>
-                                </Field>
-                                <ErrorMessage
-                                  name={`lines.${index}.discount_type`}
-                                  component="div"
-                                  className="field-error"
-                                />
-                              </div>
-
-                              {/* Discount */}
-                              <div className="field-col">
-                                <small className="field-label">Discount</small>
-                                <Field
-                                  type="number"
-                                  name={`lines.${index}.discount`}
-                                />
-                                <ErrorMessage
-                                  name={`lines.${index}.discount`}
-                                  component="div"
-                                  className="field-error"
-                                />
-                              </div>
-
-                              {/* GST */}
-                              <div className="field-col">
-                                <small className="field-label">GST %</small>
-                                <Field
-                                  as="select"
-                                  name={`lines.${index}.gst_rate_id`}
-                                >
-                                  <option value="">–</option>
-                                  {gstRates.map((g) => (
-                                    <option key={g.id} value={g.id}>
-                                      {g.rate}%
-                                    </option>
-                                  ))}
-                                </Field>
-                                <ErrorMessage
-                                  name={`lines.${index}.gst_rate_id`}
-                                  component="div"
-                                  className="field-error"
-                                />
-                              </div>
-
-                              {/* Expiry */}
-                              <div className="field-col">
-                                <small className="field-label">Expiry</small>
-                                <Field
-                                  type="date"
-                                  name={`lines.${index}.expiry_date`}
-                                />
-                                <ErrorMessage
-                                  name={`lines.${index}.expiry_date`}
-                                  component="div"
-                                  className="field-error"
-                                />
-                              </div>
-
-                              {/* HSN */}
-                              <div className="field-col">
-                                <small className="field-label">HSN</small>
-                                <Field
-                                  type="text"
-                                  name={`lines.${index}.hsn_code`}
-                                />
-                                <ErrorMessage
-                                  name={`lines.${index}.hsn_code`}
-                                  component="div"
-                                  className="field-error"
-                                />
-                              </div>
-
-                              {/* Remove */}
-                              <button
-                                type="button"
-                                className="pb-remove-btn"
-                                onClick={() => remove(index)}
-                                title="Remove line"
-                              >
-                                ✕
-                              </button>
+                                  ✕
+                                </button>
                               </div>
                             ))}
                           </div>
@@ -1392,7 +1402,9 @@ const CreateEditPurchaseBill = () => {
                           <button
                             type="button"
                             className={`pb-tax-btn${values.tax_type === "exclusive" ? " active-exclusive" : ""}`}
-                            onClick={() => setFieldValue("tax_type", "exclusive")}
+                            onClick={() =>
+                              setFieldValue("tax_type", "exclusive")
+                            }
                           >
                             <i className="fa fa-plus-circle"></i>
                             Exclusive (+)
@@ -1400,7 +1412,9 @@ const CreateEditPurchaseBill = () => {
                           <button
                             type="button"
                             className={`pb-tax-btn${values.tax_type === "inclusive" ? " active-inclusive" : ""}`}
-                            onClick={() => setFieldValue("tax_type", "inclusive")}
+                            onClick={() =>
+                              setFieldValue("tax_type", "inclusive")
+                            }
                           >
                             <i className="fa fa-arrow-circle-down"></i>
                             Inclusive (In)
@@ -1472,14 +1486,21 @@ const CreateEditPurchaseBill = () => {
 
           {/* ── Add Supplier Modal ── */}
           {showModal && (
-            <div className="pb-modal-overlay" onClick={() => setShowModal(false)}>
-              <div className="pb-modal-card" onClick={(e) => e.stopPropagation()}>
+            <div
+              className="pb-modal-overlay"
+              onClick={() => setShowModal(false)}
+            >
+              <div
+                className="pb-modal-card"
+                onClick={(e) => e.stopPropagation()}
+              >
                 <div className="pb-modal-header">
                   <h5>Add New Supplier</h5>
                 </div>
                 <div className="pb-modal-body">
                   <p className="input-name">Add Supplier Name</p>
-                  <input id="small-popup"
+                  <input
+                    id="small-popup"
                     type="text"
                     className={error ? "is-invalid" : ""}
                     placeholder="Supplier Name"
@@ -1490,61 +1511,58 @@ const CreateEditPurchaseBill = () => {
                     }}
                   />
                   {error && <div className="error-text">{error}</div>}
-                  
-                  <p className="input-name">Select State</p>
-                  <select className="state" onChange={(e) => setSupplierState(e.target.value)} name="state" id="state">
-                  <option value="">Select State</option>
-                  <option value="Andhra Pradesh">Andhra Pradesh</option>
-                        <option value="Arunachal Pradesh">
-                          Arunachal Pradesh
-                        </option>
-                        <option value="Assam">Assam</option>
-                        <option value="Bihar">Bihar</option>
-                        <option value="Chhattisgarh">Chhattisgarh</option>
-                        <option value="Goa">Goa</option>
-                        <option value="Gujarat">Gujarat</option>
-                        <option value="Haryana">Haryana</option>
-                        <option value="Himachal Pradesh">
-                          Himachal Pradesh
-                        </option>
-                        <option value="Jharkhand">Jharkhand</option>
-                        <option value="Karnataka">Karnataka</option>
-                        <option value="Kerala">Kerala</option>
-                        <option value="Madhya Pradesh">Madhya Pradesh</option>
-                        <option value="Maharashtra">Maharashtra</option>
-                        <option value="Manipur">Manipur</option>
-                        <option value="Meghalaya">Meghalaya</option>
-                        <option value="Mizoram">Mizoram</option>
-                        <option value="Nagaland">Nagaland</option>
-                        <option value="Odisha">Odisha</option>
-                        <option value="Punjab">Punjab</option>
-                        <option value="Rajasthan">Rajasthan</option>
-                        <option value="Sikkim">Sikkim</option>
-                        <option value="Tamil Nadu">Tamil Nadu</option>
-                        <option value="Telangana">Telangana</option>
-                        <option value="Tripura">Tripura</option>
-                        <option value="Uttar Pradesh">Uttar Pradesh</option>
-                        <option value="Uttarakhand">Uttarakhand</option>
-                        <option value="West Bengal">West Bengal</option>
 
-                        {/* Union Territories (optional) */}
-                        <option value="Andaman and Nicobar Islands">
-                          Andaman and Nicobar Islands
-                        </option>
-                        <option value="Chandigarh">Chandigarh</option>
-                        <option value="Dadra and Nagar Haveli and Daman and Diu">
-                          Dadra and Nagar Haveli and Daman and Diu
-                        </option>
-                        <option value="Delhi">Delhi</option>
-                        <option value="Jammu and Kashmir">
-                          Jammu and Kashmir
-                        </option>
-                        <option value="Ladakh">Ladakh</option>
-                        <option value="Lakshadweep">Lakshadweep</option>
-                        <option value="Puducherry">Puducherry</option>
+                  <p className="input-name">Select State</p>
+                  <select
+                    className="state"
+                    onChange={(e) => setSupplierState(e.target.value)}
+                    name="state"
+                    id="state"
+                  >
+                    <option value="">Select State</option>
+                    <option value="Andhra Pradesh">Andhra Pradesh</option>
+                    <option value="Arunachal Pradesh">Arunachal Pradesh</option>
+                    <option value="Assam">Assam</option>
+                    <option value="Bihar">Bihar</option>
+                    <option value="Chhattisgarh">Chhattisgarh</option>
+                    <option value="Goa">Goa</option>
+                    <option value="Gujarat">Gujarat</option>
+                    <option value="Haryana">Haryana</option>
+                    <option value="Himachal Pradesh">Himachal Pradesh</option>
+                    <option value="Jharkhand">Jharkhand</option>
+                    <option value="Karnataka">Karnataka</option>
+                    <option value="Kerala">Kerala</option>
+                    <option value="Madhya Pradesh">Madhya Pradesh</option>
+                    <option value="Maharashtra">Maharashtra</option>
+                    <option value="Manipur">Manipur</option>
+                    <option value="Meghalaya">Meghalaya</option>
+                    <option value="Mizoram">Mizoram</option>
+                    <option value="Nagaland">Nagaland</option>
+                    <option value="Odisha">Odisha</option>
+                    <option value="Punjab">Punjab</option>
+                    <option value="Rajasthan">Rajasthan</option>
+                    <option value="Sikkim">Sikkim</option>
+                    <option value="Tamil Nadu">Tamil Nadu</option>
+                    <option value="Telangana">Telangana</option>
+                    <option value="Tripura">Tripura</option>
+                    <option value="Uttar Pradesh">Uttar Pradesh</option>
+                    <option value="Uttarakhand">Uttarakhand</option>
+                    <option value="West Bengal">West Bengal</option>
+
+                    {/* Union Territories (optional) */}
+                    <option value="Andaman and Nicobar Islands">
+                      Andaman and Nicobar Islands
+                    </option>
+                    <option value="Chandigarh">Chandigarh</option>
+                    <option value="Dadra and Nagar Haveli and Daman and Diu">
+                      Dadra and Nagar Haveli and Daman and Diu
+                    </option>
+                    <option value="Delhi">Delhi</option>
+                    <option value="Jammu and Kashmir">Jammu and Kashmir</option>
+                    <option value="Ladakh">Ladakh</option>
+                    <option value="Lakshadweep">Lakshadweep</option>
+                    <option value="Puducherry">Puducherry</option>
                   </select>
-                                    
-                                   
                 </div>
                 <div className="pb-modal-footer">
                   <button
