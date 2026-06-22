@@ -417,6 +417,7 @@ const PriceOverride = () => {
                   className="form-control"
                   value={filters.product_id}
                   onChange={handleFilterChange}
+                   style={{ height: "48px", borderRadius: "6px", border: "1px solid #cbd5e1", fontSize: "13px", padding: "0 10px", width: "100%" }}
                 >
                   <option value="">All Products</option>
 
@@ -439,6 +440,7 @@ const PriceOverride = () => {
                   className="form-control"
                   value={filters.overridden_by}
                   onChange={handleFilterChange}
+                   style={{ height: "48px", borderRadius: "6px", border: "1px solid #cbd5e1", fontSize: "13px", padding: "0 10px", width: "100%" }}
                 >
                   <option value="">All Staff</option>
 
@@ -458,7 +460,7 @@ const PriceOverride = () => {
                   disabled={loading}
                   className="btn btn-success"
                   style={{
-                    height: "40px",
+                    height: "45px",
                     background: loading ? "#10b981" : "#22c55e",
                     color: "#fff",
                     border: "none",
@@ -477,7 +479,7 @@ const PriceOverride = () => {
                   onClick={handleClearFilters}
                   className="btn btn-secondary"
                   style={{
-                    height: "40px",
+                    height: "45px",
                     background: "#f1f5f9",
                     color: "#475569",
                     border: "1px solid #cbd5e1",

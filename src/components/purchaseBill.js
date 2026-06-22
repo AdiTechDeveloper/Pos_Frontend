@@ -69,7 +69,7 @@ const PurchaseBill = () => {
       width: "120px",
       cell: (row) => (
         <div className="list-icon-function">
-          <span className="item edit" title="Edit">
+          <span className="item edit mr-10" title="Edit">
             <Link
               to={`/purchase-bill/edit/${row.id}`}
               onClick={() => handleEdit(row)}

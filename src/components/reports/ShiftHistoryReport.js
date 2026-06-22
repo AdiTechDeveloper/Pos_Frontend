@@ -351,19 +351,30 @@ const ShiftHistory = () => {
 
                     {/* Summary Cards */}
                     <div style={{ display: "flex", gap: "16px", marginBottom: "20px", flexWrap: "wrap" }}>
-                        {[
-                            { label: "Total Shifts", value: summary.totalShifts, bg: "#eff6ff", border: "#bfdbfe", color: "#1d4ed8" , Width: "250px"},
-                            { label: "Total Sales (Day)", value: salesLoading ? "…" : `₹${totalSales.toFixed(2)}`, bg: "#ecfeff", border: "#a5f3fc", color: "#0e7490" , Width: "250px" },
-                            { label: "Total Cash Collected", value: `₹${summary.totalCashCollected.toFixed(2)}`, bg: "#f0fdf4", border: "#bbf7d0", color: "#15803d" },
-                            { label: "Total Expenses", value: `₹${summary.totalExpenses.toFixed(2)}`, bg: "#fff1f2", border: "#fecdd3", color: "#be123c" },
-                            { label: "Net Discrepancy", value: `₹${summary.totalDiscrepancy.toFixed(2)}`, bg: summary.totalDiscrepancy < 0 ? "#fef2f2" : "#fff7ed", border: summary.totalDiscrepancy < 0 ? "#fecaca" : "#fed7aa", color: summary.totalDiscrepancy < 0 ? "#dc2626" : "#c2410c" },
-                        ].map(({ label, value, bg, border, color }) => (
-                            <div key={label} className="wg-box" style={{ background: bg, border: `1px solid ${border}`, borderRadius: "8px", padding: "12px 20px", Width: "250px" }}>
-                                <p style={{ fontSize: "11px", color, margin: "0 0 2px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.5px" }}>{label}</p>
-                                <h3 style={{ fontSize: "22px", fontWeight: 800, color, margin: 0 }}>{value}</h3>
-                            </div>
-                        ))}
-                    </div>
+  {[
+    { label: "Total Shifts", value: summary.totalShifts, bg: "#eff6ff", border: "#bfdbfe", color: "#1d4ed8" },
+    { label: "Total Sales (Day)", value: salesLoading ? "…" : `₹${totalSales.toFixed(2)}`, bg: "#ecfeff", border: "#a5f3fc", color: "#0e7490" },
+    { label: "Total Cash Collected", value: `₹${summary.totalCashCollected.toFixed(2)}`, bg: "#f0fdf4", border: "#bbf7d0", color: "#15803d" },
+    { label: "Total Expenses", value: `₹${summary.totalExpenses.toFixed(2)}`, bg: "#fff1f2", border: "#fecdd3", color: "#be123c" },
+    { label: "Net Discrepancy", value: `₹${summary.totalDiscrepancy.toFixed(2)}`, bg: summary.totalDiscrepancy < 0 ? "#fef2f2" : "#fff7ed", border: summary.totalDiscrepancy < 0 ? "#fecaca" : "#fed7aa", color: summary.totalDiscrepancy < 0 ? "#dc2626" : "#c2410c" },
+  ].map(({ label, value, bg, border, color }) => (
+    <div 
+      key={label} 
+      className="wg-box" 
+      style={{ 
+        background: bg, 
+        border: `1px solid ${border}`, 
+        borderRadius: "8px", 
+        padding: "20px 24px", // Increased padding for larger boxes
+        flex: "1 1 200px",    // This makes them grow equally and maintain a large base size
+        minWidth: "220px"     // Prevents them from getting too small
+      }}
+    >
+      <p style={{ fontSize: "12px", color, margin: "0 0 5px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.5px" }}>{label}</p>
+      <h3 style={{ fontSize: "26px", fontWeight: 800, color, margin: 0 }}>{value}</h3>
+    </div>
+  ))}
+</div>
 
                     {/* Filters */}
                     <div className="wg-box mb-20" style={{ padding: "16px 20px" }}>
@@ -372,23 +383,23 @@ const ShiftHistory = () => {
                         <div style={{ display: "flex", flexDirection: "row", gap: "12px", alignItems: "flex-end", flexWrap: "nowrap" }}>
 
                             <div style={{ flex: 1, minWidth: "120px" }}>
-                                <label style={{ fontSize: "10px", fontWeight: "700", color: "#64748b", display: "block", marginBottom: "6px", textTransform: "uppercase" }}>START DATE</label>
+                                <label style={{ fontSize: "14px", fontWeight: "700", color: "#64748b", display: "block", marginBottom: "6px", textTransform: "uppercase" }}>START DATE</label>
                                 <input type="date" name="from_date" className="form-control"
-                                    style={{ height: "40px", borderRadius: "6px", border: "1px solid #cbd5e1", fontSize: "13px", padding: "0 10px", width: "100%" }}
+                                    style={{ height: "40px", borderRadius: "8px", border: "1px solid #cbd5e1", fontSize: "13px", padding: "0 10px", width: "100%" }}
                                     value={filters.from_date} onChange={handleFilterChange} />
                             </div>
 
                             <div style={{ flex: 1, minWidth: "120px" }}>
-                                <label style={{ fontSize: "10px", fontWeight: "700", color: "#64748b", display: "block", marginBottom: "6px", textTransform: "uppercase" }}>END DATE</label>
+                                <label style={{ fontSize: "14px", fontWeight: "700", color: "#64748b", display: "block", marginBottom: "6px", textTransform: "uppercase" }}>END DATE</label>
                                 <input type="date" name="to_date" className="form-control"
-                                    style={{ height: "40px", borderRadius: "6px", border: "1px solid #cbd5e1", fontSize: "13px", padding: "0 10px", width: "100%" }}
+                                    style={{ height: "40px", borderRadius: "8px", border: "1px solid #cbd5e1", fontSize: "13px", padding: "0 10px", width: "100%" }}
                                     value={filters.to_date} onChange={handleFilterChange} />
                             </div>
 
                             <div style={{ flex: 1, minWidth: "130px" }}>
-                                <label style={{ fontSize: "10px", fontWeight: "700", color: "#64748b", display: "block", marginBottom: "6px", textTransform: "uppercase" }}>CASHIER</label>
+                                <label style={{ fontSize: "14px", fontWeight: "700", color: "#64748b", display: "block", marginBottom: "6px", textTransform: "uppercase" }}>CASHIER</label>
                                 <select name="cashier_id" className="form-control" value={filters.cashier_id} onChange={handleFilterChange}
-                                    style={{ height: "40px", borderRadius: "6px", border: "1px solid #cbd5e1", fontSize: "13px", width: "100%" }}>
+                                    style={{ height: "40px", borderRadius: "8px", border: "1px solid #cbd5e1", fontSize: "13px", width: "100%" }}>
                                     <option value="">All Cashiers</option>
                                     {staffList.map((s) => (
                                         <option key={s.id} value={s.id}>{s.name}</option>
