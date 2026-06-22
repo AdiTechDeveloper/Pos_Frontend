@@ -9,7 +9,7 @@ import { toast } from "react-toastify";
 
 const CreateEditBrand = () => {
   const BASE_URL = process.env.REACT_APP_API_BASE_URL;
-  const { id } = useParams(); // if id exists -> Edit Mode
+  const { id } = useParams();
   const history = useHistory();
 
   const user_data = JSON.parse(localStorage.getItem("user_detail"));
@@ -95,7 +95,7 @@ const CreateEditBrand = () => {
                     <fieldset className="col-md-4">
                       <div className="body-title mb-10">Name *</div>
                       <div className="body-content mb-15">
-                        <Field type="text" name="name" className="mb-5" />
+                        <Field type="text" name="name" placeholder="Enter brand name" className="mb-5" />
                         <ErrorMessage
                           name="name"
                           className="error-text"

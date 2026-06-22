@@ -96,7 +96,7 @@ const CreateEditGstRates = () => {
                     <fieldset className="col-md-6 mb-15">
                       <div className="body-title">Rate *</div>
                       <div className="body-content">
-                        <Field type="text" name="rate" className="mb-5" />
+                        <Field type="text" name="rate" placeholder="Enter GST rate" className="mb-5" />
                         <ErrorMessage
                           name="rate"
                           className="error-text"

@@ -118,7 +118,7 @@ const CreateEditCategory = () => {
                     <fieldset className="col-md-6 mb-15">
                       <div className="body-title">Name *</div>
                       <div className="body-content">
-                        <Field type="text" name="name" className="mb-5" />
+                        <Field type="text" name="name" placeholder="Enter category name" className="mb-5" />
                         <ErrorMessage
                           name="name"
                           className="error-text"
