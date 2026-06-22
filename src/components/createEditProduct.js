@@ -68,9 +68,9 @@ const CreateEditProduct = () => {
             >
               {() => (
                 <Form className="wg-form">
-                  <div className="row mb-20">
+                  <div className="row mb-20 col-12">
                     {/* Name */}
-                    <fieldset className="col-md-4">
+                    <fieldset className="col-md-3">
                       <div className="body-title">Name *</div>
                       <div className="body-content">
                         <Field

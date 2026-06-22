@@ -352,13 +352,13 @@ const ShiftHistory = () => {
                     {/* Summary Cards */}
                     <div style={{ display: "flex", gap: "16px", marginBottom: "20px", flexWrap: "wrap" }}>
                         {[
-                            { label: "Total Shifts", value: summary.totalShifts, bg: "#eff6ff", border: "#bfdbfe", color: "#1d4ed8" },
-                            { label: "Total Sales (Day)", value: salesLoading ? "…" : `₹${totalSales.toFixed(2)}`, bg: "#ecfeff", border: "#a5f3fc", color: "#0e7490" },
+                            { label: "Total Shifts", value: summary.totalShifts, bg: "#eff6ff", border: "#bfdbfe", color: "#1d4ed8" , Width: "250px"},
+                            { label: "Total Sales (Day)", value: salesLoading ? "…" : `₹${totalSales.toFixed(2)}`, bg: "#ecfeff", border: "#a5f3fc", color: "#0e7490" , Width: "250px" },
                             { label: "Total Cash Collected", value: `₹${summary.totalCashCollected.toFixed(2)}`, bg: "#f0fdf4", border: "#bbf7d0", color: "#15803d" },
                             { label: "Total Expenses", value: `₹${summary.totalExpenses.toFixed(2)}`, bg: "#fff1f2", border: "#fecdd3", color: "#be123c" },
                             { label: "Net Discrepancy", value: `₹${summary.totalDiscrepancy.toFixed(2)}`, bg: summary.totalDiscrepancy < 0 ? "#fef2f2" : "#fff7ed", border: summary.totalDiscrepancy < 0 ? "#fecaca" : "#fed7aa", color: summary.totalDiscrepancy < 0 ? "#dc2626" : "#c2410c" },
                         ].map(({ label, value, bg, border, color }) => (
-                            <div key={label} className="wg-box" style={{ background: bg, border: `1px solid ${border}`, borderRadius: "8px", padding: "12px 20px", minWidth: "180px" }}>
+                            <div key={label} className="wg-box" style={{ background: bg, border: `1px solid ${border}`, borderRadius: "8px", padding: "12px 20px", Width: "250px" }}>
                                 <p style={{ fontSize: "11px", color, margin: "0 0 2px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.5px" }}>{label}</p>
                                 <h3 style={{ fontSize: "22px", fontWeight: 800, color, margin: 0 }}>{value}</h3>
                             </div>

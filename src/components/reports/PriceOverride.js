@@ -386,7 +386,7 @@ const PriceOverride = () => {
                   type="date"
                   name="from_date"
                   className="form-control"
-                  style={{ height: "40px", borderRadius: "6px", border: "1px solid #cbd5e1", fontSize: "13px", padding: "0 10px", width: "100%" }}
+                  style={{ height: "48px", borderRadius: "6px", border: "1px solid #cbd5e1", fontSize: "13px", padding: "0 10px", width: "100%" }}
                   value={filters.from_date}
                   onChange={handleFilterChange}
                 />
@@ -401,7 +401,7 @@ const PriceOverride = () => {
                   type="date"
                   name="to_date"
                   className="form-control"
-                  style={{ height: "40px", borderRadius: "6px", border: "1px solid #cbd5e1", fontSize: "13px", padding: "0 10px", width: "100%" }}
+                  style={{ height: "48px", borderRadius: "6px", border: "1px solid #cbd5e1", fontSize: "13px", padding: "0 10px", width: "100%" }}
                   value={filters.to_date}
                   onChange={handleFilterChange}
                 />
@@ -409,7 +409,7 @@ const PriceOverride = () => {
 
               {/* Product ID Input */}
               <div style={{ flex: 1, minWidth: "110px" }}>
-                <label style={{ fontSize: "10px", fontWeight: "700", color: "#64748b", display: "block", marginBottom: "6px", textTransform: "uppercase" }}>
+                <label style={{ fontSize: "13px", fontWeight: "700", color: "#64748b", display: "block", marginBottom: "6px", textTransform: "uppercase" }}>
                   PRODUCTS
                 </label>
                 <select
@@ -417,13 +417,6 @@ const PriceOverride = () => {
                   className="form-control"
                   value={filters.product_id}
                   onChange={handleFilterChange}
-                  style={{
-                    height: "40px",
-                    borderRadius: "6px",
-                    border: "1px solid #cbd5e1",
-                    fontSize: "13px",
-                    width: "100%"
-                  }}
                 >
                   <option value="">All Products</option>
 
@@ -438,7 +431,7 @@ const PriceOverride = () => {
 
               {/* Staff ID Input */}
               <div style={{ flex: 1, minWidth: "110px" }}>
-                <label style={{ fontSize: "10px", fontWeight: "700", color: "#64748b", display: "block", marginBottom: "6px", textTransform: "uppercase" }}>
+                <label style={{ fontSize: "13px", fontWeight: "700", color: "#64748b", display: "block", marginBottom: "6px", textTransform: "uppercase" }}>
                   STAFFS
                 </label>
                 <select
