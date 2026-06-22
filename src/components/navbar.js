@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useHistory, useLocation } from "react-router-dom";
 import axios from "axios";
+import { PiKeyReturnBold } from "react-icons/pi";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import {
   IoHomeOutline,
@@ -152,7 +153,7 @@ const Navbar = () => {
           onClick={closeSidebar}
         >
           <div className="icon">
-            <IoReturnUpBack size={22} />
+            <PiKeyReturnBold />
           </div>
           <div className="text">Purchase Return Bills</div>
         </Link>
@@ -191,7 +192,8 @@ const Navbar = () => {
           onClick={closeSidebar}
         >
           <div className="icon">
-            <IoReturnUpBack size={22} />
+            {/* <IoReturnUpBack size={22} /> */}
+            <PiKeyReturnBold />
           </div>
           <div className="text">Sales Return</div>
         </Link>

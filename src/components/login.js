@@ -82,7 +82,7 @@ const Login = () => {
                 onChange={handleChange}
               />
               {errors.username && (
-                <small className="text-red">{errors.username}</small>
+                <small className="text-red-600 text-xl">{errors.username}</small>
               )}
             </fieldset>
 
@@ -99,7 +99,7 @@ const Login = () => {
                 onChange={handleChange}
               />
               {errors.password && (
-                <small className="text-red">{errors.password}</small>
+                <small className="text-red-600 text-xl">{errors.password}</small>
               )}
             </fieldset>
             <button type="submit" className="tf-button w-full text-white">

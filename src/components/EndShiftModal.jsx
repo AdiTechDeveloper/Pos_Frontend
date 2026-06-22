@@ -13,12 +13,12 @@ const getAuthHeader = () => {
 };
 
 export default function EndShiftModal({ isOpen, branchId, onClose, onShiftClosed }) {
-  const [summary, setSummary]               = useState(null);
+  const [summary, setSummary] = useState(null);
   const [loadingSummary, setLoadingSummary] = useState(true);
-  const [actualBalance, setActualBalance]   = useState("");
-  const [otherExpenses, setOtherExpenses]   = useState("");
-  const [expenseDesc, setExpenseDesc]       = useState("");
-  const [submitting, setSubmitting]         = useState(false);
+  const [actualBalance, setActualBalance] = useState("");
+  const [otherExpenses, setOtherExpenses] = useState("");
+  const [expenseDesc, setExpenseDesc] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -42,14 +42,14 @@ export default function EndShiftModal({ isOpen, branchId, onClose, onShiftClosed
 
   if (!isOpen) return null;
 
-  const opening     = Number(summary?.opening_balance ?? 0);
-  const cashIn      = Number(summary?.cash_collected  ?? 0);
+  const opening = Number(summary?.opening_balance ?? 0);
+  const cashIn = Number(summary?.cash_collected ?? 0);
   const expensesNum = parseFloat(otherExpenses) || 0;
-  const grossTotal  = opening + cashIn;
-  const expected    = grossTotal - expensesNum;
+  const grossTotal = opening + cashIn;
+  const expected = grossTotal - expensesNum;
 
-  const actualNum   = parseFloat(actualBalance);
-  const hasActual   = actualBalance !== "" && !isNaN(actualNum);
+  const actualNum = parseFloat(actualBalance);
+  const hasActual = actualBalance !== "" && !isNaN(actualNum);
   const discrepancy = hasActual ? actualNum - expected : null;
 
   const handleSubmit = async (e) => {
@@ -63,8 +63,8 @@ export default function EndShiftModal({ isOpen, branchId, onClose, onShiftClosed
       const res = await axios.post(
         `${BASE_URL}/api/staff/close-register`,
         {
-          closing_balance:     actualNum,
-          other_expenses:      expensesNum,
+          closing_balance: actualNum,
+          other_expenses: expensesNum,
           expense_description: expenseDesc.trim() || null,
         },
         { params: { branch_id: branchId }, headers: getAuthHeader() },
@@ -105,24 +105,24 @@ export default function EndShiftModal({ isOpen, branchId, onClose, onShiftClosed
           padding: "8px 16px",
           display: "flex", alignItems: "center", justifyContent: "space-between",
         }}>
-         <div style={{ display: "flex", flexDirection: "column" }}>
-  {/* Row container for Icon and H2 */}
-  <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "10px" }}>
-    <img 
-      src="/assets/images/logo/dismissal.png" 
-      style={{ width: "40px", height: "40px" }} 
-      alt="End Shift Icon"
-    />
-    <h2 style={{ color: "#fff", margin: 0, fontSize: "20px", fontWeight: 700 }}>
-      End Shift
-    </h2>
-  </div>
-  
-  {/* Paragraph below the row */}
-  <p style={{ color: "#ffffff", margin: "5px 0 0 0", fontSize: "13px", fontWeight: 600 }}>
-    Close your register and submit cash count
-  </p>
-</div>
+          <div style={{ display: "flex", flexDirection: "column" }}>
+            {/* Row container for Icon and H2 */}
+            <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "10px" }}>
+              <img
+                src="/assets/images/logo/dismissal.png"
+                style={{ width: "40px", height: "40px" }}
+                alt="End Shift Icon"
+              />
+              <h2 style={{ color: "#fff", margin: 0, fontSize: "20px", fontWeight: 700 }}>
+                End Shift
+              </h2>
+            </div>
+
+            {/* Paragraph below the row */}
+            <p style={{ color: "#ffffff", margin: "5px 0 0 0", fontSize: "13px", fontWeight: 600 }}>
+              Close your register and submit cash count
+            </p>
+          </div>
           <button onClick={onClose} style={{
             background: "rgba(255,255,255)", border: "none",
             color: "#000000", borderRadius: "8px", width: "32px", height: "32px",
@@ -147,8 +147,8 @@ export default function EndShiftModal({ isOpen, branchId, onClose, onShiftClosed
                 marginBottom: "20px",
               }}>
                 {[
-                  { label: "Opening balance",  value: opening,    color: "#111",    prefix: "" },
-                  { label: "Cash collected",   value: cashIn,     color: "#16a34a", prefix: "+" },
+                  { label: "Opening balance", value: opening, color: "#111", prefix: "" },
+                  { label: "Cash collected", value: cashIn, color: "#16a34a", prefix: "+" },
                 ].map(({ label, value, color, prefix }) => (
                   <div key={label} style={{
                     display: "flex", justifyContent: "space-between",
@@ -228,8 +228,8 @@ export default function EndShiftModal({ isOpen, branchId, onClose, onShiftClosed
                     padding: "10px 14px", borderRadius: "8px", marginBottom: "16px",
                     fontWeight: 600, fontSize: "14px",
                     background: discrepancy < 0 ? "#fef2f2" : "#f0fdf4",
-                    color:      discrepancy < 0 ? "#dc2626" : "#16a34a",
-                    border:     `1px solid ${discrepancy < 0 ? "#fecaca" : "#bbf7d0"}`,
+                    color: discrepancy < 0 ? "#dc2626" : "#16a34a",
+                    border: `1px solid ${discrepancy < 0 ? "#fecaca" : "#bbf7d0"}`,
                   }}>
                     {discrepancy < 0
                       ? `⚠ Short by ₹${Math.abs(discrepancy).toFixed(2)}`

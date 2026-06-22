@@ -121,7 +121,7 @@ export default function SalesReport() {
           Financial Report
         </h1>
         <div className="flex flex-col gap-3 mb-6">
-          <p className="text-3xl text-gray-600">
+          <p className="text-3xl text-gray-600 mt-6">
             Overview of sales, purchases, net profits, and outstanding
             collections.
           </p>

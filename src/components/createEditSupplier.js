@@ -48,6 +48,7 @@ const CreateEditSupplier = () => {
   // Validation Schema
   const validationSchema = Yup.object({
     name: Yup.string().required("Name is required"),
+    state: Yup.string().required("State is required"),
   });
 
   // Submit (Create + Update)
@@ -103,7 +104,7 @@ const CreateEditSupplier = () => {
                     <fieldset className="col-md-6">
                       <div className="body-title">Name *</div>
                       <div className="body-content mb-15">
-                        <Field type="text" name="name" className="mb-5" />
+                        <Field type="text" name="name" className="mb-5" placeholder="Enter supplier name" />
                         <ErrorMessage
                           name="name"
                           className="error-text"
@@ -114,7 +115,7 @@ const CreateEditSupplier = () => {
                     <fieldset className="col-md-6">
                       <div className="body-title">GstIn *</div>
                       <div className="body-content">
-                        <Field type="text" name="gstin" className="mb-5" />
+                        <Field type="text" name="gstin" className="mb-5" placeholder="Enter GST no."/>
                         <ErrorMessage
                           name="gstin"
                           className="error-text"
@@ -132,6 +133,7 @@ const CreateEditSupplier = () => {
                           name="contact"
                           maxLength={10}
                           className="mb-5"
+                          placeholder="Enter mobile no."
                         />
                         <ErrorMessage
                           name="contact"
@@ -143,7 +145,7 @@ const CreateEditSupplier = () => {
                     <fieldset className="col-md-6">
                       <div className="body-title">Address *</div>
                       <div className="body-content">
-                        <Field type="text" name="address" className="mb-5" />
+                        <Field type="text" name="address" className="mb-5" placeholder="Enter address"/>
                         <ErrorMessage
                           name="address"
                           className="error-text"

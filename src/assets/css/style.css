@@ -475,9 +475,8 @@ button,
 input {
   line-height: normal;
 }
-
-button,
 input,
+button,
 select,
 textarea {
   font-size: 100%;

@@ -102,8 +102,18 @@ const CreateEditStaff = () => {
       actions.resetForm();
       history.push("/staff");
     } catch (error) {
-      console.error("Error saving staff:", error);
+      if (error.response && error.response.data) {
+        const apiMessage = error.response.data.message || "An unexpected error occurred.";
+    
+        toast.error(apiMessage);
+        if (error.response.data.errors) {
+        actions.setErrors(error.response.data.errors);
+      }
+    } else {
+     console.error("Error saving staff:", error);
+      toast.error("Network error. Please check your connection.");
     }
+  }
   };
 
   return (
@@ -126,7 +136,7 @@ const CreateEditStaff = () => {
                     <fieldset className="col-md-5">
                       <div className="body-title">Name *</div>
                       <div className="body-content mb-15">
-                        <Field type="text" name="name" className="mb-5" />
+                        <Field type="text" name="name" className="mb-5" placeholder="Enter staff name"/>
                         <ErrorMessage
                           name="name"
                           component="div"
@@ -139,7 +149,7 @@ const CreateEditStaff = () => {
                     <fieldset className="col-md-5">
                       <div className="body-title">Username *</div>
                       <div className="body-content">
-                        <Field type="text" name="username" className="mb-5" />
+                        <Field type="text" name="username" className="mb-5" placeholder="Enter username"/>
                         <ErrorMessage
                           name="username"
                           component="div"
@@ -155,7 +165,6 @@ const CreateEditStaff = () => {
                         <Field
                           as="select"
                           name="branch_ids"
-                          multiple
                           className="mb-5"
                           value={values.branch_ids.map(String)} // Convert to string if IDs are numbers
                           onChange={(e) => {
@@ -166,6 +175,10 @@ const CreateEditStaff = () => {
                             setFieldValue("branch_ids", selected);
                           }}
                         >
+                        {/* This is your first option that guides the user */}
+                          <option value="" disabled>
+                            Select  branch
+                          </option>       
                           {branches.map((element) => (
                             <option
                               key={element.id}
