@@ -886,37 +886,52 @@ const CreateEditPurchaseBill = () => {
         { barcode },
         { headers: { Authorization: `Bearer ${user_data.token}` } },
       );
-      if (!response.data.status) {
-        toast.error(response.data.message || "Product not found");
+
+      if (!response?.data?.status) {
+        toast.error(response?.data?.message || "Product not found");
         return;
       }
-      const product = response.data.product;
+
+      const product = response?.data?.product;
+
+      if (!product || !product.id) {
+        toast.error("Invalid product data received from server");
+        return;
+      }
+
       const inventory =
         response.data.batches?.find((b) => b.batch_barcode === barcode) || {};
-      const existingIndex = values.lines.findIndex(
+
+      const linesArray = values?.lines || [];
+
+      const existingIndex = linesArray.findIndex(
         (l) => l.product_id == product.id && l.batch_no === inventory.batch_no,
       );
+
       if (existingIndex !== -1) {
         setFieldValue(
           `lines.${existingIndex}.qty`,
-          Number(values.lines[existingIndex].qty || 0) + 1,
+          Number(linesArray[existingIndex]?.qty || 0) + 1,
         );
         setBarcode("");
         return;
       }
-      const emptyIndex = values.lines.findIndex((l) => !l.product_id);
+
+      const emptyIndex = linesArray.findIndex((l) => !l.product_id);
+
       const lineData = {
         product_id: product.id.toString(),
         qty: 1,
         free_qty: 0,
         purchase_rate: inventory.purchase_rate ?? inventory.cost_price ?? 0,
-        mrp: inventory.mrp,
-        selling_price: inventory.selling_price,
-        hsn_code: product.hsn_code,
-        gst_rate_id: product.gst_rate.id,
+        mrp: inventory.mrp || 0,
+        selling_price: inventory.selling_price || 0,
+        hsn_code: product.hsn_code || "",
+        gst_rate_id: product.gst_rate?.id || "",
         batch_no: inventory.batch_no || "",
         expiry_date: inventory.expiry_date || "",
       };
+
       if (emptyIndex !== -1) {
         Object.entries(lineData).forEach(([key, value]) => {
           setFieldValue(`lines.${emptyIndex}.${key}`, value);
@@ -926,6 +941,7 @@ const CreateEditPurchaseBill = () => {
       }
       setBarcode("");
     } catch (error) {
+      console.error("Barcode scan processing error: ", error);
       if (error.response && error.response.status === 404) {
         toast.error("Product not found");
       } else {
