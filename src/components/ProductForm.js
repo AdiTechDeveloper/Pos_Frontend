@@ -393,17 +393,15 @@ const ProductForm = ({ onSuccess, onCancel, initialData = null }) => {
               </button>
             </div>
 
-            {/* NESTED QUICK ADD (Sub-modal) */}
             {modalType && (
               <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/40 backdrop-blur-[3px]">
-                {/* Increased max-w to 500px and added more padding (p-8) */}
-                <div className="bg-white rounded-2xl shadow-2xl w-full max-w-[500px] p-8 border border-gray-100 animate-in fade-in zoom-in duration-200">
+                <div className="bg-white rounded-2xl shadow-2xl w-full md:max-w-4xl p-8 border border-gray-100 animate-in fade-in zoom-in duration-200">
                   <div className="mb-6">
-                    <h4 className="font-bold text-lg text-gray-800 tracking-tight">
+                    <h4 className="font-bold text-3xl text-gray-800 tracking-tight">
                       Add New{" "}
                       {modalType.charAt(0).toUpperCase() + modalType.slice(1)}
                     </h4>
-                    <p className="text-gray-500 text-sm">
+                    <p className="text-gray-500 text-2xl">
                       Enter the name for the new {modalType} to add it to your
                       list.
                     </p>
@@ -411,16 +409,15 @@ const ProductForm = ({ onSuccess, onCancel, initialData = null }) => {
 
                   <div className="space-y-6">
                     <div className="flex flex-col gap-2">
-                      <label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
+                      <label className="text-2xl font-bold text-gray-400 uppercase tracking-widest">
                         {modalType} Name
                       </label>
                       <input
                         autoFocus
-                        className="w-full px-4 py-3 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 text-base transition-all"
-                        placeholder={`Enter ${modalType} name...`}
+                        className="w-full px-4 py-3 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 text-2xl transition-all"
+                        placeholder={`Enter ${modalType} name`}
                         value={quickAddValue}
                         onChange={(e) => setQuickAddValue(e.target.value)}
-                        // Allows saving by pressing Enter
                         onKeyDown={(e) =>
                           e.key === "Enter" && handleQuickSave(setFieldValue)
                         }
@@ -434,7 +431,7 @@ const ProductForm = ({ onSuccess, onCancel, initialData = null }) => {
                           setModalType(null);
                           setQuickAddValue("");
                         }}
-                        className="flex-1 py-3 text-sm font-bold text-gray-500 hover:bg-gray-50 rounded-xl transition-colors"
+                        className="flex-1 py-3 text-2xl font-bold text-gray-500 hover:bg-gray-50 rounded-xl transition-colors"
                       >
                         Discard
                       </button>
@@ -442,7 +439,7 @@ const ProductForm = ({ onSuccess, onCancel, initialData = null }) => {
                         type="button"
                         onClick={() => handleQuickSave(setFieldValue)}
                         disabled={loading || !quickAddValue.trim()}
-                        className="flex-1 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-bold shadow-lg shadow-indigo-200 disabled:opacity-50 disabled:shadow-none transition-all"
+                        className="flex-1 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-2xl font-bold shadow-lg shadow-indigo-200 disabled:opacity-50 disabled:shadow-none transition-all"
                       >
                         {loading ? "Saving..." : `Create ${modalType}`}
                       </button>

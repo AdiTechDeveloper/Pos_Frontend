@@ -988,9 +988,37 @@ const CreateEditPurchaseBill = () => {
             >
               {({ values, setFieldValue }) => (
                 <Form
+                  // onKeyDown={(e) => {
+                  //   if (e.key === "Enter" && e.target.id !== "barcode-input") {
+                  //     e.preventDefault();
+                  //   }
+                  // }}
+
                   onKeyDown={(e) => {
-                    if (e.key === "Enter" && e.target.id !== "barcode-input") {
+                    if (e.key === "Enter") {
+                      const target = e.target;
+
+                      if (
+                        target.id === "barcode-input" ||
+                        target.tagName === "TEXTAREA" ||
+                        target.type === "submit"
+                      ) {
+                        return;
+                      }
+
                       e.preventDefault();
+
+                      const formElements = Array.from(
+                        e.currentTarget.querySelectorAll(
+                          'input:not([disabled]), select:not([disabled]), textarea:not([disabled]), button[type="submit"]',
+                        ),
+                      );
+
+                      const index = formElements.indexOf(target);
+
+                      if (index > -1 && index < formElements.length - 1) {
+                        formElements[index + 1].focus();
+                      }
                     }
                   }}
                 >
