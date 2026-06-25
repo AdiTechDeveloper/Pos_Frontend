@@ -23,7 +23,6 @@ const CashierLogin = () => {
     setErrors({ ...errors, [e.target.name]: "" });
   };
 
-  // validation
   const validate = () => {
     let temp = {};
 
@@ -31,16 +30,15 @@ const CashierLogin = () => {
 
     setErrors(temp);
 
-    return Object.keys(temp).length === 0; // return true if no errors
+    return Object.keys(temp).length === 0;
   };
 
-  // Submit form
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!validate()) {
       console.log("Validation failed");
-      return; // Stop here
+      return;
     }
 
     try {
@@ -50,14 +48,24 @@ const CashierLogin = () => {
         },
         withCredentials: true,
       });
+
       const user_detail = response.data;
+
       localStorage.setItem("user_detail", JSON.stringify(user_detail));
-      if (response.data) {
-        toast.success(user_detail.message || "Login successfull!");
-        history.push("/pos");
-      }
+
+      toast.success(user_detail.message || "Login successful!");
+
+      history.push("/pos");
     } catch (err) {
       console.error("LOGIN ERROR:", err);
+
+      if (err.response) {
+        toast.error(err.response.data?.message || "Invalid credentials");
+      } else if (err.request) {
+        toast.error("Server not responding. Please try again.");
+      } else {
+        toast.error("Something went wrong.");
+      }
     }
   };
 
@@ -88,13 +96,13 @@ const CashierLogin = () => {
             <button type="submit" className="tf-button w-full">
               Login
             </button>
-            <div className="body-text text-center">
-              Already have an register? please Login here
+            {/* <div className="body-text text-center">
+              Do not have account? please register here
               <Link to="/register" className="body-text tf-color">
                 {" "}
                 Register Now{" "}
               </Link>
-            </div>
+            </div> */}
             <div className="body-text text-center">
               Please Login here
               <Link to="/login" className="body-text tf-color">

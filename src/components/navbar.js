@@ -355,6 +355,18 @@ const Navbar = () => {
                   <>
                     <li className="menu-item">
                       <Link
+                        to="/staff"
+                        className={`menu-item-button ${isActive("/staff") ? "active" : ""}`}
+                      >
+                        <div className="icon">
+                          <i className="icon-user"></i>
+                        </div>
+                        <div className="text">Cashiers</div>
+                      </Link>
+                    </li>
+
+                    <li className="menu-item">
+                      <Link
                         to="/category"
                         className={`menu-item-button ${isActive("/category") ? "active" : ""}`}
                       >
