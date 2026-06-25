@@ -1,6 +1,11 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import Layout from "../layout";
+import { CSVLink } from "react-csv";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+
+
 
 export default function SalesReport() {
   const BASE_URL = process.env.REACT_APP_API_BASE_URL;
@@ -20,6 +25,8 @@ export default function SalesReport() {
   const [filters, setFilters] = useState(defaultFilters);
   const [branches, setBranches] = useState([]);
 
+
+  
   const resetFilters = () => {
     setFilters(defaultFilters);
   };
@@ -83,8 +90,7 @@ export default function SalesReport() {
   useEffect(() => {
     fetchReport();
   }, [filters]);
-
-  if (loading)
+ if (loading)
     return (
       <Layout>
         <div className="flex min-h-screen items-center justify-center bg-white px-6 py-12">
@@ -101,7 +107,7 @@ export default function SalesReport() {
       </Layout>
     );
 
-  if (!report)
+    if (!report)
     return (
       <Layout>
         <div className="min-h-screen flex items-center justify-center bg-white text-gray-900">
@@ -110,8 +116,159 @@ export default function SalesReport() {
       </Layout>
     );
 
-  const k = report.kpis;
-  const gst = report.gst;
+
+    const k = report.kpis;
+    const gst = report.gst;
+
+     const buildCsvData = () => {
+    const rows = [];
+
+    rows.push(["FINANCIAL REPORT"]);
+    rows.push(["Total Sales", k.total_sales]);
+    rows.push(["Total Purchase", k.total_purchase]);
+    rows.push(["Net Profit", k.profit]);
+    rows.push(["Amount Received", k.received_amount]);
+    rows.push(["Pending Amount", k.pending_amount]);
+    rows.push(["CGST", gst.cgst]);
+    rows.push(["SGST", gst.sgst]);
+    rows.push(["IGST", gst.igst]);
+    rows.push([]);
+
+    rows.push(["TOP PRODUCTS"]);
+    rows.push(["Product Name", "Qty Sold", "Total Sales"]);
+    (report.top_products || []).forEach((p) => {
+      rows.push([p.name, p.total_qty, p.total_sales]);
+    });
+    rows.push([]);
+
+    rows.push(["CUSTOMER DUES"]);
+    rows.push(["Customer Name", "Total Due"]);
+    (report.customer_dues || []).forEach((d) => {
+      rows.push([d.name, d.total_due]);
+    });
+    rows.push([]);
+
+    rows.push(["DAILY TREND"]);
+    rows.push(["Date", "Sales", "Received", "Due"]);
+    (report.charts?.daily_sales || []).forEach((row) => {
+      rows.push([row.date, row.sales, row.received, row.due]);
+    });
+
+    return rows;
+  };
+
+  const csvData = buildCsvData();
+  const csvFilename = `financial-report-${
+    filters.date_range === "custom"
+      ? `${filters.date_from}_to_${filters.date_to}`
+      : filters.date_range
+  }.csv`;
+
+  const exportCSV = () => {
+    const csvContent = csvData
+      .map((row) =>
+        row
+          .map((cell) => {
+            const value = cell === undefined || cell === null ? "" : String(cell);
+            if (value.includes(",") || value.includes('"')) {
+              return `"${value.replace(/"/g, '""')}"`;
+            }
+            return value;
+          })
+          .join(",")
+      )
+      .join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", csvFilename);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  // PDF export
+ const exportPDF = () => {
+    const doc = new jsPDF();
+
+    doc.setFontSize(18);
+    doc.text("Financial Report", 14, 18);
+
+    doc.setFontSize(11);
+    doc.text(
+      `Date Range: ${
+        filters.date_range === "custom"
+          ? `${filters.date_from} to ${filters.date_to}`
+          : "This Month"
+      }`,
+      14,
+      26
+    );
+
+    autoTable(doc, {
+      startY: 32,
+      head: [["Metric", "Value (Rs.)"]],
+      body: [
+        ["Total Sales", Number(k.total_sales).toFixed(2)],
+        ["Total Purchase", Number(k.total_purchase).toFixed(2)],
+        ["Net Profit", Number(k.profit).toFixed(2)],
+        ["Amount Received", Number(k.received_amount).toFixed(2)],
+        ["Pending Amount", Number(k.pending_amount).toFixed(2)],
+        ["CGST", Number(gst.cgst).toFixed(2)],
+        ["SGST", Number(gst.sgst).toFixed(2)],
+        ["IGST", Number(gst.igst).toFixed(2)],
+      ],
+      theme: "grid",
+      headStyles: { fillColor: [37, 99, 235] },
+    });
+
+    autoTable(doc, {
+      startY: doc.lastAutoTable.finalY + 10,
+      head: [["Product Name", "Qty Sold", "Total Sales (Rs.)"]],
+      body: (report.top_products || []).map((p) => [
+        p.name,
+        Number(p.total_qty).toFixed(0),
+        Number(p.total_sales).toFixed(2),
+      ]),
+      theme: "grid",
+      headStyles: { fillColor: [37, 99, 235] },
+    });
+
+    autoTable(doc, {
+      startY: doc.lastAutoTable.finalY + 10,
+      head: [["Customer Name", "Total Due (Rs.)"]],
+      body: (report.customer_dues || []).map((d) => [
+        d.name,
+        Number(d.total_due).toFixed(2),
+      ]),
+      theme: "grid",
+      headStyles: { fillColor: [37, 99, 235] },
+    });
+
+    autoTable(doc, {
+      startY: doc.lastAutoTable.finalY + 10,
+      head: [["Date", "Sales (Rs.)", "Received (Rs.)", "Due (Rs.)"]],
+      body: (report.charts?.daily_sales || []).map((row) => [
+        row.date,
+        Number(row.sales).toFixed(2),
+        Number(row.received).toFixed(2),
+        Number(row.due).toFixed(2),
+      ]),
+      theme: "grid",
+      headStyles: { fillColor: [37, 99, 235] },
+    });
+
+    doc.save(
+      `financial-report-${
+        filters.date_range === "custom"
+          ? `${filters.date_from}_to_${filters.date_to}`
+          : filters.date_range
+      }.pdf`
+    );
+  };
 
   return (
     <Layout>
@@ -210,6 +367,20 @@ export default function SalesReport() {
               Reset Filters
             </button>
           </div>
+              <button
+              type="button"
+              onClick={exportPDF}
+              className="bg-red-600 px-8 py-4 rounded-2xl text-white text-2xl font-semibold hover:bg-red-700 transition-all"
+            >
+              Export PDF
+            </button>
+           <button
+                type="button"
+                onClick={exportCSV}
+                className="bg-green-600 px-8 py-4 ml-4 rounded-2xl text-white text-2xl font-semibold hover:bg-green-700 transition-all"
+              >
+                Export CSV
+              </button>
         </div>
 
         {/* KPI CARDS CONTAINER */}
