@@ -32,15 +32,14 @@ const Login = () => {
 
     setErrors(temp);
 
-    return Object.keys(temp).length === 0; // return true if no errors
+    return Object.keys(temp).length === 0;
   };
 
-  // Submit form
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validate()) {
       console.log("Validation failed");
-      return; // Stop here
+      return; 
     }
     try {
       const response = await axios.post(`${BASE_URL}/api/login`, formData, {
@@ -82,7 +81,9 @@ const Login = () => {
                 onChange={handleChange}
               />
               {errors.username && (
-                <small className="text-red-600 text-xl">{errors.username}</small>
+                <small className="text-red-600 text-xl">
+                  {errors.username}
+                </small>
               )}
             </fieldset>
 
@@ -99,24 +100,26 @@ const Login = () => {
                 onChange={handleChange}
               />
               {errors.password && (
-                <small className="text-red-600 text-xl">{errors.password}</small>
+                <small className="text-red-600 text-xl">
+                  {errors.password}
+                </small>
               )}
             </fieldset>
             <button type="submit" className="tf-button w-full text-white">
               Login
             </button>
-            <div className="body-text text-center">
-              Already have an register? please Login here
+            {/* <div className="body-text text-center">
+              Do not have account? please Login here
               <Link to="/register" className="body-text tf-color">
                 {" "}
                 Register Now{" "}
               </Link>
-            </div>
-           <div className="body-text text-center">
+            </div> */}
+            <div className="body-text text-center">
               Please Cashier Login here
               <Link to="/cashier_login" className="body-text tf-color">
                 {" "}
-               Cashier Login
+                Cashier Login
               </Link>
             </div>
           </form>

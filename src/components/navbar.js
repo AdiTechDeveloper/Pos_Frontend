@@ -40,7 +40,8 @@ const Navbar = () => {
     { name: "GSTR - 3B", path: "/reports/GSTR3B" },
     { name: "GSTR1 Summary", path: "/reports/GSTR1-Summary" },
     { name: "Price Override", path: "/reports/price-override" },
-    { name: "Register Shift" , path:"/reports/shift-report"},
+    { name: "Register Shift", path: "/reports/shift-report" },
+    { name: "Stock Expiry", path: "/reports/stock-expiry-report" },
   ];
 
   const location = useLocation();
@@ -243,7 +244,8 @@ const Navbar = () => {
             { name: "Sales Report", path: "/reports/sales-report" },
             { name: "Purchase Report", path: "/reports/purchase-report" },
             { name: "Financial Report", path: "/reports/financial-report" },
-            { name: "Shift History Report" , path:"/reports/shift-report"},
+            { name: "Shift History Report", path: "/reports/shift-report" },
+            { name: "Stock Expiry", path: "/reports/stock-expiry-report" },
           ].map((item, index) => (
             <li key={index} className="sub-menu-item">
               <Link
@@ -351,6 +353,18 @@ const Navbar = () => {
 
                 {role === "manager" && (
                   <>
+                    <li className="menu-item">
+                      <Link
+                        to="/staff"
+                        className={`menu-item-button ${isActive("/staff") ? "active" : ""}`}
+                      >
+                        <div className="icon">
+                          <i className="icon-user"></i>
+                        </div>
+                        <div className="text">Cashiers</div>
+                      </Link>
+                    </li>
+
                     <li className="menu-item">
                       <Link
                         to="/category"
