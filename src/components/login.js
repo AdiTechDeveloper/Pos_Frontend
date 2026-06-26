@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useHistory } from "react-router-dom";
 import { toast } from "react-toastify";
 import axios from "axios";
+import ForgotPasswordModal from "./ForgotPassword";
 
 const BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
@@ -14,6 +15,7 @@ const Login = () => {
   });
 
   const [errors, setErrors] = useState({});
+  const [showForgotModal, setShowForgotModal] = useState(false);
 
   const handleChange = (e) => {
     setFormData({
@@ -39,7 +41,7 @@ const Login = () => {
     e.preventDefault();
     if (!validate()) {
       console.log("Validation failed");
-      return; 
+      return;
     }
     try {
       const response = await axios.post(`${BASE_URL}/api/login`, formData, {
@@ -115,6 +117,7 @@ const Login = () => {
                 Register Now{" "}
               </Link>
             </div> */}
+
             <div className="body-text text-center">
               Please Cashier Login here
               <Link to="/cashier_login" className="body-text tf-color">
@@ -123,6 +126,25 @@ const Login = () => {
               </Link>
             </div>
           </form>
+
+          <div className="body-text text-center mt-3">
+            Forgot Password?{" "}
+            <a
+              href="#forgot-password"
+              className="body-text tf-color fw-semibold"
+              onClick={(e) => {
+                e.preventDefault();
+                setShowForgotModal(true);
+              }}
+              style={{ cursor: "pointer" }}
+            >
+              Reset here
+            </a>
+          </div>
+
+          {showForgotModal && (
+            <ForgotPasswordModal onClose={() => setShowForgotModal(false)} />
+          )}
         </div>
       </div>
     </div>
