@@ -8,6 +8,10 @@ export default function PaymentModal({ total, onClose, onConfirm, cart_data }) {
   const [paymentType, setPaymentType] = useState("cash");
   const [customerName, setCustomerName] = useState("");
   const [customerMobile, setCustomerMobile] = useState("");
+  const [customerAdd1, setCustomerAdd1] = useState("");
+  const [customerAdd2, setCustomerAdd2] = useState("");
+  const [customerArea, setCustomerArea] = useState("");
+  const [customerCity, setCustomerCity] = useState("");
   const [customerDue, setCustomerDue] = useState(0);
   const [loadingCustomer, setLoadingCustomer] = useState(false);
 
@@ -87,19 +91,21 @@ export default function PaymentModal({ total, onClose, onConfirm, cart_data }) {
 
     const apiPaymentType = paymentType;
 
-    if (paymentType === "credit") {
-      if (!customerName || !customerMobile) {
-        alert("Customer name & mobile are required for Pay Later");
-        return;
-      }
-
-      customer = {
-        name: customerName,
-        mobile: customerMobile,
-      };
-
-      payments = [];
+    if (!customerName || !customerMobile) {
+      alert("Customer name & mobile are required for Pay Later");
+      return;
     }
+
+    customer = {
+      name: customerName,
+      mobile: customerMobile,
+      add1: customerAdd1,
+      add2: customerAdd2,
+      area: customerArea,
+      city: customerCity,
+    };
+
+    payments = [];
 
     if (paymentType === "cash") {
       if (!cashGiven || parse(cashGiven) < total) {
@@ -177,10 +183,21 @@ export default function PaymentModal({ total, onClose, onConfirm, cart_data }) {
         })
         .then((res) => {
           if (res.data.customer) {
-            setCustomerName(res.data.customer.name || "");
+            const c = res.data.customer;
+
+            setCustomerName(c.name || "");
+            setCustomerAdd1(c.add1 || "");
+            setCustomerAdd2(c.add2 || "");
+            setCustomerArea(c.area || "");
+            setCustomerCity(c.city || "");
+
             setCustomerDue(res.data.total_due || 0);
           } else {
             setCustomerName("");
+            setCustomerAdd1("");
+            setCustomerAdd2("");
+            setCustomerArea("");
+            setCustomerCity("");
             setCustomerDue(0);
           }
         })
@@ -193,6 +210,10 @@ export default function PaymentModal({ total, onClose, onConfirm, cart_data }) {
         });
     } else {
       setCustomerName("");
+      setCustomerAdd1("");
+      setCustomerAdd2("");
+      setCustomerArea("");
+      setCustomerCity("");
       setCustomerDue(0);
     }
   }, [customerMobile]);
@@ -342,27 +363,56 @@ export default function PaymentModal({ total, onClose, onConfirm, cart_data }) {
               </>
             )}
 
-            {paymentType === "credit" && (
-              <div className="space-y-4">
-                <h2 className="text-xl font-bold" style={{ fontSize: "2rem" }}>
-                  Customer Details
-                </h2>
-                <input
-                  type="text"
-                  className="payment-cash p-4 text-xl w-full border rounded-xl shadow"
-                  placeholder="Customer Mobile"
-                  value={customerMobile}
-                  onChange={(e) => setCustomerMobile(e.target.value)}
-                />
-                <input
-                  type="text"
-                  className="payment-cash p-4 text-xl w-full border rounded-xl shadow"
-                  placeholder="Customer Name"
-                  value={customerName}
-                  onChange={(e) => setCustomerName(e.target.value)}
-                />
-              </div>
-            )}
+            <div className="space-y-4">
+              <h2 className="text-xl font-bold" style={{ fontSize: "2rem" }}>
+                Customer Details
+              </h2>
+              <input
+                type="text"
+                className="payment-cash p-4 text-xl w-half border rounded-xl shadow"
+                placeholder="Mobile"
+                value={customerMobile}
+                onChange={(e) => setCustomerMobile(e.target.value)}
+              />
+              <input
+                type="text"
+                className="payment-cash p-4 text-xl w-half border rounded-xl shadow"
+                placeholder="Customer Name"
+                value={customerName}
+                onChange={(e) => setCustomerName(e.target.value)}
+              />
+              <input
+                type="text"
+                className="payment-cash p-4 text-xl w-half border rounded-xl shadow"
+                placeholder="Add 1"
+                value={customerAdd1}
+                onChange={(e) => setCustomerAdd1(e.target.value)}
+              />
+
+              <input
+                type="text"
+                className="payment-cash p-4 text-xl w-half border rounded-xl shadow"
+                placeholder="Add 2"
+                value={customerAdd2}
+                onChange={(e) => setCustomerAdd2(e.target.value)}
+              />
+
+              <input
+                type="text"
+                className="payment-cash p-4 text-xl w-half border rounded-xl shadow"
+                placeholder="Area"
+                value={customerArea}
+                onChange={(e) => setCustomerArea(e.target.value)}
+              />
+
+              <input
+                type="text"
+                className="payment-cash p-4 text-xl w-half border rounded-xl shadow"
+                placeholder="City"
+                value={customerCity}
+                onChange={(e) => setCustomerCity(e.target.value)}
+              />
+            </div>
 
             {loadingCustomer && (
               <div className="text-blue-500 text-sm mt-2">
@@ -454,7 +504,8 @@ export default function PaymentModal({ total, onClose, onConfirm, cart_data }) {
               disabled={
                 (paymentType === "cash" && remaining > 0) ||
                 (paymentType === "split" && cashApplied <= 0) ||
-                (paymentType === "credit" && (!customerName || !customerMobile))
+                !customerName ||
+                !customerMobile
               }
               onClick={handleConfirm}
               className={`rounded-xl text-white font-bold ${
