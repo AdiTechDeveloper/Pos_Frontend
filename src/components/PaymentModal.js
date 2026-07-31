@@ -14,6 +14,8 @@ export default function PaymentModal({ total, onClose, onConfirm, cart_data }) {
   const [customerCity, setCustomerCity] = useState("");
   const [customerDue, setCustomerDue] = useState(0);
   const [loadingCustomer, setLoadingCustomer] = useState(false);
+  const [mobileError, setMobileError] = useState("");
+  const [nameError, setNameError] = useState("");
 
   const parse = (v) => (parseFloat(v) ? parseFloat(v) : 0);
   const cashApplied = Math.min(parse(cashGiven), total);
@@ -31,68 +33,20 @@ export default function PaymentModal({ total, onClose, onConfirm, cart_data }) {
     });
   };
 
-  // const handleConfirm = () => {
-  //   let payments = [];
-  //   let customer = null;
-  //   const apiPaymentType = paymentType;
-
-  //   if (customerName && customerMobile && paymentType === "credit") {
-  //     customer = {
-  //       name: customerName,
-  //       mobile: customerMobile,
-  //     };
-  //   }
-
-  //   if (paymentType === "online") {
-  //     payments.push({
-  //       method: "online",
-  //       amount: total,
-  //       transaction_id: "",
-  //       cash_received: 0,
-  //       balance_return: 0,
-  //     });
-  //   }
-
-  //   if (paymentType === "cash") {
-  //     payments.push({
-  //       method: "cash",
-  //       amount: cashApplied,
-  //       cash_received: parse(cashGiven),
-  //       balance_return: balanceReturn,
-  //     });
-  //   }
-
-  //   // SPLIT PAYMENT
-  //   if (paymentType === "split") {
-  //     if (cashApplied > 0) {
-  //       payments.push({
-  //         method: "cash",
-  //         amount: cashApplied,
-  //         cash_received: parse(cashGiven),
-  //         balance_return: balanceReturn,
-  //       });
-  //     }
-
-  //     if (remaining > 0) {
-  //       payments.push({
-  //         method: "online",
-  //         amount: remaining,
-  //         transaction_id: "",
-  //       });
-  //     }
-  //   }
-
-  //   onConfirm({ payments, payment_type: apiPaymentType, customer });
-  // };
-
   const handleConfirm = () => {
     let payments = [];
     let customer = null;
 
     const apiPaymentType = paymentType;
 
-    if (!customerName || !customerMobile) {
-      alert("Customer name & mobile are required for Pay Later");
+    if (!customerMobile) {
+      alert("Mobile is required for Pay Later");
+      return;
+    }
+
+    // Mobile validation
+    if (customerMobile.length !== 10) {
+      alert("Mobile number must be exactly 10 digits");
       return;
     }
 
@@ -347,7 +301,9 @@ export default function PaymentModal({ total, onClose, onConfirm, cart_data }) {
 
             <div style={amountStyle}>
               <strong>Paid: </strong> ₹
-              {paymentType === "online" || paymentType === "split"
+              {paymentType === "online" ||
+              paymentType === "split" ||
+              paymentType === "cash"
                 ? total.toFixed(2)
                 : cashApplied.toFixed(2)}
             </div>
@@ -369,18 +325,67 @@ export default function PaymentModal({ total, onClose, onConfirm, cart_data }) {
               </h2>
               <input
                 type="text"
-                className="payment-cash p-4 text-xl w-half border rounded-xl shadow"
+                className={`payment-cash p-4 text-xl w-half border rounded-xl shadow ${
+                  mobileError ? "border-red-500" : ""
+                }`}
                 placeholder="Mobile"
                 value={customerMobile}
-                onChange={(e) => setCustomerMobile(e.target.value)}
+                onChange={(e) => {
+                  let value = e.target.value;
+
+                  // remove spaces
+                  value = value.replace(/\s+/g, "");
+
+                  // remove non digits
+                  value = value.replace(/\D/g, "");
+
+                  // remove leading 0
+                  value = value.replace(/^0+/, "");
+
+                  // limit to 10
+                  value = value.slice(0, 10);
+
+                  setCustomerMobile(value);
+
+                  // validation
+                  if (value.length === 0) {
+                    setMobileError("Mobile is required");
+                  } else if (value.length < 10) {
+                    setMobileError("Enter 10 digit mobile number");
+                  } else {
+                    setMobileError("");
+                  }
+                }}
               />
+              {mobileError && (
+                <div className="text-red-500 text-sm">{mobileError}</div>
+              )}
               <input
                 type="text"
-                className="payment-cash p-4 text-xl w-half border rounded-xl shadow"
+                className={`payment-cash p-4 text-xl w-half border rounded-xl shadow ${
+                  nameError ? "border-red-500" : ""
+                }`}
                 placeholder="Customer Name"
                 value={customerName}
-                onChange={(e) => setCustomerName(e.target.value)}
+                onChange={(e) => {
+                  let value = e.target.value;
+
+                  // allow only letters + space
+                  value = value.replace(/[^a-zA-Z\s]/g, "");
+
+                  setCustomerName(value);
+
+                  // validation
+                  if (value && !/^[a-zA-Z\s]+$/.test(value)) {
+                    setNameError("Only letters allowed");
+                  } else {
+                    setNameError("");
+                  }
+                }}
               />
+              {nameError && (
+                <div className="text-red-500 text-sm">{nameError}</div>
+              )}
               <input
                 type="text"
                 className="payment-cash p-4 text-xl w-half border rounded-xl shadow"
@@ -504,12 +509,14 @@ export default function PaymentModal({ total, onClose, onConfirm, cart_data }) {
               disabled={
                 (paymentType === "cash" && remaining > 0) ||
                 (paymentType === "split" && cashApplied <= 0) ||
-                !customerName ||
-                !customerMobile
+                mobileError ||
+                customerMobile.length !== 10
               }
               onClick={handleConfirm}
               className={`rounded-xl text-white font-bold ${
-                paymentType === "cash" && remaining > 0
+                (paymentType === "cash" && remaining > 0) ||
+                mobileError ||
+                customerMobile.length !== 10
                   ? "bg-gray-400 cursor-not-allowed"
                   : "bg-green-600 hover:bg-green-700"
               }`}
