@@ -71,12 +71,12 @@ const ReceiptModal = forwardRef(
             <div style={styles.dash} />
             {items.map((item, i) => (
               <div key={i} style={styles.itemRow}>
-                <span style={{ flex: 2 }}>{item.name}</span>
-                <span style={{ flex: 1 }}>{item.mrp}</span>
-                <span style={{ flex: 1 }}>{format(item.selling)}</span>
-                <span style={{ flex: 1, textAlign: "center" }}>{item.qty}</span>
+                <span style={{ flex: 2 }}>{item.name ?? ""}</span>
+                <span style={{ flex: 1 }}>{item.mrp ?? ""}</span>
+                <span style={{ flex: 1 }}>{format(item.selling ?? "")}</span>
+                <span style={{ flex: 1, textAlign: "center" }}>{item.qty ?? ""}</span>
                 <span style={{ flex: 1, textAlign: "right" }}>
-                  {format(item.amount)}
+                  {format(item.amount) ?? ""}
                 </span>
 
                 {/* Price override note — only shown if overridden */}
@@ -118,7 +118,7 @@ const ReceiptModal = forwardRef(
                     .filter((item) => item.is_price_overridden)
                     .map((item, i) => (
                       <div key={i} style={styles.overrideSummaryRow}>
-                        <span style={{ flex: 2 }}>{item.name}</span>
+                        <span style={{ flex: 2 }}>{item.name ?? ""}</span>
                         <span
                           style={{
                             flex: 1,

@@ -21,6 +21,11 @@ const getAuthHeader = () => {
 export default function CartPanel({ cart, setCart, triggerRefresh }) {
   const history = useHistory();
   const [showPayment, setShowPayment] = useState(false);
+
+  // Initialize custom date state (Defaults to Today: YYYY-MM-DD)
+  const todayFormatted = new Date().toISOString().split("T")[0];
+  const [selectedDate, setSelectedDate] = useState(todayFormatted);
+
   localStorage.setItem("cart_detail", JSON.stringify(cart));
   const user_data = JSON.parse(localStorage.getItem("user_detail"));
   const role = user_data?.user?.role;
@@ -88,7 +93,6 @@ export default function CartPanel({ cart, setCart, triggerRefresh }) {
   };
 
   // ── Price Override Handlers ──
-
   const startPriceEdit = (item) => {
     setPriceOverrides((prev) => ({
       ...prev,
@@ -128,11 +132,11 @@ export default function CartPanel({ cart, setCart, triggerRefresh }) {
       prev.map((i) =>
         i.cart_key === item.cart_key
           ? {
-            ...i,
-            selling_price: newPrice,
-            original_price: i.original_price || i.selling_price,
-            is_price_overridden: true,
-          }
+              ...i,
+              selling_price: newPrice,
+              original_price: i.original_price || i.selling_price,
+              is_price_overridden: true,
+            }
           : i,
       ),
     );
@@ -153,10 +157,10 @@ export default function CartPanel({ cart, setCart, triggerRefresh }) {
       prev.map((i) =>
         i.cart_key === item.cart_key
           ? {
-            ...i,
-            selling_price: i.original_price,
-            is_price_overridden: false,
-          }
+              ...i,
+              selling_price: i.original_price,
+              is_price_overridden: false,
+            }
           : i,
       ),
     );
@@ -169,7 +173,7 @@ export default function CartPanel({ cart, setCart, triggerRefresh }) {
         product_id: i.product_id || i.id,
         inventory_id: i.inventory_id || i.inventoryId,
         qty: i.qty,
-        selling_price: i.selling_price, // overridden price sent here
+        selling_price: i.selling_price,
         original_price: i.original_price || i.selling_price,
         is_price_overridden: i.is_price_overridden || false,
       }));
@@ -186,11 +190,13 @@ export default function CartPanel({ cart, setCart, triggerRefresh }) {
         customer = payloadOrPayments.customer || null;
       }
 
-      const createPayload = { lines };
+      // Include selected_date inside the backend payload
+      const createPayload = {
+        lines,
+        selected_date: selectedDate, // Custom date sent to Laravel
+      };
       if (payment_type) createPayload.payment_type = payment_type;
       if (customer) createPayload.customer = customer;
-
-      console.log("Payload being sent:", createPayload);
 
       const res = await createSalesBill(createPayload);
       const billId = res.data.data.id;
@@ -220,8 +226,6 @@ export default function CartPanel({ cart, setCart, triggerRefresh }) {
     }
   };
 
-  // Final step after the shift is successfully closed on the backend —
-  // clears the session and sends the cashier back to the login screen.
   const finishLogout = async () => {
     try {
       const user_detail = localStorage.getItem("user_detail");
@@ -253,8 +257,6 @@ export default function CartPanel({ cart, setCart, triggerRefresh }) {
     history.push("/cashier_login");
   };
 
-  // Break: lock the screen without closing the shift.
-  // Clears only the UI session — the shift record stays open on the backend.
   const handleBreak = async () => {
     try {
       const user_detail = localStorage.getItem("user_detail");
@@ -271,14 +273,13 @@ export default function CartPanel({ cart, setCart, triggerRefresh }) {
         },
       );
     } catch (error) {
-      // Ignore logout API errors — still lock the screen
+      // Ignore logout API errors
     }
 
     localStorage.clear();
     sessionStorage.clear();
     history.push("/cashier_login");
   };
-
 
   const handleEndShiftClick = (e) => {
     e.preventDefault();
@@ -294,7 +295,6 @@ export default function CartPanel({ cart, setCart, triggerRefresh }) {
     setShowEndShift(true);
   };
 
-  // Called by EndShiftModal once /close-register succeeds.
   const handleShiftClosed = () => {
     setShowEndShift(false);
     finishLogout();
@@ -332,36 +332,40 @@ export default function CartPanel({ cart, setCart, triggerRefresh }) {
     <>
       <div className="w-1/3 bg-gray-50 border-l shadow-2xl p-10 flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between mb-10">
+        <div className="flex items-center justify-between mb-6">
           <div className="flex flex-col gap-2">
-    <h2 className="font-extrabold text-5xl">Cart</h2>
-    {/* Shift status badge — only shown for cashiers */}
-    {role === "cashier" && (
-      <span style={{
-        display: "inline-flex",
-        alignItems: "center",
-        gap: "6px",
-        background: "#f0fdf4",
-        border: "1px solid #bbf7d0",
-        color: "#15803d",
-        borderRadius: "20px",
-        padding: "3px 12px",
-        fontSize: "13px",
-        fontWeight: 600,
-        width: "fit-content",
-      }}>
-        <span style={{
-          width: "8px", height: "8px",
-          borderRadius: "50%",
-          background: "#22c55e",
-          display: "inline-block",
-          boxShadow: "0 0 0 2px rgba(34,197,94,0.3)",
-          animation: "pulse 2s infinite",
-        }} />
-        Shift Open
-      </span>
-    )}
-  </div>
+            <h2 className="font-extrabold text-5xl">Cart</h2>
+            {role === "cashier" && (
+              <span
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  background: "#f0fdf4",
+                  border: "1px solid #bbf7d0",
+                  color: "#15803d",
+                  borderRadius: "20px",
+                  padding: "3px 12px",
+                  fontSize: "13px",
+                  fontWeight: 600,
+                  width: "fit-content",
+                }}
+              >
+                <span
+                  style={{
+                    width: "8px",
+                    height: "8px",
+                    borderRadius: "50%",
+                    background: "#22c55e",
+                    display: "inline-block",
+                    boxShadow: "0 0 0 2px rgba(34,197,94,0.3)",
+                    animation: "pulse 2s infinite",
+                  }}
+                />
+                Shift Open
+              </span>
+            )}
+          </div>
 
           {role !== "cashier" ? (
             <Link
@@ -372,14 +376,12 @@ export default function CartPanel({ cart, setCart, triggerRefresh }) {
             </Link>
           ) : (
             <div className="flex flex-row gap-2 items-end">
-              {/* Break — locks screen, shift stays open */}
               <button
                 onClick={handleBreak}
                 className="px-6 py-3 text-2xl rounded-xl bg-red-500 hover:bg-yellow-600 text-white font-semibold shadow-md transition"
               >
                 🔒 Break
               </button>
-              {/* End Shift — opens modal to close shift + logout */}
               <button
                 onClick={handleEndShiftClick}
                 className="px-6 py-3 text-2xl rounded-xl bg-green-600 hover:bg-red-700 text-white font-semibold shadow-md transition"
@@ -388,6 +390,17 @@ export default function CartPanel({ cart, setCart, triggerRefresh }) {
               </button>
             </div>
           )}
+        </div>
+
+        {/* 3. Date Selection Input Section */}
+        <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 mb-6 flex items-center justify-between">
+          <label className="text-xl font-bold text-gray-700">Bill Date:</label>
+          <input
+            type="date"
+            value={selectedDate}
+            onChange={(e) => setSelectedDate(e.target.value)}
+            className="px-4 py-2 border rounded-xl text-xl font-semibold bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
         </div>
 
         {/* Cart Items */}
@@ -412,14 +425,13 @@ export default function CartPanel({ cart, setCart, triggerRefresh }) {
               return (
                 <div
                   key={`${item.inventory_id}_${item.selling_price}`}
-                  className="bg-white p-3 rounded-xl shadow border border-gray-100"
+                  className="bg-white p-3 rounded-xl shadow border border-gray-100 mb-3"
                   style={{
                     border: isOverridden
                       ? "2px solid #f59e0b"
                       : "2px solid transparent",
                   }}
                 >
-                  {/* Top row: name + override badge */}
                   <div className="flex items-center justify-between mb-3">
                     <p
                       className="font-bold"
@@ -496,12 +508,9 @@ export default function CartPanel({ cart, setCart, triggerRefresh }) {
                     </div>
                   </div>
 
-                  {/* Price row */}
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex flex-col gap-1">
                       <div className="flex items-center gap-2 flex-wrap">
-                        {/* Unit price — editable */}
-
                         <span
                           className="text-gray-600"
                           style={{ fontSize: "14px" }}
@@ -509,7 +518,6 @@ export default function CartPanel({ cart, setCart, triggerRefresh }) {
                           Unit Price:
                         </span>
 
-                        {/* Original price crossed out if overridden */}
                         {isOverridden && (
                           <span
                             style={{
@@ -522,7 +530,6 @@ export default function CartPanel({ cart, setCart, triggerRefresh }) {
                           </span>
                         )}
 
-                        {/* Editable price input or display */}
                         {isEditing ? (
                           <div className="flex items-center gap-2">
                             <input
@@ -554,7 +561,6 @@ export default function CartPanel({ cart, setCart, triggerRefresh }) {
                                 outline: "none",
                               }}
                             />
-                            {/* Confirm */}
                             <button
                               onClick={() => confirmPriceOverride(item)}
                               style={{
@@ -570,7 +576,6 @@ export default function CartPanel({ cart, setCart, triggerRefresh }) {
                             >
                               ✓
                             </button>
-                            {/* Cancel */}
                             <button
                               onClick={() => cancelPriceEdit(item)}
                               style={{
@@ -609,7 +614,6 @@ export default function CartPanel({ cart, setCart, triggerRefresh }) {
                           </span>
                         )}
 
-                        {/* Edit / Reset button — only for admin/manager */}
                         {canOverridePrice && !isEditing && (
                           <>
                             <button
@@ -664,6 +668,7 @@ export default function CartPanel({ cart, setCart, triggerRefresh }) {
               );
             })
           )}
+
           {/* Total + Checkout */}
           <div className="pt-8 border-t mt-8">
             <div className="flex justify-between text-4xl font-extrabold mb-8">
@@ -673,15 +678,16 @@ export default function CartPanel({ cart, setCart, triggerRefresh }) {
             <button
               onClick={() => setShowPayment(true)}
               disabled={cart.length === 0}
-              className={`w-full bg-gradient-to-r from-green-500 to-green-700 hover:from-green-600 hover:to-green-800 text-white p-6 rounded-3xl text-4xl font-extrabold shadow-2xl ${cart.length === 0 ? "cursor-not-allowed" : ""
-                }`}
+              className={`w-full bg-gradient-to-r from-green-500 to-green-700 hover:from-green-600 hover:to-green-800 text-white p-6 rounded-3xl text-4xl font-extrabold shadow-2xl ${
+                cart.length === 0 ? "cursor-not-allowed" : ""
+              }`}
             >
               Checkout
             </button>
 
             <button
               onClick={() => history.push("/customer-dues")}
-              className={`w-full bg-gradient-to-r bg-blue-600 hover:bg-blue-700 hover:from-blue-600 hover:to-blue-800 text-white p-6 rounded-3xl text-4xl font-extrabold shadow-2xl mt-6`}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white p-6 rounded-3xl text-4xl font-extrabold shadow-2xl mt-6"
             >
               Customer Dues
             </button>

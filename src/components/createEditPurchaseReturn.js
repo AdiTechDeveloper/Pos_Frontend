@@ -5,6 +5,7 @@ import { Formik, Form, Field, ErrorMessage, FieldArray } from "formik";
 import * as Yup from "yup";
 import Layout from "./layout";
 import { toast } from "react-toastify";
+import FormikDatePicker from "./FormikDatePicker";
 
 const CreateEditPurchaseReturn = () => {
   const BASE_URL = process.env.REACT_APP_API_BASE_URL;
@@ -294,14 +295,14 @@ const CreateEditPurchaseReturn = () => {
                       <div className="mb-20 col-md-6">
                         <label
                           className="mb-8 purchase-label"
-                          style={{ fontSize: "15px" }}
+                          style={{ fontSize: "15px", display: "block" }}
                         >
                           Return Date
                         </label>
-                        <Field
-                          type="date"
+                        <FormikDatePicker
                           name="return_date"
-                          className="mb-6"
+                          placeholder="dd-mm-yyyy"
+                          className="form-control"
                         />
                         <ErrorMessage
                           name="return_date"

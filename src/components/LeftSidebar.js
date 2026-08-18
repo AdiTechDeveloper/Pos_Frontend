@@ -22,11 +22,10 @@ export default function LeftSidebar({
   const [activeCategory, setActiveCategory] = useState(null);
   const [activeBrand, setActiveBrand] = useState(null);
 
-  const userDetailString = localStorage.getItem("user_detail"); 
+  const userDetailString = localStorage.getItem("user_detail");
   const user_detail = userDetailString ? JSON.parse(userDetailString) : null;
   const role = user_detail?.user?.role;
 
-  console.log(role)
   const handleCategory = (id) => {
     setActiveCategory(id);
     setCategory(id);
@@ -56,7 +55,10 @@ export default function LeftSidebar({
       {role !== "cashier" && (
         <div className="p-8 border-b">
           <a href="/dashboard">
-            <p className="font-size-24px font-bold text-gray-800"> ⬅️ Back To Dashboard</p>
+            <p className="font-size-24px font-bold text-gray-800">
+              {" "}
+              ⬅️ Back To Dashboard
+            </p>
           </a>
         </div>
       )}
@@ -79,9 +81,10 @@ export default function LeftSidebar({
                 key={c.id}
                 onClick={() => handleCategory(c.id)}
                 className={`w-full text-left px-6 py-4 rounded-2xl font-bold text-2xl transition-all duration-200
-                  ${activeCategory === c.id
-                    ? "bg-blue-600 text-white shadow-xl transform scale-105"
-                    : "bg-gray-100 hover:bg-blue-100 text-gray-700"
+                  ${
+                    activeCategory === c.id
+                      ? "bg-blue-600 text-white shadow-xl transform scale-105"
+                      : "bg-gray-100 hover:bg-blue-100 text-gray-700"
                   }
                 `}
               >
@@ -100,9 +103,10 @@ export default function LeftSidebar({
                 key={b.id}
                 onClick={() => handleBrand(b.id)}
                 className={`w-full text-left px-6 py-4 rounded-2xl font-bold text-2xl transition-all duration-200
-                  ${activeBrand === b.id
-                    ? "bg-green-600 text-white shadow-xl transform scale-105"
-                    : "bg-gray-100 hover:bg-green-100 text-gray-800"
+                  ${
+                    activeBrand === b.id
+                      ? "bg-green-600 text-white shadow-xl transform scale-105"
+                      : "bg-gray-100 hover:bg-green-100 text-gray-800"
                   }
                 `}
               >

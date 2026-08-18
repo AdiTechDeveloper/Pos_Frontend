@@ -7,6 +7,7 @@ import * as Yup from "yup";
 import Layout from "./layout";
 import { toast } from "react-toastify";
 import ProductForm from "./ProductForm";
+import FormikDatePicker from "./FormikDatePicker";
 
 const ledgerStyles = `
   :root {
@@ -694,12 +695,27 @@ const CreateEditPurchaseBill = () => {
     return () => window.removeEventListener("keydown", handler);
   }, []);
 
+  const parseDateString = (value, originalValue) => {
+    if (typeof originalValue === "string" && originalValue.trim() !== "") {
+      const parts = originalValue.split("-");
+      if (parts.length === 3) {
+        const [day, month, year] = parts.map(Number);
+        // JS months are 0-indexed (0 = Jan, 1 = Feb, etc.)
+        return new Date(year, month - 1, day);
+      }
+    }
+    return value;
+  };
+
   // ── Validation Schema ──
   const validationSchema = Yup.object().shape({
     branch_id: Yup.string().required("Branch is required"),
     supplier_id: Yup.string().required("Supplier is required"),
     bill_no: Yup.string().required("Bill No is required"),
-    bill_date: Yup.date().required("Bill date is required"),
+    bill_date: Yup.date()
+      .transform(parseDateString)
+      .typeError("Invalid date format")
+      .required("Bill date is required"),
     tax_type: Yup.string().oneOf(["inclusive", "exclusive"]).required(),
     settlement_amount: Yup.number().nullable().min(0, "Cannot be negative"),
     notes: Yup.string().nullable(),
@@ -740,10 +756,9 @@ const CreateEditPurchaseBill = () => {
             .min(0, "Discount cannot be negative"),
           gst_rate_id: Yup.string().required("GST rate required"),
           expiry_date: Yup.date()
-            .nullable()
-            .transform((value, originalValue) =>
-              originalValue === "" ? null : value,
-            ),
+            .transform(parseDateString)
+            .typeError("Invalid date format")
+            .required("Expiry date is required"),
           is_opening: Yup.boolean().default(false),
         }),
       ),
@@ -1079,7 +1094,7 @@ const CreateEditPurchaseBill = () => {
 
                       <div className="mb-20 col-md-4">
                         <label className="pb-field-label">Bill Date</label>
-                        <Field type="date" name="bill_date" />
+                        <FormikDatePicker type="date" name="bill_date" />
                         <ErrorMessage
                           name="bill_date"
                           className="error-text"
@@ -1360,9 +1375,9 @@ const CreateEditPurchaseBill = () => {
                                 {/* Expiry */}
                                 <div className="field-col">
                                   <small className="field-label">Expiry</small>
-                                  <Field
-                                    type="date"
+                                  <FormikDatePicker
                                     name={`lines.${index}.expiry_date`}
+                                    placeholder="dd-mm-yyyy"
                                   />
                                   <ErrorMessage
                                     name={`lines.${index}.expiry_date`}

@@ -51,26 +51,31 @@ const SupplierBill = () => {
       name: "Name",
       selector: (row) => row.name,
       sortable: true,
+      wrap: true,
     },
     {
       name: "GstIn",
       selector: (row) => row.gstin,
       sortable: true,
+      wrap: true,
     },
     {
       name: "Contact",
       selector: (row) => row.contact,
       sortable: true,
+      wrap: true,
     },
     {
       name: "Address",
       selector: (row) => row.address,
       sortable: true,
+      wrap: true,
     },
     {
       name: "State",
       selector: (row) => row.state,
       sortable: true,
+      wrap: true,
     },
     {
       name: "Action",

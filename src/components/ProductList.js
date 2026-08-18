@@ -49,6 +49,7 @@ export default function ProductList({
 
               batch_no: inv.batch_no,
               selling_price: Number(inv.selling_price),
+              expiry_date: inv.expiry_date || null, // Pick expiry date
 
               stock: 0,
               free_qty: 0,
@@ -58,6 +59,15 @@ export default function ProductList({
               inventories: [], // keep ids for cart logic
               is_opening: inv.is_opening,
             };
+          } else {
+            // Keep the earliest non-null expiry date if multiple inventory lines share the batch/price
+            if (
+              inv.expiry_date &&
+              (!grouped[key].expiry_date ||
+                new Date(inv.expiry_date) < new Date(grouped[key].expiry_date))
+            ) {
+              grouped[key].expiry_date = inv.expiry_date;
+            }
           }
 
           grouped[key].stock += Number(inv.available_qty);
@@ -71,6 +81,7 @@ export default function ProductList({
             qty: Number(inv.available_qty),
             free: inv.free,
             gst_rate: inv.gst_rate,
+            expiry_date: inv.expiry_date,
           });
         });
 
@@ -119,6 +130,7 @@ export default function ProductList({
 
         batch_no: b.batch_no,
         selling_price: Number(b.selling_price),
+        expiry_date: b.expiry_date || null,
 
         stock: Number(b.total_stock),
         free_qty: 0,
@@ -151,6 +163,15 @@ export default function ProductList({
     } finally {
       setBarcode("");
     }
+  };
+
+  // Helper function to check if date is within 30 days
+  const isNearExpiry = (dateStr) => {
+    if (!dateStr) return false;
+    const expiry = new Date(dateStr);
+    const today = new Date();
+    const diffDays = (expiry - today) / (1000 * 60 * 60 * 24);
+    return diffDays <= 30;
   };
 
   return (
@@ -215,63 +236,82 @@ export default function ProductList({
         )}
 
         {!loading &&
-          products.map((p) => (
-            <div
-              key={`${p.product_id}-${p.batch_no}-${p.selling_price}`}
-              onClick={() => {
-                if (p.stock > 0) {
-                  const inventory = p.inventories[0];
-                  const actualId =
-                    p.inventories[0].inventory_id || p.inventories[0].id;
+          products.map((p) => {
+            const nearExpiry = isNearExpiry(p.expiry_date);
+            return (
+              <div
+                key={`${p.product_id}-${p.batch_no}-${p.selling_price}`}
+                onClick={() => {
+                  if (p.stock > 0) {
+                    const actualId =
+                      p.inventories[0].inventory_id || p.inventories[0].id;
 
-                  addToCart({
-                    ...p,
-                    inventory_id: actualId,
-                    gst_percent: Number(p.gst_percent),
-                    gst_inclusive: Number(p.gst_inclusive),
-                    qty: 1,
-                  });
-                }
-              }}
-              className={`p-6 rounded-3xl shadow-2xl flex flex-col justify-between mb-15 transition
-        ${p.stock > 0 ? "cursor-pointer hover:scale-105" : "opacity-50"}
-      `}
-              style={{
-                background: p.is_opening ? "#ecfdf5" : "#ffffff",
-                border: p.is_opening
-                  ? "2px solid #10b981"
-                  : "1px solid #e5e7eb",
-              }}
-            >
-              <div>
-                <h3 className="font-extrabold text-3xl">{p.name}</h3>
-                <p className="text-xl text-gray-600">{p.brand?.name}</p>
-                <p className="text-lg text-gray-500">Batch: {p.batch_no}</p>
+                    addToCart({
+                      ...p,
+                      inventory_id: actualId,
+                      gst_percent: Number(p.gst_percent),
+                      gst_inclusive: Number(p.gst_inclusive),
+                      qty: 1,
+                    });
+                  }
+                }}
+                className={`p-6 rounded-3xl shadow-2xl flex flex-col justify-between mb-15 transition
+          ${p.stock > 0 ? "cursor-pointer hover:scale-105" : "opacity-50"}
+        `}
+                style={{
+                  background: p.is_opening ? "#ecfdf5" : "#ffffff",
+                  border: nearExpiry
+                    ? "2px solid #ef4444"
+                    : p.is_opening
+                      ? "2px solid #10b981"
+                      : "1px solid #e5e7eb",
+                }}
+              >
+                <div>
+                  <div className="flex justify-between items-start">
+                    <h3 className="font-extrabold text-3xl">{p.name}</h3>
+                    {p.expiry_date && (
+                      <span
+                        className={`px-3 py-1 rounded-lg text-sm font-bold ${
+                          nearExpiry
+                            ? "bg-red-100 text-red-800" // Removed animate-pulse
+                            : "bg-gray-100 text-gray-700"
+                        }`}
+                      >
+                        Exp:{" "}
+                        {new Date(p.expiry_date).toLocaleDateString("en-IN")}
+                      </span>
+                    )}
+                  </div>
 
-                {p.free_qty > 0 && (
-                  <span className="inline-block mt-2 px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-bold">
-                    FREE QTY: {p.free_qty}
+                  <p className="text-xl text-gray-600 mt-1">{p.brand?.name}</p>
+                  <p className="text-lg text-gray-500">Batch: {p.batch_no}</p>
+
+                  {p.free_qty > 0 && (
+                    <span className="inline-block mt-2 px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-bold">
+                      FREE QTY: {p.free_qty}
+                    </span>
+                  )}
+                </div>
+
+                <div className="mt-4 flex justify-between items-center">
+                  <span className="text-3xl font-bold text-blue-700">
+                    ₹{p.selling_price}
                   </span>
-                )}
-              </div>
 
-              <div className="mt-4 flex justify-between items-center">
-                <span className="text-3xl font-bold text-blue-700">
-                  ₹{p.selling_price}
-                </span>
-
-                <span
-                  className={`px-4 py-2 rounded-full text-xl font-semibold ${
-                    p.stock < 5
-                      ? "bg-red-100 text-red-700"
-                      : "bg-green-100 text-green-700"
-                  }`}
-                >
-                  {p.stock} in stock
-                </span>
+                  <span
+                    className={`px-4 py-2 rounded-full text-xl font-semibold ${
+                      p.stock < 5
+                        ? "bg-red-100 text-red-700"
+                        : "bg-green-100 text-green-700"
+                    }`}
+                  >
+                    {p.stock} in stock
+                  </span>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
       </div>
 
       {showBatchModal && (

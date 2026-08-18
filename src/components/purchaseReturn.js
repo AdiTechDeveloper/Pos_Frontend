@@ -31,36 +31,46 @@ const PurchaseReturn = () => {
       name: "Purchase Bill No",
       selector: (row) => row?.purchase_bill?.bill_no,
       sortable: true,
+      wrap: true,
     },
     {
       name: "Branch Name",
       selector: (row) => row.branch.name,
       sortable: true,
+      wrap: true,
     },
     {
       name: "Supplier Name",
       selector: (row) => row.supplier.name,
       sortable: true,
+      wrap: true,
     },
     {
       name: "Return Date",
-      selector: (row) => row.return_date,
+      selector: (row) => {
+        const date = new Date(row.return_date);
+        return date.toLocaleDateString("en-GB");
+      },
       sortable: true,
+      wrap: true,
     },
     {
       name: "Total Gst",
       selector: (row) => row.total_gst,
       sortable: true,
+      wrap: true,
     },
     {
       name: "Total Amount",
       selector: (row) => row.total_amount,
       sortable: true,
+      wrap: true,
     },
     {
       name: "Return Type",
       selector: (row) => row.return_type,
       sortable: true,
+      wrap: true,
     },
   ];
 

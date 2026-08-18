@@ -191,6 +191,7 @@ const Product = () => {
       selector: (row) => row.sku,
       sortable: true,
       width: "120px",
+      wrap: true,
     },
 
     {
@@ -218,6 +219,7 @@ const Product = () => {
       selector: (row) => row?.name,
       sortable: true,
       minWidth: "220px",
+      wrap: true,
     },
 
     {
@@ -225,6 +227,7 @@ const Product = () => {
       selector: (row) => row?.brand?.name,
       sortable: true,
       minWidth: "120px",
+      wrap: true,
     },
 
     {
@@ -232,6 +235,7 @@ const Product = () => {
       selector: (row) => row?.category?.name,
       sortable: true,
       minWidth: "100px",
+      wrap: true,
     },
 
     {
@@ -239,6 +243,7 @@ const Product = () => {
       selector: (row) => row?.hsn_code,
       sortable: true,
       width: "100px",
+      wrap: true,
     },
 
     {
@@ -246,6 +251,7 @@ const Product = () => {
       selector: (row) => row?.gst_rate?.rate,
       sortable: true,
       width: "90px",
+      wrap: true,
     },
 
     {
@@ -253,20 +259,44 @@ const Product = () => {
       selector: (row) => row.mrp,
       sortable: true,
       width: "80px",
+      wrap: true,
     },
 
     {
-      name: "SP",
+      name: (
+        <div
+          style={{
+            whiteSpace: "normal",
+            wordBreak: "break-word",
+            textAlign: "center",
+            lineHeight: "1.2",
+          }}
+        >
+          Selling Price
+        </div>
+      ),
       selector: (row) => row.selling_price,
       sortable: true,
-      width: "80px",
+      width: "100px",
+      wrap: true,
     },
 
     {
-      name: "GST Included",
+      name: (
+        <div
+          style={{
+            whiteSpace: "normal",
+            wordBreak: "break-word",
+            textAlign: "center",
+            lineHeight: "1.2",
+          }}
+        >
+          GST Included
+        </div>
+      ),
       sortable: true,
       center: true,
-      width: "130px",
+      width: "100px",
       cell: (row) => {
         const isYes = row?.gst_inclusive === true || row?.gst_inclusive === 1;
 

@@ -58,12 +58,6 @@ const PurchaseBill = () => {
       cell: (row, index) => (currentPage - 1) * perPage + index + 1,
       width: "60px",
     },
-    // {
-    //   name: "Branch Name",
-    //   selector: (row) => row.branch?.name,
-    //   sortable: true,
-    //   width: "180px",
-    // },
     {
       name: "Action",
       width: "120px",
@@ -88,16 +82,25 @@ const PurchaseBill = () => {
       ),
     },
     {
+      name: "Inward No.",
+      selector: (row) => row.inward_no,
+      sortable: true,
+      width: "180px",
+      wrap: true,
+    },
+    {
       name: "Supplier Name",
       selector: (row) => row.supplier?.name,
       sortable: true,
       width: "200px",
+      wrap: true,
     },
     {
       name: "Bill No",
       selector: (row) => row.bill_no,
       sortable: true,
       width: "150px",
+      wrap: true,
       cell: (row) => (
         <span style={row.is_lost ? { color: "#ef4444", fontWeight: 600 } : {}}>
           {row.bill_no}
@@ -125,66 +128,96 @@ const PurchaseBill = () => {
       selector: (row) => row.bill_date,
       sortable: true,
       width: "110px",
+      wrap: true,
+      cell: (row) => {
+        const date = new Date(row.bill_date);
+        return date.toLocaleDateString("en-GB");
+      },
     },
     {
       name: "Taxable Amt",
       selector: (row) => row.taxable_value,
       sortable: true,
       width: "150px",
+      wrap: true,
     },
     {
       name: "CGST",
       selector: (row) => row.cgst_amount,
       sortable: true,
       width: "90px",
+      wrap: true,
     },
     {
       name: "SGST",
       selector: (row) => row.sgst_amount,
       sortable: true,
       width: "90px",
+      wrap: true,
     },
     {
       name: "IGST",
       selector: (row) => row.igst_amount,
       sortable: true,
       width: "90px",
+      wrap: true,
     },
     {
       name: "CESS",
       selector: (row) => row.cess_amount,
       sortable: true,
       width: "90px",
+      wrap: true,
     },
     {
       name: "Total Tax",
       selector: (row) => row.total_tax,
       sortable: true,
       width: "120px",
+      wrap: true,
     },
     {
       name: "Total",
       selector: (row) => row.total_amount,
       sortable: true,
       width: "120px",
+      wrap: true,
     },
     {
       name: "Expiry Date",
       selector: (row) => row.lines?.[0]?.expiry_date ?? "—",
       sortable: true,
       width: "150px",
+      wrap: true,
+      cell: (row) => {
+        const rawDate = row.lines?.[0]?.expiry_date;
+        if (!rawDate) return "—";
+
+        const date = new Date(rawDate);
+        const formatted = date.toLocaleDateString("en-GB");
+
+        const isExpired = date < new Date();
+
+        return (
+          <span style={{ color: isExpired ? "red" : "inherit" }}>
+            {formatted}
+          </span>
+        );
+      },
     },
     {
       name: "Settlement Amount",
       selector: (row) => row.settlement_amount ?? "00",
       sortable: true,
       width: "200px",
+      wrap: true,
     },
     {
       name: "Settlement Note",
       selector: (row) => row.notes ?? "-",
       sortable: true,
       width: "200px",
+      wrap: true,
     },
   ];
 
@@ -213,6 +246,7 @@ const PurchaseBill = () => {
         ${item.id}
         ${item.branch?.name}
         ${item.supplier?.name}
+        ${item.inward_no}
         ${item.bill_no}
         ${item.bill_date}
         ${item.taxable_value}
