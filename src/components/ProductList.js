@@ -88,6 +88,13 @@ export default function ProductList({
         return Object.values(grouped);
       });
 
+      flatProducts.sort((a, b) => {
+        if (!a.expiry_date && !b.expiry_date) return 0;
+        if (!a.expiry_date) return 1;
+        if (!b.expiry_date) return -1;
+        return new Date(a.expiry_date) - new Date(b.expiry_date);
+      });
+
       setProducts(flatProducts);
     } catch (e) {
       console.error("Failed to load products");
@@ -166,16 +173,28 @@ export default function ProductList({
   };
 
   // Helper function to check if date is within 30 days
-  const isNearExpiry = (dateStr) => {
-    if (!dateStr) return false;
-    const expiry = new Date(dateStr);
-    const today = new Date();
-    const diffDays = (expiry - today) / (1000 * 60 * 60 * 24);
-    return diffDays <= 30;
+  const getExpiryStatus = (dateStr) => {
+    if (!dateStr) return null;
+    const diffDays = Math.ceil(
+      (new Date(dateStr) - new Date()) / (1000 * 60 * 60 * 24),
+    );
+    if (diffDays <= 7) return { level: "critical", diffDays };
+    if (diffDays <= 30) return { level: "warning", diffDays };
+    return null;
   };
+
+  const criticalCount = products.filter(
+    (p) => getExpiryStatus(p.expiry_date)?.level === "critical",
+  ).length;
 
   return (
     <div className="flex-1 p-6 overflow-y-auto bg-gray-50">
+      {criticalCount > 0 && (
+        <div className="mb-6 bg-red-600 text-white p-4 rounded-2xl shadow-lg flex items-center gap-3 font-bold text-xl">
+          ⚠️ {criticalCount} product{criticalCount > 1 ? "s" : ""} expiring
+          within 7 days — sold these first!
+        </div>
+      )}
       <div className="flex gap-6 mb-40">
         <input
           ref={barcodeRef}
@@ -237,14 +256,18 @@ export default function ProductList({
 
         {!loading &&
           products.map((p) => {
-            const nearExpiry = isNearExpiry(p.expiry_date);
+            const expiryStatus = getExpiryStatus(p.expiry_date);
+            const isCritical = expiryStatus?.level === "critical";
+            const isWarning = expiryStatus?.level === "warning";
+
             return (
               <div
                 key={`${p.product_id}-${p.batch_no}-${p.selling_price}`}
                 onClick={() => {
                   if (p.stock > 0) {
                     const actualId =
-                      p.inventories[0].inventory_id || p.inventories[0].id;
+                      p.inventories?.[0]?.inventory_id ||
+                      p.inventories?.[0]?.id;
 
                     addToCart({
                       ...p,
@@ -255,31 +278,46 @@ export default function ProductList({
                     });
                   }
                 }}
-                className={`p-6 rounded-3xl shadow-2xl flex flex-col justify-between mb-15 transition
-          ${p.stock > 0 ? "cursor-pointer hover:scale-105" : "opacity-50"}
-        `}
+                className={`p-6 rounded-3xl shadow-2xl flex flex-col justify-between mb-15 transition relative ${
+                  p.stock > 0 ? "cursor-pointer hover:scale-105" : "opacity-50"
+                } ${isCritical ? "animate-pulse" : ""}`}
                 style={{
-                  background: p.is_opening ? "#ecfdf5" : "#ffffff",
-                  border: nearExpiry
-                    ? "2px solid #ef4444"
-                    : p.is_opening
-                      ? "2px solid #10b981"
-                      : "1px solid #e5e7eb",
+                  background: isCritical
+                    ? "#fef2f2"
+                    : isWarning
+                      ? "#fffbeb"
+                      : p.is_opening
+                        ? "#ecfdf5"
+                        : "#ffffff",
+                  border: isCritical
+                    ? "2px solid #dc2626"
+                    : isWarning
+                      ? "2px solid #f59e0b"
+                      : p.is_opening
+                        ? "2px solid #10b981"
+                        : "1px solid #e5e7eb",
                 }}
               >
+                {isCritical && (
+                  <span className="absolute -top-3 -right-3 bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg z-10">
+                    🔥 Sell First
+                  </span>
+                )}
+
                 <div>
                   <div className="flex justify-between items-start">
                     <h3 className="font-extrabold text-3xl">{p.name}</h3>
-                    {p.expiry_date && (
+                    {expiryStatus && (
                       <span
                         className={`px-3 py-1 rounded-lg text-sm font-bold ${
-                          nearExpiry
-                            ? "bg-red-100 text-red-800" // Removed animate-pulse
-                            : "bg-gray-100 text-gray-700"
+                          isCritical
+                            ? "bg-red-600 text-white"
+                            : "bg-orange-100 text-orange-800"
                         }`}
                       >
-                        Exp:{" "}
-                        {new Date(p.expiry_date).toLocaleDateString("en-IN")}
+                        {expiryStatus.diffDays <= 0
+                          ? "Expires Today"
+                          : `${expiryStatus.diffDays}d left`}
                       </span>
                     )}
                   </div>

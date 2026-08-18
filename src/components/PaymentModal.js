@@ -62,23 +62,44 @@ export default function PaymentModal({ total, onClose, onConfirm, cart_data }) {
     payments = [];
 
     if (paymentType === "cash") {
-      if (!cashGiven || parse(cashGiven) < total) {
-        alert("Insufficient cash amount");
+      if (!cashGiven || parse(cashGiven) <= 0) {
+        alert("Enter cash amount received");
+        return;
+      }
+
+      const cashAmt = Math.min(parse(cashGiven), total);
+      const dueAmt = Math.max(total - cashAmt, 0);
+
+      if (dueAmt > 0 && !customerMobile) {
+        alert("Mobile number required for partial payment (due amount)");
         return;
       }
 
       payments.push({
         method: "cash",
-        amount: total,
+        amount: cashAmt,
         cash_received: parse(cashGiven),
         balance_return: Math.max(parse(cashGiven) - total, 0),
       });
     }
 
     if (paymentType === "online") {
+      if (!cashGiven || parse(cashGiven) <= 0) {
+        alert("Enter online amount received");
+        return;
+      }
+
+      const onlineAmt = Math.min(parse(cashGiven), total);
+      const dueAmt = Math.max(total - onlineAmt, 0);
+
+      if (dueAmt > 0 && !customerMobile) {
+        alert("Mobile number required for partial payment (due amount)");
+        return;
+      }
+
       payments.push({
         method: "online",
-        amount: total,
+        amount: onlineAmt,
         transaction_id: "",
       });
     }
@@ -277,17 +298,23 @@ export default function PaymentModal({ total, onClose, onConfirm, cart_data }) {
 
           {/* MIDDLE AREA */}
           <div className="col-span-1">
-            {(paymentType === "cash" || paymentType === "split") && (
+            {(paymentType === "cash" ||
+              paymentType === "split" ||
+              paymentType === "online") && (
               <>
                 <h2 className="text-3xl font-extrabold text-slate-800 tracking-tight">
-                  Enter Amount
+                  Enter Amount{" "}
+                  {paymentType === "online" ? "(Online Received)" : ""}
                 </h2>
-
                 <div>
                   <input
                     type="number"
                     className="payment-cash p-4 text-2xl text-center border rounded-xl shadow mb-20"
-                    placeholder="Cash Received"
+                    placeholder={
+                      paymentType === "online"
+                        ? "Online Amount Received"
+                        : "Cash Received"
+                    }
                     value={cashGiven ?? ""}
                     onChange={(e) =>
                       setCashGiven(
@@ -436,6 +463,13 @@ export default function PaymentModal({ total, onClose, onConfirm, cart_data }) {
                 <strong>Change: </strong> ₹{balanceReturn.toFixed(2)}
               </div>
             )}
+
+            {(paymentType === "cash" || paymentType === "online") &&
+              remaining > 0 && (
+                <div style={{ ...amountStyle, color: "#dc2626" }}>
+                  <strong>Due (Pay Later): </strong> ₹{remaining.toFixed(2)}
+                </div>
+              )}
           </div>
         </div>
 
@@ -443,7 +477,7 @@ export default function PaymentModal({ total, onClose, onConfirm, cart_data }) {
         <>
           <div className="col-md-5">
             <div className="grid grid-cols-3 gap-3">
-              {["cash", "split"].includes(paymentType) && (
+              {["cash", "split", "online"].includes(paymentType) && (
                 <>
                   {[
                     "1",
@@ -507,18 +541,23 @@ export default function PaymentModal({ total, onClose, onConfirm, cart_data }) {
 
             <button
               disabled={
-                (paymentType === "cash" && remaining > 0) ||
-                (paymentType === "split" && cashApplied <= 0) ||
+                ((remaining > 0 || paymentType === "credit") &&
+                  customerMobile.length !== 10) ||
                 mobileError ||
-                customerMobile.length !== 10
+                ((paymentType === "cash" || paymentType === "online") &&
+                  (!cashGiven || parse(cashGiven) <= 0)) ||
+                (paymentType === "split" && cashApplied <= 0)
               }
               onClick={handleConfirm}
-              className={`rounded-xl text-white font-bold ${
-                (paymentType === "cash" && remaining > 0) ||
+              className={`rounded-xl text-white font-bold transition-colors ${
+                ((remaining > 0 || paymentType === "credit") &&
+                  customerMobile.length !== 10) ||
                 mobileError ||
-                customerMobile.length !== 10
+                ((paymentType === "cash" || paymentType === "online") &&
+                  (!cashGiven || parse(cashGiven) <= 0)) ||
+                (paymentType === "split" && cashApplied <= 0)
                   ? "bg-gray-400 cursor-not-allowed"
-                  : "bg-green-600 hover:bg-green-700"
+                  : "bg-green-600 hover:bg-green-700 cursor-pointer"
               }`}
               style={{ width: "100%", fontSize: "16px", padding: "14px 30px" }}
             >
