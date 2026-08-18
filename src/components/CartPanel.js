@@ -6,6 +6,7 @@ import { Link, useHistory } from "react-router-dom";
 import axios from "axios";
 import ReceiptModal from "./ReceiptModal";
 import EndShiftModal from "./EndShiftModal";
+import AddAdvanceModal from "./AddAdvanceModal";
 
 const BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
@@ -36,6 +37,7 @@ export default function CartPanel({ cart, setCart, triggerRefresh }) {
 
   const [priceOverrides, setPriceOverrides] = useState({});
   const [showEndShift, setShowEndShift] = useState(false);
+  const [showAddAdvance, setShowAddAdvance] = useState(false);
 
   const canOverridePrice = role === "admin" || role === "manager";
 
@@ -691,6 +693,13 @@ export default function CartPanel({ cart, setCart, triggerRefresh }) {
             >
               Customer Dues
             </button>
+
+            <button
+              onClick={() => setShowAddAdvance(true)}
+              className="w-full bg-purple-600 hover:bg-purple-700 text-white p-6 rounded-3xl text-4xl font-extrabold shadow-2xl mt-6"
+            >
+              Add Advance
+            </button>
           </div>
 
           {showPayment && (
@@ -722,6 +731,15 @@ export default function CartPanel({ cart, setCart, triggerRefresh }) {
               }
               onClose={() => setShowEndShift(false)}
               onShiftClosed={handleShiftClosed}
+            />
+          )}
+
+          {showAddAdvance && (
+            <AddAdvanceModal
+              onClose={() => setShowAddAdvance(false)}
+              onSuccess={() => {
+                toast.success("Advance added successfully!");
+              }}
             />
           )}
         </div>

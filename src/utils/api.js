@@ -88,3 +88,13 @@ export const paySalesBill = async (sales_bill_id, payments) => {
 
   return res;
 };
+
+export const addCustomerAdvance = (payload) =>
+  axios.post(`${BASE_URL}/api/customers/advance`, payload, {
+    headers: getAuthHeader(),
+  });
+
+export const getCustomerWalletBalance = (mobile) =>
+  axios.get(`${BASE_URL}/api/customers/wallet-balance/${mobile}`, {
+    headers: getAuthHeader(),
+  });

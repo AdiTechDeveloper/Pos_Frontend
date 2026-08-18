@@ -16,6 +16,8 @@ export default function PaymentModal({ total, onClose, onConfirm, cart_data }) {
   const [loadingCustomer, setLoadingCustomer] = useState(false);
   const [mobileError, setMobileError] = useState("");
   const [nameError, setNameError] = useState("");
+  const [walletBalance, setWalletBalance] = useState(0);
+  const [useWallet, setUseWallet] = useState(false);
 
   const parse = (v) => (parseFloat(v) ? parseFloat(v) : 0);
   const cashApplied = Math.min(parse(cashGiven), total);
@@ -129,6 +131,31 @@ export default function PaymentModal({ total, onClose, onConfirm, cart_data }) {
       }
     }
 
+    if (paymentType === "wallet") {
+      const walletApplied = Math.min(walletBalance, total);
+      const remainingAfterWallet = total - walletApplied;
+
+      payments.push({
+        method: "wallet",
+        amount: walletApplied,
+      });
+
+      if (remainingAfterWallet > 0) {
+        if (!cashGiven || parse(cashGiven) < remainingAfterWallet) {
+          alert(
+            `Wallet covers ₹${walletApplied.toFixed(2)}. Enter remaining ₹${remainingAfterWallet.toFixed(2)} in cash.`,
+          );
+          return;
+        }
+        payments.push({
+          method: "cash",
+          amount: remainingAfterWallet,
+          cash_received: parse(cashGiven),
+          balance_return: Math.max(parse(cashGiven) - remainingAfterWallet, 0),
+        });
+      }
+    }
+
     onConfirm({
       payments,
       payment_type: apiPaymentType,
@@ -152,44 +179,38 @@ export default function PaymentModal({ total, onClose, onConfirm, cart_data }) {
     if (customerMobile.length === 10) {
       setLoadingCustomer(true);
 
-      axios
-        .get(`${BASE_URL}/api/customer-due/${customerMobile}`, {
+      Promise.all([
+        axios.get(`${BASE_URL}/api/customer-due/${customerMobile}`, {
           headers: getAuthHeader(),
-        })
-        .then((res) => {
-          if (res.data.customer) {
-            const c = res.data.customer;
-
+        }),
+        axios.get(
+          `${BASE_URL}/api/customers/wallet-balance/${customerMobile}`,
+          { headers: getAuthHeader() },
+        ),
+      ])
+        .then(([dueRes, walletRes]) => {
+          const c = dueRes.data.customer;
+          if (c) {
             setCustomerName(c.name || "");
             setCustomerAdd1(c.add1 || "");
             setCustomerAdd2(c.add2 || "");
             setCustomerArea(c.area || "");
             setCustomerCity(c.city || "");
-
-            setCustomerDue(res.data.total_due || 0);
+            setCustomerDue(dueRes.data.total_due || 0);
           } else {
-            setCustomerName("");
-            setCustomerAdd1("");
-            setCustomerAdd2("");
-            setCustomerArea("");
-            setCustomerCity("");
             setCustomerDue(0);
           }
+          setWalletBalance(walletRes.data.balance || 0);
         })
         .catch((err) => {
           console.error("Customer fetch error", err);
           setCustomerDue(0);
+          setWalletBalance(0);
         })
-        .finally(() => {
-          setLoadingCustomer(false);
-        });
+        .finally(() => setLoadingCustomer(false));
     } else {
-      setCustomerName("");
-      setCustomerAdd1("");
-      setCustomerAdd2("");
-      setCustomerArea("");
-      setCustomerCity("");
       setCustomerDue(0);
+      setWalletBalance(0);
     }
   }, [customerMobile]);
 
@@ -293,6 +314,30 @@ export default function PaymentModal({ total, onClose, onConfirm, cart_data }) {
                   </div>
                 </div>
               </button>
+
+              {/* Wallet Button — sirf tab dikhega jab balance ho */}
+              {walletBalance > 0 && (
+                <button
+                  type="button"
+                  onClick={() => handleMethod("wallet")}
+                  className={`p-4 rounded-xl text-center transition-all duration-200 border flex flex-col items-center justify-center gap-1.5 ${
+                    paymentType === "wallet"
+                      ? "bg-purple-600 text-white border-purple-600 shadow-md scale-[1.02]"
+                      : "bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100 hover:border-slate-300"
+                  }`}
+                >
+                  <div>
+                    <div className="text-2xl font-bold leading-tight">
+                      Wallet
+                    </div>
+                    <div
+                      className={`text-xl mt-0.5 leading-normal ${paymentType === "wallet" ? "text-purple-100" : "text-slate-400"}`}
+                    >
+                      Available: ₹{Number(walletBalance).toFixed(2)}
+                    </div>
+                  </div>
+                </button>
+              )}
             </div>
           </div>
 
@@ -300,20 +345,24 @@ export default function PaymentModal({ total, onClose, onConfirm, cart_data }) {
           <div className="col-span-1">
             {(paymentType === "cash" ||
               paymentType === "split" ||
-              paymentType === "online") && (
+              paymentType === "online" ||
+              (paymentType === "wallet" && walletBalance < total)) && (
               <>
                 <h2 className="text-3xl font-extrabold text-slate-800 tracking-tight">
-                  Enter Amount{" "}
-                  {paymentType === "online" ? "(Online Received)" : ""}
+                  {paymentType === "wallet"
+                    ? "Remaining Amount (Cash)"
+                    : `Enter Amount ${paymentType === "online" ? "(Online Received)" : ""}`}
                 </h2>
                 <div>
                   <input
                     type="number"
                     className="payment-cash p-4 text-2xl text-center border rounded-xl shadow mb-20"
                     placeholder={
-                      paymentType === "online"
-                        ? "Online Amount Received"
-                        : "Cash Received"
+                      paymentType === "wallet"
+                        ? "Remaining Cash"
+                        : paymentType === "online"
+                          ? "Online Amount Received"
+                          : "Cash Received"
                     }
                     value={cashGiven ?? ""}
                     onChange={(e) =>
@@ -343,6 +392,21 @@ export default function PaymentModal({ total, onClose, onConfirm, cart_data }) {
                 <div style={amountStyle}>
                   <strong>Online: </strong> ₹{(total - cashApplied).toFixed(2)}
                 </div>
+              </>
+            )}
+
+            {paymentType === "wallet" && (
+              <>
+                <div style={amountStyle}>
+                  <strong>From Wallet: </strong> ₹
+                  {Math.min(walletBalance, total).toFixed(2)}
+                </div>
+                {total > walletBalance && (
+                  <div style={{ ...amountStyle, color: "#dc2626" }}>
+                    <strong>Remaining (Cash needed): </strong> ₹
+                    {(total - walletBalance).toFixed(2)}
+                  </div>
+                )}
               </>
             )}
 
@@ -477,7 +541,8 @@ export default function PaymentModal({ total, onClose, onConfirm, cart_data }) {
         <>
           <div className="col-md-5">
             <div className="grid grid-cols-3 gap-3">
-              {["cash", "split", "online"].includes(paymentType) && (
+              {(["cash", "split", "online"].includes(paymentType) ||
+                (paymentType === "wallet" && walletBalance < total)) && (
                 <>
                   {[
                     "1",
@@ -546,7 +611,10 @@ export default function PaymentModal({ total, onClose, onConfirm, cart_data }) {
                 mobileError ||
                 ((paymentType === "cash" || paymentType === "online") &&
                   (!cashGiven || parse(cashGiven) <= 0)) ||
-                (paymentType === "split" && cashApplied <= 0)
+                (paymentType === "split" && cashApplied <= 0) ||
+                (paymentType === "wallet" &&
+                  walletBalance < total &&
+                  (!cashGiven || parse(cashGiven) < total - walletBalance))
               }
               onClick={handleConfirm}
               className={`rounded-xl text-white font-bold transition-colors ${
@@ -555,7 +623,10 @@ export default function PaymentModal({ total, onClose, onConfirm, cart_data }) {
                 mobileError ||
                 ((paymentType === "cash" || paymentType === "online") &&
                   (!cashGiven || parse(cashGiven) <= 0)) ||
-                (paymentType === "split" && cashApplied <= 0)
+                (paymentType === "split" && cashApplied <= 0) ||
+                (paymentType === "wallet" &&
+                  walletBalance < total &&
+                  (!cashGiven || parse(cashGiven) < total - walletBalance))
                   ? "bg-gray-400 cursor-not-allowed"
                   : "bg-green-600 hover:bg-green-700 cursor-pointer"
               }`}
