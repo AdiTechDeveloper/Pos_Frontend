@@ -46,8 +46,6 @@ const BarcodePrintModal = ({ product, onClose }) => {
 
   if (!product) return null;
 
-  console.log(product);
-
   return (
     <div style={styles.backdrop}>
       <div style={{ ...styles.modal, width: showPreview ? "600px" : "350px" }}>

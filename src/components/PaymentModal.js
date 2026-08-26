@@ -42,7 +42,7 @@ export default function PaymentModal({ total, onClose, onConfirm, cart_data }) {
     const apiPaymentType = paymentType;
 
     if (!customerMobile) {
-      alert("Mobile is required for Pay Later");
+      alert("Mobile is required for payment.");
       return;
     }
 

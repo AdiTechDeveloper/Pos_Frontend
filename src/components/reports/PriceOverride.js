@@ -149,8 +149,6 @@ const PriceOverride = () => {
         },
       });
 
-      console.log("Products Response:", response.data);
-
       setProducts(response.data.products || []);
 
     } catch (error) {
@@ -171,8 +169,6 @@ const PriceOverride = () => {
           Authorization: `Bearer ${user_data?.token}`,
         },
       });
-
-      console.log("Staff Response:", response.data);
 
       setStaffList(response.data.data || []);
 

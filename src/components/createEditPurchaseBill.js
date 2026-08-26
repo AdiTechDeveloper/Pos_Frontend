@@ -628,7 +628,14 @@ const CreateEditPurchaseBill = () => {
           Authorization: `Bearer ${user_data.token}`,
         },
       });
-      setProducts(response.data.products);
+
+      const sortedProducts = (response.data.products || []).sort((a, b) =>
+        (a.name || "").localeCompare(b.name || "", undefined, {
+          sensitivity: "base",
+        }),
+      );
+
+      setProducts(sortedProducts);
     } catch (error) {
       console.error("Error fetching products:", error);
     }

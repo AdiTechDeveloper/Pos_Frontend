@@ -66,7 +66,6 @@ const CreateEditProduct = () => {
   // If editing → set initial values
   const loadProductData = () => {
     if (incomingProduct) {
-      console.log(incomingProduct);
       setBrandId(incomingProduct.brand_id);
       setCategoryId(incomingProduct.category_id);
       setInitialValues({
@@ -391,7 +390,6 @@ const CreateEditProduct = () => {
                                   const barcode = field.value.trim();
                                   if (!barcode) return;
 
-                                  console.log("Process barcode:", barcode);
                                   form.setFieldValue("_scanner", false, false);
                                 }
                               }}
