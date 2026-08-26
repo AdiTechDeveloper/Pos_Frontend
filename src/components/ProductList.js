@@ -23,6 +23,7 @@ export default function ProductList({
   const [barcode, setBarcode] = useState("");
   const [batchOptions, setBatchOptions] = useState([]);
   const [showBatchModal, setShowBatchModal] = useState(false);
+  const [activeProduct, setActiveProduct] = useState(null);
   const barcodeRef = useRef();
 
   const fetchProducts = async () => {
@@ -34,68 +35,9 @@ export default function ProductList({
         search,
       });
 
-      const flatProducts = (res.data.products || []).flatMap((product) => {
-        const grouped = {};
+      console.log("FETCH PRODUCTS API RESPONSE:", res.data.products?.[0]);
 
-        product.inventories.forEach((inv) => {
-          const key = `${inv.batch_no}_${inv.selling_price}`;
-
-          if (!grouped[key]) {
-            grouped[key] = {
-              product_id: product.id,
-              name: product.name,
-              brand: product.brand,
-              category: product.category,
-
-              batch_no: inv.batch_no,
-              selling_price: Number(inv.selling_price),
-              expiry_date: inv.expiry_date || null, // Pick expiry date
-
-              stock: 0,
-              free_qty: 0,
-              gst_percent: product.gst_rate ? product.gst_rate.rate : 0,
-              gst_inclusive: product.gst_inclusive,
-
-              inventories: [], // keep ids for cart logic
-              is_opening: inv.is_opening,
-            };
-          } else {
-            // Keep the earliest non-null expiry date if multiple inventory lines share the batch/price
-            if (
-              inv.expiry_date &&
-              (!grouped[key].expiry_date ||
-                new Date(inv.expiry_date) < new Date(grouped[key].expiry_date))
-            ) {
-              grouped[key].expiry_date = inv.expiry_date;
-            }
-          }
-
-          grouped[key].stock += Number(inv.available_qty);
-
-          if (inv.free === 1) {
-            grouped[key].free_qty += Number(inv.available_qty);
-          }
-
-          grouped[key].inventories.push({
-            inventory_id: inv.id,
-            qty: Number(inv.available_qty),
-            free: inv.free,
-            gst_rate: inv.gst_rate,
-            expiry_date: inv.expiry_date,
-          });
-        });
-
-        return Object.values(grouped);
-      });
-
-      flatProducts.sort((a, b) => {
-        if (!a.expiry_date && !b.expiry_date) return 0;
-        if (!a.expiry_date) return 1;
-        if (!b.expiry_date) return -1;
-        return new Date(a.expiry_date) - new Date(b.expiry_date);
-      });
-
-      setProducts(flatProducts);
+      setProducts(res.data.products || []);
     } catch (e) {
       console.error("Failed to load products");
     } finally {
@@ -115,6 +57,69 @@ export default function ProductList({
     barcodeRef.current?.focus();
   }, [barcode]);
 
+  const buildCartItem = (product, batch) => {
+    const rawInclusive =
+      product?.is_gst_inclusive ??
+      product?.is_inclusive ??
+      product?.gst_inclusive ??
+      product?.is_gst_included ??
+      batch?.is_gst_inclusive ??
+      0;
+
+    const isInclusive =
+      rawInclusive === true || rawInclusive === 1 || rawInclusive === "1"
+        ? 1
+        : 0;
+
+    const gstRate = Number(
+      product?.gst_rate?.rate ??
+        product?.gst_rate ??
+        batch?.gst_rate?.rate ??
+        batch?.gst_rate ??
+        0,
+    );
+
+    return {
+      cart_key: `${batch.id}`,
+      inventory_id: batch.id,
+
+      product_id: product?.id || batch?.product_id,
+      name: product?.name || batch?.name,
+
+      batch_no: batch.batch_no,
+      selling_price: Number(batch.selling_price),
+      expiry_date: batch.expiry_date,
+
+      stock: batch.qty_available,
+      free_qty: 0,
+
+      gst_percent: gstRate,
+      gst_inclusive: isInclusive,
+
+      qty: 1,
+    };
+  };
+
+  const handleCardClick = (product) => {
+    if (!product.total_stock || product.total_stock <= 0) return;
+
+    // Single Batch Case
+    if (product.batch_count <= 1 && product.batches?.length) {
+      addToCart(buildCartItem(product, product.batches[0]));
+      return;
+    }
+
+    // Multiple Batches Case
+    setActiveProduct(product);
+    setBatchOptions(
+      (product.batches || []).map((b) => ({
+        ...b,
+        product_ref: product,
+      })),
+    );
+    setShowBatchModal(true);
+  };
+
   const handleBarcodeScan = async () => {
     try {
       const res = await scanBarcode(barcode.trim());
@@ -131,37 +136,11 @@ export default function ProductList({
         return;
       }
 
-      const groups = batches.map((b) => ({
-        product_id: product.id,
-        name: product.name,
-
-        batch_no: b.batch_no,
-        selling_price: Number(b.selling_price),
-        expiry_date: b.expiry_date || null,
-
-        stock: Number(b.total_stock),
-        free_qty: 0,
-
-        gst_percent: Number(product.gst_rate?.rate || 0),
-        gst_inclusive: Number(product.is_gst_inclusive ?? 0),
-
-        inventories: [
-          {
-            inventory_id: b.inventory_id,
-          },
-        ],
-      }));
-
-      if (groups.length === 1) {
-        addToCart({
-          ...groups[0],
-          inventory_id: groups[0].inventories[0].inventory_id,
-          gst_percent: Number(groups[0].gst_percent),
-          gst_inclusive: Number(groups[0].gst_inclusive),
-          qty: 1,
-        });
+      if (batches.length === 1) {
+        addToCart(buildCartItem(product, batches[0]));
       } else {
-        setBatchOptions(groups);
+        setActiveProduct(product);
+        setBatchOptions(batches.map((b) => ({ ...b, product })));
         setShowBatchModal(true);
       }
     } catch (err) {
@@ -172,7 +151,7 @@ export default function ProductList({
     }
   };
 
-  // Helper function to check if date is within 30 days
+  // 7 din ke andar critical, 30 din ke andar warning
   const getExpiryStatus = (dateStr) => {
     if (!dateStr) return null;
     const diffDays = Math.ceil(
@@ -184,23 +163,24 @@ export default function ProductList({
   };
 
   const criticalCount = products.filter(
-    (p) => getExpiryStatus(p.expiry_date)?.level === "critical",
+    (p) => getExpiryStatus(p.nearest_expiry)?.level === "critical",
   ).length;
+
+  const formatPrice = (p) => {
+    if (p.has_multiple_prices && p.min_price !== p.max_price) {
+      return `₹${p.min_price} - ₹${p.max_price}`;
+    }
+    return `₹${p.min_price ?? p.max_price ?? "-"}`;
+  };
 
   return (
     <div className="flex-1 p-6 overflow-y-auto bg-gray-50">
-      {criticalCount > 0 && (
-        <div className="mb-6 bg-red-600 text-white p-4 rounded-2xl shadow-lg flex items-center gap-3 font-bold text-xl">
-          ⚠️ {criticalCount} product{criticalCount > 1 ? "s" : ""} expiring
-          within 7 days — sold these first!
-        </div>
-      )}
-      <div className="flex gap-6 mb-40">
+      <div className="flex gap-6 mb-12">
         <input
           ref={barcodeRef}
           type="text"
           placeholder="Scan barcode..."
-          className="border p-5 text-2xl w-96 rounded-2xl shadow-lg focus:outline-none focus:ring-4 focus:ring-blue-400 mb-12"
+          className="border p-5 text-2xl w-96 rounded-2xl shadow-lg focus:outline-none focus:ring-4 focus:ring-blue-400"
           value={barcode}
           onChange={(e) => setBarcode(e.target.value)}
           onKeyDown={(e) => {
@@ -223,15 +203,14 @@ export default function ProductList({
           [...Array(6)].map((_, i) => (
             <div
               key={i}
-              className="bg-white p-6 rounded-3xl shadow-2xl animate-pulse mb-15"
+              className="bg-white p-6 rounded-3xl shadow-md animate-pulse"
             >
-              <div className="h-6 bg-gray-300 rounded mb-3"></div>
-              <div className="h-4 bg-gray-200 rounded mb-2 w-2/3"></div>
-              <div className="h-4 bg-gray-200 rounded mb-2 w-1/2"></div>
-
+              <div className="h-6 bg-gray-200 rounded mb-3"></div>
+              <div className="h-4 bg-gray-100 rounded mb-2 w-2/3"></div>
+              <div className="h-4 bg-gray-100 rounded mb-2 w-1/2"></div>
               <div className="mt-6 flex justify-between items-center">
-                <span className="h-8 w-20 bg-gray-300 rounded"></span>
                 <span className="h-8 w-20 bg-gray-200 rounded"></span>
+                <span className="h-8 w-20 bg-gray-100 rounded"></span>
               </div>
             </div>
           ))}
@@ -244,7 +223,6 @@ export default function ProductList({
             <p className="text-gray-500 text-2xl mt-8">
               Try adjusting your search, category, or brand filters.
             </p>
-
             <button
               onClick={resetFilters}
               className="mt-8 px-6 py-3 text-2xl rounded-xl bg-blue-600 text-white shadow hover:bg-blue-700 transition"
@@ -256,65 +234,47 @@ export default function ProductList({
 
         {!loading &&
           products.map((p) => {
-            const expiryStatus = getExpiryStatus(p.expiry_date);
+            const expiryStatus = getExpiryStatus(p.nearest_expiry);
             const isCritical = expiryStatus?.level === "critical";
             const isWarning = expiryStatus?.level === "warning";
+            const inStock = p.total_stock > 0;
 
             return (
               <div
-                key={`${p.product_id}-${p.batch_no}-${p.selling_price}`}
-                onClick={() => {
-                  if (p.stock > 0) {
-                    const actualId =
-                      p.inventories?.[0]?.inventory_id ||
-                      p.inventories?.[0]?.id;
-
-                    addToCart({
-                      ...p,
-                      inventory_id: actualId,
-                      gst_percent: Number(p.gst_percent),
-                      gst_inclusive: Number(p.gst_inclusive),
-                      qty: 1,
-                    });
-                  }
-                }}
-                className={`p-6 rounded-3xl shadow-2xl flex flex-col justify-between mb-15 transition relative ${
-                  p.stock > 0 ? "cursor-pointer hover:scale-105" : "opacity-50"
-                } ${isCritical ? "animate-pulse" : ""}`}
+                key={p.id}
+                onClick={() => handleCardClick(p)}
+                className={`group p-6 rounded-3xl bg-white flex flex-col justify-between transition relative border ${
+                  inStock
+                    ? "cursor-pointer hover:-translate-y-1 hover:shadow-xl"
+                    : "opacity-50 cursor-not-allowed"
+                }`}
                 style={{
-                  background: isCritical
-                    ? "#fef2f2"
+                  borderLeft: isCritical
+                    ? "6px solid #dc2626"
                     : isWarning
-                      ? "#fffbeb"
-                      : p.is_opening
-                        ? "#ecfdf5"
-                        : "#ffffff",
-                  border: isCritical
-                    ? "2px solid #dc2626"
-                    : isWarning
-                      ? "2px solid #f59e0b"
-                      : p.is_opening
-                        ? "2px solid #10b981"
-                        : "1px solid #e5e7eb",
+                      ? "6px solid #f59e0b"
+                      : "6px solid #e5e7eb",
+                  boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
                 }}
               >
                 {isCritical && (
-                  <span className="absolute -top-3 -right-3 bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg z-10">
+                  <span className="absolute top-4 right-4 flex items-center gap-1 bg-red-50 text-red-700 text-xs font-bold px-3 py-1 rounded-full border border-red-200">
                     🔥 Sell First
                   </span>
                 )}
 
                 <div>
-                  <div className="flex justify-between items-start">
-                    <h3 className="font-extrabold text-3xl">{p.name}</h3>
-                    {expiryStatus && (
-                      <span
-                        className={`px-3 py-1 rounded-lg text-sm font-bold ${
-                          isCritical
-                            ? "bg-red-600 text-white"
-                            : "bg-orange-100 text-orange-800"
-                        }`}
-                      >
+                  <div className="flex justify-between items-start gap-2">
+                    <h3 className="font-extrabold text-2xl leading-tight">
+                      {p.name}
+                    </h3>
+                    {expiryStatus && !isCritical && (
+                      <span className="shrink-0 px-3 py-1 rounded-lg text-sm font-bold bg-orange-100 text-orange-800">
+                        {expiryStatus.diffDays}d left
+                      </span>
+                    )}
+                    {isCritical && (
+                      <span className="shrink-0 px-3 py-1 rounded-lg text-sm font-bold bg-red-600 text-white mt-8">
                         {expiryStatus.diffDays <= 0
                           ? "Expires Today"
                           : `${expiryStatus.diffDays}d left`}
@@ -322,29 +282,28 @@ export default function ProductList({
                     )}
                   </div>
 
-                  <p className="text-xl text-gray-600 mt-1">{p.brand?.name}</p>
-                  <p className="text-lg text-gray-500">Batch: {p.batch_no}</p>
+                  <p className="text-lg text-gray-500 mt-1">{p.brand?.name}</p>
 
-                  {p.free_qty > 0 && (
-                    <span className="inline-block mt-2 px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-bold">
-                      FREE QTY: {p.free_qty}
+                  {p.batch_count > 1 && (
+                    <span className="inline-block mt-2 px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm font-semibold">
+                      {p.batch_count} batches
                     </span>
                   )}
                 </div>
 
                 <div className="mt-4 flex justify-between items-center">
                   <span className="text-3xl font-bold text-blue-700">
-                    ₹{p.selling_price}
+                    {formatPrice(p)}
                   </span>
 
                   <span
-                    className={`px-4 py-2 rounded-full text-xl font-semibold ${
-                      p.stock < 5
+                    className={`px-4 py-2 rounded-full text-lg font-semibold ${
+                      p.total_stock < 5
                         ? "bg-red-100 text-red-700"
                         : "bg-green-100 text-green-700"
                     }`}
                   >
-                    {p.stock} in stock
+                    {p.total_stock} in stock
                   </span>
                 </div>
               </div>
@@ -355,29 +314,8 @@ export default function ProductList({
       {showBatchModal && (
         <BatchSelectModal
           options={batchOptions}
-          onSelect={(option) => {
-            const actualInventoryId =
-              option.inventories[0].inventory_id || option.inventories[0].id;
-
-            addToCart({
-              cart_key: `${actualInventoryId}`,
-              inventory_id: actualInventoryId,
-
-              product_id: option.product_id,
-              name: option.name,
-
-              batch_no: option.batch_no,
-              selling_price: option.selling_price,
-
-              stock: option.stock,
-              free_qty: option.free_qty,
-
-              gst_percent: Number(option.gst_percent),
-              gst_inclusive: Number(option.gst_inclusive),
-
-              qty: 1,
-            });
-
+          onSelect={(selectedBatch) => {
+            addToCart(buildCartItem(activeProduct, selectedBatch));
             setShowBatchModal(false);
           }}
           onClose={() => setShowBatchModal(false)}

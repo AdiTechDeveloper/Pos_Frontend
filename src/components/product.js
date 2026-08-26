@@ -64,10 +64,10 @@ const Product = () => {
       const rows = [];
 
       response.data.products.forEach((product) => {
-        if (product.inventories && product.inventories.length > 0) {
+        if (product.batches && product.batches.length > 0) {
           const grouped = {};
 
-          product.inventories.forEach((inv) => {
+          product.batches.forEach((inv) => {
             const key = `${inv.batch_no}-${inv.batch_barcode}-${inv.mrp}-${inv.selling_price}`;
 
             if (!grouped[key]) {
@@ -89,19 +89,20 @@ const Product = () => {
                 mrp: Number(inv.mrp),
                 selling_price: Number(inv.selling_price),
 
-                qty: Number(inv.qty) || 0,
+                qty: Number(inv.qty_available) || 0,
                 free: Number(inv.free) || 0,
 
-                cost_total: Number(inv.cost_price) * Number(inv.qty || 0),
+                cost_total:
+                  Number(inv.cost_price) * Number(inv.qty_available || 0),
 
                 barcodes: new Set([inv.batch_barcode]),
               };
             } else {
               grouped[key].inventory_ids.push(inv.id);
-              grouped[key].qty += Number(inv.qty) || 0;
+              grouped[key].qty += Number(inv.qty_available) || 0;
               grouped[key].free += Number(inv.free) || 0;
               grouped[key].cost_total +=
-                Number(inv.cost_price) * Number(inv.qty || 0);
+                Number(inv.cost_price) * Number(inv.qty_available || 0);
               grouped[key].barcodes.add(inv.batch_barcode);
             }
           });
@@ -134,8 +135,8 @@ const Product = () => {
             batch_no: "-",
             barcode: product.barcode ?? null,
 
-            mrp: product.mrp ?? 0,
-            selling_price: product.selling_price ?? 0,
+            mrp: Number(product.min_price) || 0,
+            selling_price: Number(product.min_price) || 0,
             cost_price: product.cost_price ?? 0,
 
             qty: 0,

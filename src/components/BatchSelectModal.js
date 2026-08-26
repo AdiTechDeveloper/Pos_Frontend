@@ -13,7 +13,7 @@ export default function BatchSelectModal({ options, onSelect, onClose }) {
             >
               <div>
                 <p className="text-xl font-semibold">Batch: {o.batch_no}</p>
-                <p className="text-gray-500">Stock: {o.stock}</p>
+                <p className="text-gray-500">Stock: {o.qty_available}</p>
               </div>
 
               <div className="text-right">
