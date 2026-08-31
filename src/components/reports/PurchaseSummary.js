@@ -170,8 +170,6 @@ const PurchaseSummary = () => {
   };
 
   const fetchReport = useCallback(async () => {
-    console.log("API SENDING FILTERS:", filters);
-
     setLoading(true);
     try {
       const response = await axios.post(

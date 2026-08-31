@@ -106,7 +106,6 @@ const CreateEditSaleBill = () => {
         },
       });
       toast.success("Sales Bill Created Successfully!");
-      console.log("RESULT:", response.data);
     } catch (error) {
       console.error("API Error:", error.response?.data);
       alert(error.response?.data?.message || "Error creating sales bill");

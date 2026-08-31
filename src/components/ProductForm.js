@@ -294,8 +294,6 @@ const ProductForm = ({ onSuccess, onCancel, initialData = null }) => {
                               const barcodeValue = field.value?.trim();
                               if (!barcodeValue) return;
 
-                              console.log("Processed Barcode:", barcodeValue);
-
                               form.setFieldValue("_scanner", false, false);
                             }
                           }}

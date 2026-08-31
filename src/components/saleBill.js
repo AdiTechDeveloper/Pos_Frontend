@@ -9,6 +9,7 @@ import Layout from "./layout";
 import ReceiptModal from "./ReceiptModal";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import PaymentEditModal from "../components/PaymentEditModal";
 
 const getAuthHeader = () => {
   const user_detail = localStorage.getItem("user_detail");
@@ -32,6 +33,14 @@ const SaleBill = () => {
 
   const [filteredData, setFilteredData] = useState([]);
   const user_data = JSON.parse(localStorage.getItem("user_detail"));
+
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [selectedBill, setSelectedBill] = useState(null);
+
+  const openPaymentModal = (bill) => {
+    setSelectedBill(bill);
+    setShowPaymentModal(true);
+  };
 
   // Fetch Sale Bills from API
   const fetchSaleBill = async (dateParam = selectedDate) => {
@@ -157,9 +166,21 @@ const SaleBill = () => {
       cell: (row) => (
         <button
           onClick={() => handlePrint(row.id)}
-          className="px-3 py-1 text-base bg-blue-600 text-white rounded hover:bg-blue-700"
+          className="px-3 py-1 text-xl bg-blue-600 text-white rounded hover:bg-blue-700"
         >
           Print
+        </button>
+      ),
+    },
+    {
+      name: "Payment",
+      button: true,
+      cell: (row) => (
+        <button
+          onClick={() => openPaymentModal(row)}
+          className="px-2 py-1 bg-green-700 text-white rounded text-xl"
+        >
+          Edit Payment
         </button>
       ),
     },
@@ -187,18 +208,6 @@ const SaleBill = () => {
       wrap: true,
     },
     {
-      name: "Subtotal",
-      selector: (row) => row.subtotal,
-      sortable: true,
-      wrap: true,
-    },
-    {
-      name: "Total Gst",
-      selector: (row) => row.total_gst,
-      sortable: true,
-      wrap: true,
-    },
-    {
       name: (
         <div
           style={{
@@ -208,13 +217,44 @@ const SaleBill = () => {
             lineHeight: "1.2",
           }}
         >
-          Total Amount
+          Created At
         </div>
       ),
-      selector: (row) => row?.total_amount,
+      selector: (row) => new Date(row.created_at).toLocaleString("en-IN"),
       sortable: true,
       wrap: true,
     },
+    {
+      name: "Subtotal",
+      selector: (row) => row.subtotal,
+      sortable: true,
+      wrap: true,
+      cell: (row) => `₹${row.subtotal}`,
+    },
+    {
+      name: "Total Gst",
+      selector: (row) => row.total_gst,
+      sortable: true,
+      wrap: true,
+      cell: (row) => `₹${row.total_gst}`,
+    },
+    // {
+    //   name: (
+    //     <div
+    //       style={{
+    //         whiteSpace: "normal",
+    //         wordBreak: "break-word",
+    //         textAlign: "center",
+    //         lineHeight: "1.2",
+    //       }}
+    //     >
+    //       Total Amount
+    //     </div>
+    //   ),
+    //   selector: (row) => row?.total_amount,
+    //   sortable: true,
+    //   wrap: true,
+    // },
     {
       name: (
         <div
@@ -231,24 +271,25 @@ const SaleBill = () => {
       selector: (row) => row.total_saved,
       sortable: true,
       wrap: true,
+      cell: (row) => `₹${row.total_saved}`,
     },
-    {
-      name: (
-        <div
-          style={{
-            whiteSpace: "normal",
-            wordBreak: "break-word",
-            textAlign: "center",
-            lineHeight: "1.2",
-          }}
-        >
-          Total Cogs
-        </div>
-      ),
-      selector: (row) => row.total_cogs,
-      sortable: true,
-      wrap: true,
-    },
+    // {
+    //   name: (
+    //     <div
+    //       style={{
+    //         whiteSpace: "normal",
+    //         wordBreak: "break-word",
+    //         textAlign: "center",
+    //         lineHeight: "1.2",
+    //       }}
+    //     >
+    //       Total Cogs
+    //     </div>
+    //   ),
+    //   selector: (row) => row.total_cogs,
+    //   sortable: true,
+    //   wrap: true,
+    // },
     {
       name: (
         <div
@@ -265,6 +306,7 @@ const SaleBill = () => {
       selector: (row) => row.total_profit,
       sortable: true,
       wrap: true,
+      cell: (row) => `₹${row.total_profit}`,
     },
     {
       name: (
@@ -282,6 +324,51 @@ const SaleBill = () => {
       selector: (row) => row.cash_received,
       sortable: true,
       wrap: true,
+      cell: (row) => `₹${row.cash_received}`,
+    },
+    {
+      name: (
+        <div
+          style={{
+            whiteSpace: "normal",
+            wordBreak: "break-word",
+            textAlign: "center",
+            lineHeight: "1.2",
+          }}
+        >
+          Online Received
+        </div>
+      ),
+      selector: (row) => row.online_received,
+      sortable: true,
+      wrap: true,
+      cell: (row) => `₹${row.online_received}`,
+    },
+    {
+      name: (
+        <div
+          style={{
+            whiteSpace: "normal",
+            wordBreak: "break-word",
+            textAlign: "center",
+            lineHeight: "1.2",
+          }}
+        >
+          Due Amount
+        </div>
+      ),
+      selector: (row) => row.due_amount,
+      sortable: true,
+      wrap: true,
+      cell: (row) => (
+        <span
+          className={
+            Number(row.due_amount) > 0 ? "text-red-600 font-semibold" : ""
+          }
+        >
+          ₹{row.due_amount}
+        </span>
+      ),
     },
     {
       name: (
@@ -296,9 +383,10 @@ const SaleBill = () => {
           Balance Return
         </div>
       ),
-      selector: (row) => row.balance_return,
+      selector: (row) => Number(row.balance_return || 0),
       sortable: true,
       wrap: true,
+      cell: (row) => `₹${Number(row.balance_return || 0).toFixed(2)}`,
     },
     {
       name: (
@@ -331,23 +419,6 @@ const SaleBill = () => {
         </div>
       ),
       selector: (row) => row.bill_status,
-      sortable: true,
-      wrap: true,
-    },
-    {
-      name: (
-        <div
-          style={{
-            whiteSpace: "normal",
-            wordBreak: "break-word",
-            textAlign: "center",
-            lineHeight: "1.2",
-          }}
-        >
-          Created At
-        </div>
-      ),
-      selector: (row) => new Date(row.created_at).toLocaleString("en-IN"),
       sortable: true,
       wrap: true,
     },
@@ -566,6 +637,17 @@ const SaleBill = () => {
           data={printData}
           onClose={() => setShowReceipt(false)}
           onPrint={printReceipt}
+        />
+      )}
+
+      {showPaymentModal && (
+        <PaymentEditModal
+          bill={selectedBill}
+          onClose={() => setShowPaymentModal(false)}
+          onSuccess={() => {
+            setShowPaymentModal(false);
+            fetchSaleBill();
+          }}
         />
       )}
     </Layout>

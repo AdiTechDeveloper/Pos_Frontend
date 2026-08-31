@@ -35,8 +35,6 @@ export default function ProductList({
         search,
       });
 
-      console.log("FETCH PRODUCTS API RESPONSE:", res.data.products?.[0]);
-
       setProducts(res.data.products || []);
     } catch (e) {
       console.error("Failed to load products");

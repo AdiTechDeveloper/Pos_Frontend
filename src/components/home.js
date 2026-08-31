@@ -32,7 +32,6 @@ const Home = () => {
           Authorization: `Bearer ${user_data.token}`,
         },
       });
-      // console.log("store_data",response.data);
       setStores(response.data.data);
     } catch (error) {
       console.error("Error fetching categories:", error);

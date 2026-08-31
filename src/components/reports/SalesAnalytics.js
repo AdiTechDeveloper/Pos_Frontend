@@ -2,7 +2,6 @@ import React, { useEffect, useState, useCallback } from "react";
 import DataTable from "react-data-table-component";
 import axios from "axios";
 import Layout from "../layout";
-import { CSVLink } from "react-csv";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { Link } from "react-router-dom";
@@ -33,93 +32,72 @@ const SalesAnalytics = () => {
   const [branch, setbranch] = useState([]);
   const [loading, setLoading] = useState(false);
 
- const exportPDF = () => {
-  if (!summary.length) {
-    alert("No data available to export");
-    return;
-  }
+  const exportPDF = () => {
+    if (!summary.length) {
+      alert("No data available to export");
+      return;
+    }
 
-  const doc = new jsPDF();
+    const doc = new jsPDF();
 
-  doc.text("Sales Analytics Report", 14, 15);
+    doc.text("Sales Analytics Report", 14, 15);
 
-  const tableRows = summary.map((row) => [
-    row.date,
-    row.bills,
-    row.total_taxable,
-    row.total_gst,
-    row.total_amount,
-    row.total_profit,
-  ]);
+    const tableRows = summary.map((row) => [
+      row.date,
+      row.bills,
+      row.total_taxable,
+      row.total_gst,
+      row.total_amount,
+      row.total_profit,
+    ]);
 
-  autoTable(doc, {
-    head: [
-      [
-        "Date",
-        "Bills",
-        "Taxable",
-        "GST",
-        "Net Sales",
-        "Profit",
-      ],
-    ],
-    body: tableRows,
-    startY: 25,
-  });
+    autoTable(doc, {
+      head: [["Date", "Bills", "Taxable", "GST", "Net Sales", "Profit"]],
+      body: tableRows,
+      startY: 25,
+    });
 
-  doc.save("sales-analytics.pdf");
-};
-  
+    doc.save("sales-analytics.pdf");
+  };
+
   const exportCSV = () => {
-  if (!summary.length) {
-    alert("No data available to export");
-    return;
-  }
+    if (!summary.length) {
+      alert("No data available to export");
+      return;
+    }
 
-  const headers = [
-    "Date",
-    "Bills",
-    "Taxable",
-    "GST",
-    "Net Sales",
-    "Profit",
-  ];
+    const headers = ["Date", "Bills", "Taxable", "GST", "Net Sales", "Profit"];
 
-  const rows = summary.map((row) => [
-    row.date,
-    row.bills,
-    row.total_taxable,
-    row.total_gst,
-    row.total_amount,
-    row.total_profit,
-  ]);
+    const rows = summary.map((row) => [
+      row.date,
+      row.bills,
+      row.total_taxable,
+      row.total_gst,
+      row.total_amount,
+      row.total_profit,
+    ]);
 
-  const csvContent = [
-    headers,
-    ...rows,
-  ]
-    .map((row) => row.join(","))
-    .join("\n");
+    const csvContent = [headers, ...rows]
+      .map((row) => row.join(","))
+      .join("\n");
 
+    const blob = new Blob([csvContent], {
+      type: "text/csv;charset=utf-8;",
+    });
 
-  const blob = new Blob([csvContent], {
-    type: "text/csv;charset=utf-8;",
-  });
+    const url = URL.createObjectURL(blob);
 
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "sales-analytics.csv";
 
-  const url = URL.createObjectURL(blob);
+    document.body.appendChild(link);
+    link.click();
 
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = "sales-analytics.csv";
+    document.body.removeChild(link);
 
-  document.body.appendChild(link);
-  link.click();
-
-  document.body.removeChild(link);
-
-  URL.revokeObjectURL(url);
-};
+    URL.revokeObjectURL(url);
+  };
 
   const fetchBrach = async () => {
     try {
@@ -157,8 +135,8 @@ const SalesAnalytics = () => {
       setTopProducts(data.top_products || []);
       setSlowProducts(data.slow_products || []);
       setPaymentMethods(data.payment_methods || {});
-      setHighestSale(data.highest_sale_day || null);
-      setLowestSale(data.lowest_sale_day || null);
+      setHighestSale(data.sales_extremes?.highest_day || null);
+      setLowestSale(data.sales_extremes?.lowest_day || null);
       setBranchPerformance(data.branch_performance || []);
       setBrandSales(data.brand_sales || []);
     } catch (error) {
@@ -525,7 +503,7 @@ const HighLowCards = ({ highest, lowest }) => (
                       bg-gradient-to-r from-green-700 to-emerald-600 
                       bg-clip-text text-transparent"
         >
-          ₹{parseFloat(highest?.sale || 0).toLocaleString("en-IN")}
+          ₹{parseFloat(highest?.sales || 0).toLocaleString("en-IN")}
         </div>
       </div>
     </div>
@@ -559,7 +537,7 @@ const HighLowCards = ({ highest, lowest }) => (
                       bg-gradient-to-r from-red-700 to-rose-600 
                       bg-clip-text text-transparent"
         >
-          ₹{parseFloat(lowest?.sale || 0).toLocaleString("en-IN")}
+          ₹{parseFloat(lowest?.sales || 0).toLocaleString("en-IN")}
         </div>
       </div>
     </div>

@@ -1,5 +1,8 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import * as XLSX from "xlsx";
 import Layout from "../layout";
 
 export default function SalesReport() {
@@ -25,7 +28,6 @@ export default function SalesReport() {
   };
 
   const fetchBranches = async () => {
-    const role = user_data?.user?.role;
     const token = user_data?.token;
 
     try {
@@ -43,7 +45,6 @@ export default function SalesReport() {
   };
 
   const fetchReport = async () => {
-    const role = user_data?.user?.role;
     const token = user_data?.token;
 
     try {
@@ -81,6 +82,245 @@ export default function SalesReport() {
   useEffect(() => {
     fetchReport();
   }, [filters]);
+
+  // ================= EXPORT FUNCTIONS =================
+
+  // 1. Export Excel Function (With Payment Summary Included)
+  const exportToExcel = () => {
+    if (!report) return;
+
+    let csvData = [];
+
+    // Payment Methods Breakdown (Always included at top)
+    csvData.push(["--- PAYMENT METHOD BREAKDOWN ---"]);
+    csvData.push(["Payment Method", "Total Collected", "Share %"]);
+
+    (report.payment_methods?.rows || []).forEach((pm) => {
+      csvData.push([pm.method, pm.total_collected, `${pm.share_pct}%`]);
+    });
+
+    csvData.push([
+      "Grand Total Collected",
+      report.payment_methods?.grand_total || 0,
+      "100%",
+    ]);
+    csvData.push([]); // Blank separator row
+    csvData.push([`--- ${activeTab.toUpperCase()} DETAILED REPORT ---`]);
+
+    // Active Tab Data Export
+    let headers = [];
+    let rows = [];
+
+    if (activeTab === "invoices") {
+      headers = [
+        "Date",
+        "Bill No",
+        "Subtotal",
+        "GST",
+        "Total",
+        "Paid",
+        "Due",
+        "Profit",
+        "Status",
+      ];
+      rows = (report.invoices?.rows || []).map((row) => [
+        new Date(row.created_at).toLocaleDateString(),
+        String(row.bill_no),
+        row.subtotal,
+        row.total_gst,
+        row.total_amount,
+        row.paid_amount,
+        row.due_amount,
+        row.total_profit,
+        row.payment_status,
+      ]);
+    } else if (activeTab === "products") {
+      headers = ["Product Name", "Qty Sold", "Net Revenue", "Profit"];
+      rows = (report.products?.rows || []).map((p) => [
+        p.product_name,
+        p.qty_sold,
+        p.net_revenue,
+        p.total_profit,
+      ]);
+    } else if (activeTab === "payments") {
+      headers = ["Method", "Total Collected", "Share %"];
+      rows = (report.payment_methods?.rows || []).map((p) => [
+        p.method,
+        p.total_collected,
+        `${p.share_pct}%`,
+      ]);
+    } else if (activeTab === "overrides") {
+      headers = [
+        "Bill No",
+        "Product Name",
+        "Original Price",
+        "Override Price",
+        "Value Leakage",
+      ];
+      rows = (report.price_overrides?.rows || []).map((o) => [
+        String(o.bill_no),
+        o.product_name,
+        o.original_price,
+        o.override_price,
+        o.value_leakage,
+      ]);
+    }
+
+    csvData.push(headers);
+    csvData = csvData.concat(rows);
+
+    const worksheet = XLSX.utils.aoa_to_sheet(csvData);
+    const billNoColumn = headers.indexOf("Bill No");
+
+    // Keep long bill numbers as text so Excel does not display scientific notation.
+    if (billNoColumn !== -1) {
+      const firstDataRow = csvData.length - rows.length;
+      rows.forEach((_, rowIndex) => {
+        const cellAddress = XLSX.utils.encode_cell({
+          r: firstDataRow + rowIndex,
+          c: billNoColumn,
+        });
+        if (worksheet[cellAddress]) {
+          worksheet[cellAddress].t = "s";
+          worksheet[cellAddress].v = String(rows[rowIndex][billNoColumn]);
+        }
+      });
+    }
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Sales Report");
+    XLSX.writeFile(workbook, `Sales_Report_${activeTab}_${Date.now()}.xlsx`);
+  };
+
+  // 2. Export PDF Function (With Payment Summary Included)
+  const exportToPDF = () => {
+    if (!report) return;
+
+    const doc = new jsPDF("landscape");
+    doc.setFontSize(16);
+    doc.text(`Sales Report - ${activeTab.toUpperCase()}`, 14, 15);
+    doc.setFontSize(10);
+    doc.text(`Generated on: ${new Date().toLocaleString()}`, 14, 21);
+
+    // Section 1: Payment Method Summary Breakdown Table
+    doc.setFontSize(12);
+    doc.text("Payment Method Breakdown", 14, 28);
+
+    const paymentHeaders = [["Method", "Total Collected (Rs.)", "Share (%)"]];
+    const paymentRows = (report.payment_methods?.rows || []).map((p) => [
+      p.method,
+      `Rs. ${p.total_collected}`,
+      `${p.share_pct}%`,
+    ]);
+
+    // Add Grand Total row for Payments
+    paymentRows.push([
+      "Grand Total",
+      `Rs. ${report.payment_methods?.grand_total || 0}`,
+      "100%",
+    ]);
+
+    autoTable(doc, {
+      head: paymentHeaders,
+      body: paymentRows,
+      startY: 32,
+      theme: "striped",
+      styles: { fontSize: 8 },
+      headStyles: { fillColor: [16, 185, 129] }, // Emerald header
+      margin: { bottom: 10 },
+    });
+
+    // Section 2: Selected Tab Main Table
+    const nextStartY = doc.lastAutoTable.finalY + 10;
+    doc.text(`${activeTab.toUpperCase()} Details`, 14, nextStartY);
+
+    let headers = [];
+    let rows = [];
+
+    if (activeTab === "invoices") {
+      headers = [
+        [
+          "Date",
+          "Bill No",
+          "Subtotal",
+          "GST",
+          "Total",
+          "Paid",
+          "Due",
+          "Profit",
+          "Status",
+        ],
+      ];
+      rows = (report.invoices?.rows || []).map((row) => [
+        new Date(row.created_at).toLocaleDateString(),
+        String(row.bill_no),
+        `Rs. ${row.subtotal}`,
+        `Rs. ${row.total_gst}`,
+        `Rs. ${row.total_amount}`,
+        `Rs. ${row.paid_amount}`,
+        `Rs. ${row.due_amount}`,
+        `Rs. ${row.total_profit}`,
+        row.payment_status,
+      ]);
+    } else if (activeTab === "products") {
+      headers = [["Product Name", "Qty Sold", "Net Revenue", "Profit"]];
+      rows = (report.products?.rows || []).map((p) => [
+        p.product_name,
+        p.qty_sold,
+        `Rs. ${p.net_revenue}`,
+        `Rs. ${p.total_profit}`,
+      ]);
+    } else if (activeTab === "payments") {
+      headers = [["Method", "Total Collected", "Share %"]];
+      rows = (report.payment_methods?.rows || []).map((p) => [
+        p.method,
+        `Rs. ${p.total_collected}`,
+        `${p.share_pct}%`,
+      ]);
+    } else if (activeTab === "overrides") {
+      headers = [
+        [
+          "Bill No",
+          "Product Name",
+          "Original Price",
+          "Override Price",
+          "Value Leakage",
+        ],
+      ];
+      rows = (report.price_overrides?.rows || []).map((o) => [
+        o.bill_no,
+        o.product_name,
+        `Rs. ${o.original_price}`,
+        `Rs. ${o.override_price}`,
+        `Rs. ${o.value_leakage}`,
+      ]);
+    }
+
+    autoTable(doc, {
+      head: headers,
+      body: rows,
+      startY: nextStartY + 4,
+      theme: "grid",
+      styles: { fontSize: 8 },
+      headStyles: { fillColor: [37, 99, 235] },
+      didParseCell: function (data) {
+        // Highlight Due amount in RED if greater than 0
+        if (
+          activeTab === "invoices" &&
+          data.section === "body" &&
+          data.column.index === 6
+        ) {
+          const rawVal = String(data.cell.raw).replace("Rs. ", "").trim();
+          if (parseFloat(rawVal) > 0) {
+            data.cell.styles.textColor = [220, 38, 38];
+            data.cell.styles.fontStyle = "bold";
+          }
+        }
+      },
+    });
+
+    doc.save(`Sales_Report_${activeTab}_${Date.now()}.pdf`);
+  };
 
   if (loading)
     return (
@@ -221,6 +461,18 @@ export default function SalesReport() {
                 className="bg-blue-600 px-8 py-4 rounded-2xl text-white text-2xl font-semibold hover:bg-blue-700 transition-all"
               >
                 Reset
+              </button>
+              <button
+                onClick={exportToPDF}
+                className="bg-red-600 px-8 py-4 rounded-2xl text-white text-2xl font-semibold hover:bg-red-700 transition-all"
+              >
+                Export PDF
+              </button>
+              <button
+                onClick={exportToExcel}
+                className="bg-emerald-600 px-8 py-4 rounded-2xl text-white text-2xl font-semibold hover:bg-emerald-700 transition-all"
+              >
+                Export Excel
               </button>
             </div>
           </div>
@@ -400,8 +652,7 @@ const InvoiceTable = ({ data }) => (
             Total
           </td>
           <td className="px-6 py-5 text-right text-3xl font-bold">
-            {/* Format: ₹XX.XX */}₹
-            {(Number(data.totals.subtotal) || 0).toFixed(2)}
+            ₹{(Number(data.totals.subtotal) || 0).toFixed(2)}
           </td>
           <td className="px-6 py-5 text-right text-3xl font-bold">
             ₹{(Number(data.totals.total_gst) || 0).toFixed(2)}
