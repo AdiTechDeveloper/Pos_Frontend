@@ -1,8 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
 import { useParams, useHistory } from "react-router-dom";
 import { Formik, Form, Field, ErrorMessage, FieldArray } from "formik";
-import { useRef } from "react";
 import * as Yup from "yup";
 import Layout from "./layout";
 import { toast } from "react-toastify";
@@ -36,7 +35,6 @@ const ledgerStyles = `
   }
 
   .pb-header-strip {
-    // background: linear-gradient(135deg, #FFFDF8 0%, var(--pb-gold-soft) 100%);
     border: 1px solid var(--pb-border-strong);
     border-radius: 14px;
     padding: 22px 28px;
@@ -98,7 +96,6 @@ const ledgerStyles = `
     letter-spacing: 0.2px;
   }
 
-  /* Unified premium input styling */
   .pb-page input[type="text"],
   .pb-page input[type="number"],
   .pb-page input[type="date"],
@@ -134,7 +131,6 @@ const ledgerStyles = `
     margin-top: 5px;
   }
 
-  /* ── Lost bill toggle ── */
   .lost-bill-wrapper {
     display: flex;
     align-items: center;
@@ -199,7 +195,6 @@ const ledgerStyles = `
     border-left: 3px solid var(--pb-red);
   }
 
-  /* ── Barcode scanner input ── */
   .pb-barcode-input {
     border: 1.5px dashed var(--pb-gold) !important;
     background: #FFFBF2 !important;
@@ -208,7 +203,7 @@ const ledgerStyles = `
     margin-bottom: 16px !important;
   }
 
- #small-popup{
+  #small-popup{
     font-size:17px !important;
     width :103% !important;
     background : #fff !important;
@@ -217,13 +212,12 @@ const ledgerStyles = `
   }
 
   .input-name{
-  margin-bottom : 3px;
-  font-size : 15px;
-  font-weight :600;
-  margin-top : 10px;
+    margin-bottom : 3px;
+    font-size : 15px;
+    font-weight :600;
+    margin-top : 10px;
   }
 
-  /* ── Line item ledger rows ── */
   .pb-lines-scroll {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
@@ -295,7 +289,6 @@ const ledgerStyles = `
     background: #FFFBF2;
   }
 
-  /* ── Tax type pill toggle ── */
   .pb-tax-toggle {
     display: flex;
     padding: 4px;
@@ -323,7 +316,6 @@ const ledgerStyles = `
   .pb-tax-btn.active-exclusive { background: var(--pb-gold); color: #fff; box-shadow: 0 2px 6px rgba(200,155,74,0.3); }
   .pb-tax-btn.active-inclusive { background: var(--pb-green); color: #fff; box-shadow: 0 2px 6px rgba(62,156,118,0.3); }
 
-  /* ── Total summary bar ── */
   .pb-total-bar {
     padding: 18px 26px;
     border-radius: 12px;
@@ -383,15 +375,15 @@ const ledgerStyles = `
   }
   .pb-bottom-row .pb-total-bar { flex: 1; max-width: 480px; margin-left: auto; }
   .pb-bottom-row .pb-submit-btn { margin-top: 0; width: auto; padding: 15px 32px; flex-shrink: 0; }
-    margin-top: 22px;
-    width: 100%;
+
+  .pb-submit-btn {
     background: var(--pb-gold);
-    color: #fff;
     border: none;
-    border-radius: 10px;
-    padding: 15px;
-    font-size: 15px;
+    color: #ffffff;
+    border-radius: 8px;
+    padding: 15px 32px;
     font-weight: 800;
+    font-size: 15px;
     letter-spacing: 0.4px;
     text-transform: uppercase;
     cursor: pointer;
@@ -401,7 +393,6 @@ const ledgerStyles = `
   .pb-submit-btn:hover { filter: brightness(1.06); }
   .pb-submit-btn:active { transform: translateY(1px); }
 
-  /* ── Modals ── */
   .pb-modal-overlay {
     position: fixed; inset: 0;
     background: rgba(15, 27, 46, 0.55);
@@ -439,7 +430,7 @@ const ledgerStyles = `
     font-size: 13px;
     cursor: pointer;
   }
-    .pb-btn-save {
+  .pb-btn-save {
     background: var(--pb-paper);
     border: 1.5px solid var(--pb-border-strong);
     color: var(--pb-text);
@@ -449,17 +440,47 @@ const ledgerStyles = `
     font-size: 13px;
     cursor: pointer;
   }
-  .pb-submit-btn {
-    background: var(--pb-gold);
-    border: none;
-    color: #ffffff;
-    border-radius: 8px;
-    padding: 9px 18px;
-    font-weight: 700;
-    font-size: 13px;
-    cursor: pointer;
-  }
   .pb-btn-save:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .payment-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  /* ── Status & Payment Ledger Styles ── */
+  .status-badge {
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+  .status-badge.paid { background: var(--pb-green-bg); color: var(--pb-green); border: 1px solid var(--pb-green); }
+  .status-badge.due { background: var(--pb-red-bg); color: var(--pb-red); border: 1px solid var(--pb-red); }
+  .status-badge.partial { background: #FFFBF2; color: var(--pb-gold); border: 1px solid var(--pb-gold); }
+
+  .payment-summary-box {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    border-radius: 10px;
+    margin-bottom: 16px;
+    font-weight: 600;
+  }
+  .payment-summary-box.due-bg {
+    background: var(--pb-red-bg);
+    border: 1px dashed var(--pb-red);
+    color: var(--pb-red);
+  }
+  .payment-summary-box.paid-bg {
+    background: var(--pb-green-bg);
+    border: 1px dashed var(--pb-green);
+    color: var(--pb-green);
+  }
 `;
 
 const CreateEditPurchaseBill = () => {
@@ -473,7 +494,6 @@ const CreateEditPurchaseBill = () => {
   const [supplierId, setSupplierId] = useState("");
   const [barcode, setBarcode] = useState("");
 
-  // Lost bill toggle
   const [isBillLost, setIsBillLost] = useState(false);
 
   const formikRef = useRef();
@@ -482,7 +502,6 @@ const CreateEditPurchaseBill = () => {
   const [activeRowIndex, setActiveRowIndex] = useState(null);
   const [newSupplier, setNewSupplier] = useState("");
   const [supplierState, setSupplierState] = useState("");
-  const [newProduct, setNewProduct] = useState("");
   const [error, setError] = useState("");
 
   const user_data = JSON.parse(localStorage.getItem("user_detail"));
@@ -519,17 +538,28 @@ const CreateEditPurchaseBill = () => {
         is_opening: false,
       },
     ],
+    payments: [],
   });
 
   const setBillInitialValues = (bill) => {
+    const normalizeDate = (value) => {
+      if (!value) return "";
+      const datePart = String(value).split("T")[0];
+      const parts = datePart.split("-");
+      if (parts.length !== 3) return value;
+      if (parts[0].length === 4) return datePart;
+      const [day, month, year] = parts;
+      return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+    };
+
     setSupplierId(bill.supplier_id?.toString() || "");
-    if (bill.is_lost === 1) setIsBillLost(true);
+    setIsBillLost(Number(bill.is_lost) === 1);
 
     setInitialValues({
       branch_id: bill.branch_id?.toString() || "",
       supplier_id: bill.supplier_id?.toString() || "",
       bill_no: bill.bill_no || "",
-      bill_date: bill.bill_date || "",
+      bill_date: normalizeDate(bill.bill_date),
       tax_type: bill.tax_type || "exclusive",
       settlement_amount:
         bill.settlement_amount != null ? bill.settlement_amount : "",
@@ -537,10 +567,16 @@ const CreateEditPurchaseBill = () => {
       is_lost: bill.is_lost ?? 0,
       lines: bill.lines?.length
         ? bill.lines.map((line) => ({
+            ...line,
+            inventory: line.inventory,
             product_id: line.product_id?.toString() || "",
             qty: line.qty || "",
             free_qty: line.free_qty || "",
-            purchase_rate: line.purchase_rate || "",
+            purchase_rate:
+              line.purchase_rate ??
+              line.inventory?.cost_price ??
+              line.inventory?.rate ??
+              "",
             mrp: line.mrp ?? line.inventory?.mrp ?? "",
             selling_price:
               line.selling_price ?? line.inventory?.selling_price ?? "",
@@ -548,11 +584,21 @@ const CreateEditPurchaseBill = () => {
             discount: line.discount || "",
             hsn_code: line.hsn_code || "",
             gst_rate_id: line.gst_rate_id?.toString() || "",
-            batch_no: line.batch_no || "",
-            expiry_date: line.expiry_date || "",
+            batch_no: line.batch_no ?? line.inventory?.batch_no ?? "",
+            expiry_date: normalizeDate(
+              line.expiry_date ?? line.inventory?.expiry_date,
+            ),
             is_opening: line.is_opening || false,
           }))
         : initialValues.lines,
+      payments: bill.payments?.length
+        ? bill.payments.map((p) => ({
+            amount: p.amount || "",
+            method: p.method ?? p.payment_method ?? "cash",
+            reference: p.reference || "",
+            payment_date: normalizeDate(p.payment_date),
+          }))
+        : [],
     });
   };
 
@@ -579,10 +625,10 @@ const CreateEditPurchaseBill = () => {
   };
 
   useEffect(() => {
-    if (incomingBill) {
-      setBillInitialValues(incomingBill);
-    } else if (isEdit) {
+    if (isEdit) {
       fetchPurchaseBillById();
+    } else if (incomingBill) {
+      setBillInitialValues(incomingBill);
     }
   }, [incomingBill, isEdit, id]);
 
@@ -599,9 +645,6 @@ const CreateEditPurchaseBill = () => {
       console.error("Error fetching branches:", error);
     }
   };
-  useEffect(() => {
-    fetchBranch();
-  }, []);
 
   const fetchSupplierBill = async () => {
     try {
@@ -616,9 +659,6 @@ const CreateEditPurchaseBill = () => {
       console.error("Error fetching suppliers:", error);
     }
   };
-  useEffect(() => {
-    fetchSupplierBill();
-  }, []);
 
   const fetchProduct = async () => {
     try {
@@ -628,13 +668,11 @@ const CreateEditPurchaseBill = () => {
           Authorization: `Bearer ${user_data.token}`,
         },
       });
-
       const sortedProducts = (response.data.products || []).sort((a, b) =>
         (a.name || "").localeCompare(b.name || "", undefined, {
           sensitivity: "base",
         }),
       );
-
       setProducts(sortedProducts);
     } catch (error) {
       console.error("Error fetching products:", error);
@@ -642,11 +680,22 @@ const CreateEditPurchaseBill = () => {
   };
 
   const fetchGstRates = async () => {
-    const response = await axios.get(`${BASE_URL}/api/gst-rates`, {
-      headers: { Authorization: `Bearer ${user_data.token}` },
-    });
-    setGstRates(response.data.gstRates);
+    try {
+      const response = await axios.get(`${BASE_URL}/api/gst-rates`, {
+        headers: { Authorization: `Bearer ${user_data.token}` },
+      });
+      setGstRates(response.data.gstRates);
+    } catch (error) {
+      console.error("Error fetching GST rates:", error);
+    }
   };
+
+  useEffect(() => {
+    fetchBranch();
+    fetchSupplierBill();
+    fetchProduct();
+    fetchGstRates();
+  }, []);
 
   const getGstRate = (gstRateId) => {
     const matched = gstRates.find(
@@ -655,66 +704,22 @@ const CreateEditPurchaseBill = () => {
     return matched ? Number(matched.rate || 0) : 0;
   };
 
-  const calculateLineTotal = (line, taxType) => {
-    const qty = Number(line.qty) || 0;
-    const purchaseRate = Number(line.purchase_rate) || 0;
-    const discount = Number(line.discount || 0);
-    const discountType = line.discount_type;
-    const gstRate = getGstRate(line.gst_rate_id);
-
-    if (!qty || !purchaseRate) {
-      return 0;
-    }
-
-    const grossValue =
-      taxType === "inclusive"
-        ? qty * (purchaseRate / (1 + gstRate / 100))
-        : qty * purchaseRate;
-
-    const discountAmount =
-      discountType === "percent" ? grossValue * (discount / 100) : discount;
-
-    const taxable = Math.max(0, grossValue - discountAmount);
-    const totalTax = (taxable * gstRate) / 100;
-
-    return taxable + totalTax;
-  };
-
   const formatAmount = (amount) =>
     Number(amount || 0)
       .toFixed(2)
       .replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-
-  const calculateTotalAmount = (lines, taxType) =>
-    (lines || []).reduce(
-      (sum, line) => sum + calculateLineTotal(line, taxType),
-      0,
-    );
-
-  useEffect(() => {
-    fetchProduct();
-    fetchGstRates();
-  }, []);
-
-  useEffect(() => {
-    const handler = (e) => e.key === "Escape" && setShowModal(false);
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, []);
 
   const parseDateString = (value, originalValue) => {
     if (typeof originalValue === "string" && originalValue.trim() !== "") {
       const parts = originalValue.split("-");
       if (parts.length === 3) {
         const [day, month, year] = parts.map(Number);
-        // JS months are 0-indexed (0 = Jan, 1 = Feb, etc.)
         return new Date(year, month - 1, day);
       }
     }
     return value;
   };
 
-  // ── Validation Schema ──
   const validationSchema = Yup.object().shape({
     branch_id: Yup.string().required("Branch is required"),
     supplier_id: Yup.string().required("Supplier is required"),
@@ -753,22 +758,25 @@ const CreateEditPurchaseBill = () => {
             .min(0, "Selling price cannot be negative"),
           discount_type: Yup.string()
             .nullable()
-            .oneOf(
-              ["percent", "fixed", ""],
-              "Discount type must be percent or fixed",
-            ),
-          discount: Yup.number()
-            .nullable()
-            .typeError("Discount must be a number")
-            .min(0, "Discount cannot be negative"),
+            .oneOf(["percent", "fixed", ""]),
+          discount: Yup.number().nullable().min(0, "Cannot be negative"),
           gst_rate_id: Yup.string().required("GST rate required"),
-          expiry_date: Yup.date()
-            .transform(parseDateString)
-            .typeError("Invalid date format")
-            .required("Expiry date is required"),
+          expiry_date: Yup.date().transform(parseDateString).nullable(),
           is_opening: Yup.boolean().default(false),
         }),
       ),
+    payments: Yup.array().of(
+      Yup.object().shape({
+        amount: Yup.number()
+          .required("Amount is required")
+          .min(0.01, "Min amount is 0.01"),
+        method: Yup.string()
+          .required("Method is required")
+          .oneOf(["cash", "online", "bank"], "Invalid payment method"),
+        reference: Yup.string().nullable(),
+        payment_date: Yup.date().transform(parseDateString).nullable(),
+      }),
+    ),
   });
 
   const handleSubmit = async (values, actions) => {
@@ -800,23 +808,24 @@ const CreateEditPurchaseBill = () => {
           hsn_code: line.hsn_code || null,
           is_opening: line.is_opening ? 1 : 0,
         })),
+        payments: values.payments.map((p) => ({
+          amount: Number(p.amount),
+          method: p.method,
+          reference: p.reference?.trim() || null,
+          payment_date: p.payment_date || null,
+        })),
       };
 
-      let response;
       if (isEdit) {
-        response = await axios.put(
-          `${BASE_URL}/api/purchase-bill/${id}`,
-          payload,
-          {
-            headers: {
-              Accept: "application/json",
-              Authorization: `Bearer ${user_data.token}`,
-            },
+        await axios.put(`${BASE_URL}/api/purchase-bill/${id}`, payload, {
+          headers: {
+            Accept: "application/json",
+            Authorization: `Bearer ${user_data.token}`,
           },
-        );
+        });
         toast.success("Purchase bill updated successfully!");
       } else {
-        response = await axios.post(`${BASE_URL}/api/purchase-bill`, payload, {
+        await axios.post(`${BASE_URL}/api/purchase-bill`, payload, {
           headers: {
             Accept: "application/json",
             Authorization: `Bearer ${user_data.token}`,
@@ -861,43 +870,9 @@ const CreateEditPurchaseBill = () => {
     toast.success("Suppliers Created!");
     setSupplierId(supplier.id);
     setNewSupplier("");
-    setSupplierState(""); // Reset state after saving
+    setSupplierState("");
     setShowModal(false);
     fetchSupplierBill();
-  };
-
-  const saveProduct = async (e) => {
-    e.preventDefault();
-    if (newProduct.trim().length < 3) {
-      setError("Product name must be at least 3 characters.");
-      return;
-    }
-    setError("");
-    try {
-      const response = await axios.post(
-        `${BASE_URL}/api/products`,
-        { name: newProduct.trim() },
-        {
-          headers: {
-            Accept: "application/json",
-            Authorization: `Bearer ${user_data.token}`,
-          },
-        },
-      );
-      const createdProduct = response.data.product || response.data;
-      toast.success("Product Created!");
-      setProducts((prev) => [...prev, createdProduct]);
-      if (activeRowIndex !== null && formikRef.current) {
-        formikRef.current.setFieldValue(
-          `lines.${activeRowIndex}.product_id`,
-          createdProduct.id,
-        );
-      }
-      setNewProduct("");
-      setShowProductModal(false);
-    } catch (err) {
-      console.error(err);
-    }
   };
 
   const handleBarcodeScan = async (barcode, values, push, setFieldValue) => {
@@ -923,7 +898,6 @@ const CreateEditPurchaseBill = () => {
 
       const inventory =
         response.data.batches?.find((b) => b.batch_barcode === barcode) || {};
-
       const linesArray = values?.lines || [];
 
       const existingIndex = linesArray.findIndex(
@@ -940,7 +914,6 @@ const CreateEditPurchaseBill = () => {
       }
 
       const emptyIndex = linesArray.findIndex((l) => !l.product_id);
-
       const lineData = {
         product_id: product.id.toString(),
         qty: 1,
@@ -963,594 +936,768 @@ const CreateEditPurchaseBill = () => {
       }
       setBarcode("");
     } catch (error) {
-      console.error("Barcode scan processing error: ", error);
-      if (error.response && error.response.status === 404) {
-        toast.error("Product not found");
-      } else {
-        toast.error(error.response?.data?.message || "Something went wrong");
-      }
+      toast.error(error.response?.data?.message || "Something went wrong");
       setBarcode("");
     }
   };
 
-  // Auto-generate lost bill reference number — always unique (uses HHMMSS)
   const generateLostRef = () => {
     const now = new Date();
-    const ymd = now.toISOString().slice(0, 10).replace(/-/g, ""); // 20260604
-    const time = now.toTimeString().slice(0, 8).replace(/:/g, ""); // 143052
-    return `LOST-${ymd}-${time}`; // e.g. LOST-20260604-143052
+    const ymd = now.toISOString().slice(0, 10).replace(/-/g, "");
+    const time = now.toTimeString().slice(0, 8).replace(/:/g, "");
+    return `LOST-${ymd}-${time}`;
   };
 
   return (
     <Layout>
-      {/* Inject ledger design system CSS */}
       <style>{ledgerStyles}</style>
 
       <div className="main-content-inner">
         <div className="main-content-wrap">
-          <div className="pb-page">
-            {/* Header strip */}
-            <div className="pb-header-strip">
-              <div>
-                <p className="pb-header-eyebrow">
-                  Purchases &amp; Stock Inward
-                </p>
-                <h3>
-                  {isEdit ? "Edit Purchase Bill" : "Create Purchase Bill"}
-                </h3>
-              </div>
-            </div>
+          <Formik
+            innerRef={formikRef}
+            initialValues={initialValues}
+            enableReinitialize={true}
+            validationSchema={validationSchema}
+            onSubmit={(values, actions) => handleSubmit(values, actions)}
+          >
+            {({ values, setFieldValue }) => {
+              // 1. Dynamic Totals from lines
+              const grandTotal = (values.lines || []).reduce((sum, line) => {
+                const qty = Number(line.qty) || 0;
+                const purchaseRate = Number(line.purchase_rate) || 0;
+                const discount = Number(line.discount || 0);
+                const discountType = line.discount_type;
+                const gstRate = getGstRate(line.gst_rate_id);
 
-            <Formik
-              innerRef={formikRef}
-              initialValues={initialValues}
-              enableReinitialize={true}
-              validationSchema={validationSchema}
-              onSubmit={(values, actions) => handleSubmit(values, actions)}
-            >
-              {({ values, setFieldValue }) => (
-                <Form
-                  // onKeyDown={(e) => {
-                  //   if (e.key === "Enter" && e.target.id !== "barcode-input") {
-                  //     e.preventDefault();
-                  //   }
-                  // }}
+                if (!qty || !purchaseRate) return sum;
 
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      const target = e.target;
+                const grossValue =
+                  values.tax_type === "inclusive"
+                    ? qty * (purchaseRate / (1 + gstRate / 100))
+                    : qty * purchaseRate;
 
-                      if (
-                        target.id === "barcode-input" ||
-                        target.tagName === "TEXTAREA" ||
-                        target.type === "submit"
-                      ) {
-                        return;
+                const discountAmount =
+                  discountType === "percent"
+                    ? grossValue * (discount / 100)
+                    : discount;
+
+                const taxable = Math.max(0, grossValue - discountAmount);
+                const totalTax = (taxable * gstRate) / 100;
+
+                return sum + (taxable + totalTax);
+              }, 0);
+
+              // Settlement parse handle for null values
+              const effectiveTotal =
+                values.settlement_amount !== "" &&
+                values.settlement_amount != null &&
+                !isNaN(Number(values.settlement_amount))
+                  ? Number(values.settlement_amount)
+                  : incomingBill?.total_amount
+                    ? Number(incomingBill.total_amount)
+                    : grandTotal;
+
+              // Payments log total
+              const paidTotal = (values.payments || []).reduce(
+                (acc, p) => acc + (Number(p.amount) || 0),
+                0,
+              );
+
+              // Due Amount Calculation (with tolerance rounding for floating point division)
+              const rawDue = effectiveTotal - paidTotal;
+              const dueAmount =
+                rawDue > 0.5 ? Math.round(rawDue * 100) / 100 : 0;
+
+              // Status flags
+              const isPaid =
+                dueAmount === 0 && (paidTotal > 0 || effectiveTotal > 0);
+              const isPartial = paidTotal > 0 && dueAmount > 0;
+
+              return (
+                <div className="pb-page">
+                  <div className="pb-header-strip">
+                    <div>
+                      <p className="pb-header-eyebrow">
+                        Purchases &amp; Stock Inward
+                      </p>
+                      <h3>
+                        {isEdit ? "Edit Purchase Bill" : "Create Purchase Bill"}
+                      </h3>
+                    </div>
+
+                    {/* Dynamic Status Badges */}
+                    {isEdit && (
+                      <div>
+                        {isPaid && (
+                          <span className="status-badge paid">
+                            <i className="fa fa-check-circle mr-1"></i> Fully
+                            Paid
+                          </span>
+                        )}
+                        {isPartial && (
+                          <span className="status-badge partial">
+                            <i className="fa fa-clock-o mr-1"></i> Partially
+                            Paid
+                          </span>
+                        )}
+                        {!isPaid && !isPartial && (
+                          <span className="status-badge due">
+                            <i className="fa fa-exclamation-circle mr-1"></i>{" "}
+                            Unpaid / Due
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  <Form
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        const target = e.target;
+                        if (
+                          target.id === "barcode-input" ||
+                          target.tagName === "TEXTAREA" ||
+                          target.type === "submit"
+                        ) {
+                          return;
+                        }
+                        e.preventDefault();
+                        const formElements = Array.from(
+                          e.currentTarget.querySelectorAll(
+                            'input:not([disabled]), select:not([disabled]), textarea:not([disabled]), button[type="submit"]',
+                          ),
+                        );
+                        const index = formElements.indexOf(target);
+                        if (index > -1 && index < formElements.length - 1) {
+                          formElements[index + 1].focus();
+                        }
                       }
+                    }}
+                  >
+                    {/* Bill Details */}
+                    <div className="pb-card">
+                      <p className="pb-section-label">Bill Details</p>
+                      <div className="row mb-0">
+                        <div className="mb-20 col-md-4">
+                          <label className="pb-field-label">Branch</label>
+                          <Field as="select" name="branch_id">
+                            <option value="">Select Branch</option>
+                            {branches?.map((b) => (
+                              <option key={b.id} value={b.id}>
+                                {b.name}
+                              </option>
+                            ))}
+                          </Field>
+                          <ErrorMessage
+                            name="branch_id"
+                            className="error-text"
+                            component="div"
+                          />
+                        </div>
 
-                      e.preventDefault();
+                        <div className="mb-20 col-md-4">
+                          <label className="pb-field-label">Supplier</label>
+                          <Field name="supplier_id" as="select">
+                            {({ field }) => (
+                              <select
+                                {...field}
+                                onChange={(e) => {
+                                  field.onChange(e);
+                                  const value = e.target.value;
+                                  if (value === "add_new") setShowModal(true);
+                                  setSupplierId(value);
+                                }}
+                              >
+                                <option value="">Select Supplier</option>
+                                {suppliers.map((s) => (
+                                  <option key={s.id} value={s.id}>
+                                    {s.name}
+                                  </option>
+                                ))}
+                                {!newSupplier && (
+                                  <option value="add_new">
+                                    + Add New Supplier
+                                  </option>
+                                )}
+                              </select>
+                            )}
+                          </Field>
+                          <ErrorMessage
+                            name="supplier_id"
+                            className="error-text"
+                            component="div"
+                          />
+                        </div>
 
-                      const formElements = Array.from(
-                        e.currentTarget.querySelectorAll(
-                          'input:not([disabled]), select:not([disabled]), textarea:not([disabled]), button[type="submit"]',
-                        ),
-                      );
-
-                      const index = formElements.indexOf(target);
-
-                      if (index > -1 && index < formElements.length - 1) {
-                        formElements[index + 1].focus();
-                      }
-                    }
-                  }}
-                >
-                  {/* ── Branch, Supplier & Bill Date ── */}
-                  <div className="pb-card">
-                    <p className="pb-section-label">Bill Details</p>
-                    <div className="row mb-0">
-                      <div className="mb-20 col-md-4">
-                        <label className="pb-field-label">Branch</label>
-                        <Field as="select" name="branch_id">
-                          <option value="">Select Branch</option>
-                          {branches?.map((b) => (
-                            <option key={b.id} value={b.id}>
-                              {b.name}
-                            </option>
-                          ))}
-                        </Field>
-                        <ErrorMessage
-                          name="branch_id"
-                          className="error-text"
-                          component="div"
-                        />
+                        <div className="mb-20 col-md-4">
+                          <label className="pb-field-label">Bill Date</label>
+                          <FormikDatePicker type="date" name="bill_date" />
+                          <ErrorMessage
+                            name="bill_date"
+                            className="error-text"
+                            component="div"
+                          />
+                        </div>
                       </div>
 
-                      <div className="mb-20 col-md-4">
-                        <label className="pb-field-label">Supplier</label>
-                        <Field name="supplier_id" as="select">
-                          {({ field }) => (
-                            <select
-                              {...field}
-                              onChange={(e) => {
-                                field.onChange(e);
-                                const value = e.target.value;
-                                if (value === "add_new") setShowModal(true);
-                                setSupplierId(value);
-                              }}
+                      <div className="row mb-0">
+                        <div className="mb-0 col-md-6">
+                          <label className="pb-field-label">Bill No</label>
+                          <div
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "10px",
+                            }}
+                          >
+                            <div
+                              className={`lost-bill-wrapper${isBillLost ? " active" : ""}`}
                             >
-                              <option value="">Select Supplier</option>
-                              {suppliers.map((s) => (
-                                <option key={s.id} value={s.id}>
-                                  {s.name}
-                                </option>
-                              ))}
-                              {!newSupplier && (
-                                <option value="add_new">
-                                  + Add New Supplier
-                                </option>
-                              )}
-                            </select>
-                          )}
-                        </Field>
-                        <ErrorMessage
-                          name="supplier_id"
-                          className="error-text"
-                          component="div"
-                        />
-                      </div>
+                              <label
+                                className="toggle-switch"
+                                htmlFor="lost-toggle"
+                              >
+                                <input
+                                  type="checkbox"
+                                  id="lost-toggle"
+                                  checked={isBillLost}
+                                  onChange={(e) => {
+                                    const lost = e.target.checked;
+                                    setIsBillLost(lost);
+                                    setFieldValue(
+                                      "bill_no",
+                                      lost ? generateLostRef() : "",
+                                    );
+                                  }}
+                                />
+                                <span className="toggle-track"></span>
+                              </label>
+                              <label
+                                htmlFor="lost-toggle"
+                                className="toggle-label-text"
+                              >
+                                {isBillLost ? "⚠ Lost" : "Bill available"}
+                              </label>
+                            </div>
 
-                      <div className="mb-20 col-md-4">
-                        <label className="pb-field-label">Bill Date</label>
-                        <FormikDatePicker type="date" name="bill_date" />
-                        <ErrorMessage
-                          name="bill_date"
-                          className="error-text"
-                          component="div"
-                        />
+                            <div style={{ flex: 1 }}>
+                              <Field
+                                type="text"
+                                name="bill_no"
+                                className={isBillLost ? "lost-bill-input" : ""}
+                                placeholder={
+                                  isBillLost
+                                    ? "Auto-generated reference"
+                                    : "Enter bill no"
+                                }
+                                disabled={isBillLost}
+                              />
+                              <ErrorMessage
+                                name="bill_no"
+                                className="error-text"
+                                component="div"
+                              />
+                            </div>
+                          </div>
+
+                          {isBillLost && (
+                            <div className="lost-bill-hint">
+                              <span>
+                                You can update the real bill no. later from the
+                                bills list once supplier sends a copy.
+                              </span>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
 
-                    {/* ── Bill No with lost toggle ── */}
-                    <div className="row mb-0">
-                      <div className="mb-0 col-md-6">
-                        <label className="pb-field-label">Bill No</label>
-                        <div
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "10px",
-                          }}
-                        >
-                          <div
-                            className={`lost-bill-wrapper${isBillLost ? " active" : ""}`}
-                          >
-                            <label
-                              className="toggle-switch"
-                              htmlFor="lost-toggle"
-                            >
-                              <input
-                                type="checkbox"
-                                id="lost-toggle"
-                                checked={isBillLost}
-                                onChange={(e) => {
-                                  const lost = e.target.checked;
-                                  setIsBillLost(lost);
-                                  setFieldValue(
-                                    "bill_no",
-                                    lost ? generateLostRef() : "",
-                                  );
-                                }}
-                              />
-                              <span className="toggle-track"></span>
-                            </label>
-                            <label
-                              htmlFor="lost-toggle"
-                              className="toggle-label-text"
-                            >
-                              {isBillLost ? "⚠ Lost" : "Bill available"}
-                            </label>
-                          </div>
-
-                          <div style={{ flex: 1 }}>
-                            <Field
+                    {/* Line Items */}
+                    <div className="pb-card">
+                      <p className="pb-section-label">Line Items</p>
+                      <FieldArray name="lines">
+                        {({ push, remove }) => (
+                          <>
+                            <input
+                              id="barcode-input"
+                              className="pb-barcode-input"
                               type="text"
-                              name="bill_no"
-                              className={isBillLost ? "lost-bill-input" : ""}
-                              placeholder={
-                                isBillLost
-                                  ? "Auto-generated reference"
-                                  : "Enter bill no"
+                              value={barcode}
+                              onChange={(e) => setBarcode(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                  e.preventDefault();
+                                  handleBarcodeScan(
+                                    barcode,
+                                    values,
+                                    push,
+                                    setFieldValue,
+                                  );
+                                }
+                              }}
+                              placeholder="⌁ Scan barcode to auto-fill a line"
+                            />
+
+                            <div className="pb-lines-scroll">
+                              {values?.lines?.map((line, index) => (
+                                <div
+                                  key={index}
+                                  className={`pb-line-row${line.is_opening ? " is-opening" : ""}`}
+                                >
+                                  <div className="field-col">
+                                    <small className="field-label">
+                                      Product
+                                    </small>
+                                    <Field name={`lines.${index}.product_id`}>
+                                      {({ field, form }) => (
+                                        <select
+                                          {...field}
+                                          onChange={(e) => {
+                                            const value = e.target.value;
+                                            if (value === "add_new") {
+                                              setShowProductModal(true);
+                                              setActiveRowIndex(index);
+                                              return;
+                                            }
+                                            form.setFieldValue(
+                                              field.name,
+                                              value,
+                                            );
+                                          }}
+                                        >
+                                          <option value="">Select</option>
+                                          {products.map((p) => (
+                                            <option key={p.id} value={p.id}>
+                                              {p.name}
+                                            </option>
+                                          ))}
+                                          <option value="add_new">
+                                            + Add New Product
+                                          </option>
+                                        </select>
+                                      )}
+                                    </Field>
+                                    <ErrorMessage
+                                      name={`lines.${index}.product_id`}
+                                      component="div"
+                                      className="field-error"
+                                    />
+                                  </div>
+
+                                  <div className="field-col">
+                                    <small className="field-label">Qty</small>
+                                    <Field
+                                      type="number"
+                                      name={`lines.${index}.qty`}
+                                    />
+                                    <ErrorMessage
+                                      name={`lines.${index}.qty`}
+                                      component="div"
+                                      className="field-error"
+                                    />
+                                  </div>
+
+                                  <div className="field-col">
+                                    <small className="field-label">Free</small>
+                                    <Field
+                                      type="number"
+                                      name={`lines.${index}.free_qty`}
+                                    />
+                                    <ErrorMessage
+                                      name={`lines.${index}.free_qty`}
+                                      component="div"
+                                      className="field-error"
+                                    />
+                                  </div>
+
+                                  <div className="field-col">
+                                    <small className="field-label">Rate</small>
+                                    <Field
+                                      type="number"
+                                      name={`lines.${index}.purchase_rate`}
+                                    />
+                                    <ErrorMessage
+                                      name={`lines.${index}.purchase_rate`}
+                                      component="div"
+                                      className="field-error"
+                                    />
+                                  </div>
+
+                                  <div className="field-col">
+                                    <small className="field-label">MRP</small>
+                                    <Field
+                                      type="number"
+                                      name={`lines.${index}.mrp`}
+                                    />
+                                    <ErrorMessage
+                                      name={`lines.${index}.mrp`}
+                                      component="div"
+                                      className="field-error"
+                                    />
+                                  </div>
+
+                                  <div className="field-col">
+                                    <small className="field-label">SP</small>
+                                    <Field
+                                      type="number"
+                                      name={`lines.${index}.selling_price`}
+                                    />
+                                    <ErrorMessage
+                                      name={`lines.${index}.selling_price`}
+                                      component="div"
+                                      className="field-error"
+                                    />
+                                  </div>
+
+                                  <div className="field-col">
+                                    <small className="field-label">
+                                      Disc Type
+                                    </small>
+                                    <Field
+                                      as="select"
+                                      name={`lines.${index}.discount_type`}
+                                    >
+                                      <option value="">–</option>
+                                      <option value="percent">%</option>
+                                      <option value="fixed">₹</option>
+                                    </Field>
+                                    <ErrorMessage
+                                      name={`lines.${index}.discount_type`}
+                                      component="div"
+                                      className="field-error"
+                                    />
+                                  </div>
+
+                                  <div className="field-col">
+                                    <small className="field-label">
+                                      Discount
+                                    </small>
+                                    <Field
+                                      type="number"
+                                      name={`lines.${index}.discount`}
+                                    />
+                                    <ErrorMessage
+                                      name={`lines.${index}.discount`}
+                                      component="div"
+                                      className="field-error"
+                                    />
+                                  </div>
+
+                                  <div className="field-col">
+                                    <small className="field-label">GST %</small>
+                                    <Field
+                                      as="select"
+                                      name={`lines.${index}.gst_rate_id`}
+                                    >
+                                      <option value="">–</option>
+                                      {gstRates.map((g) => (
+                                        <option key={g.id} value={g.id}>
+                                          {g.rate}%
+                                        </option>
+                                      ))}
+                                    </Field>
+                                    <ErrorMessage
+                                      name={`lines.${index}.gst_rate_id`}
+                                      component="div"
+                                      className="field-error"
+                                    />
+                                  </div>
+
+                                  <div className="field-col">
+                                    <small className="field-label">
+                                      Expiry
+                                    </small>
+                                    <FormikDatePicker
+                                      name={`lines.${index}.expiry_date`}
+                                      placeholder="dd-mm-yyyy"
+                                    />
+                                    <ErrorMessage
+                                      name={`lines.${index}.expiry_date`}
+                                      component="div"
+                                      className="field-error"
+                                    />
+                                  </div>
+
+                                  <div className="field-col">
+                                    <small className="field-label">HSN</small>
+                                    <Field
+                                      type="text"
+                                      name={`lines.${index}.hsn_code`}
+                                    />
+                                    <ErrorMessage
+                                      name={`lines.${index}.hsn_code`}
+                                      component="div"
+                                      className="field-error"
+                                    />
+                                  </div>
+
+                                  <button
+                                    type="button"
+                                    className="pb-remove-btn"
+                                    onClick={() => remove(index)}
+                                    title="Remove line"
+                                  >
+                                    ✕
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+
+                            <button
+                              type="button"
+                              className="pb-add-product-btn"
+                              onClick={() => {
+                                const newIndex = values.lines.length;
+                                push({
+                                  product_id: "",
+                                  qty: "",
+                                  free_qty: "",
+                                  purchase_rate: "",
+                                  mrp: "",
+                                  selling_price: "",
+                                  discount_type: "",
+                                  discount: "",
+                                  hsn_code: "",
+                                  gst_rate_id: "",
+                                  batch_no: "",
+                                  expiry_date: "",
+                                  is_opening: false,
+                                });
+                                setTimeout(() => {
+                                  document
+                                    .querySelector(
+                                      `input[name="lines.${newIndex}.qty"]`,
+                                    )
+                                    ?.focus();
+                                }, 50);
+                              }}
+                            >
+                              + Add Product Line
+                            </button>
+                          </>
+                        )}
+                      </FieldArray>
+                    </div>
+
+                    {/* Tax Type & Remarks */}
+                    <div className="pb-card">
+                      <p className="pb-section-label">
+                        Billing &amp; Settlement
+                      </p>
+                      <div className="row mb-0">
+                        <div className="mb-20 col-md-4">
+                          <label className="pb-field-label">
+                            Tax Billing Type
+                          </label>
+                          <div className="pb-tax-toggle">
+                            <button
+                              type="button"
+                              className={`pb-tax-btn${values.tax_type === "exclusive" ? " active-exclusive" : ""}`}
+                              onClick={() =>
+                                setFieldValue("tax_type", "exclusive")
                               }
-                              disabled={isBillLost}
-                            />
-                            <ErrorMessage
-                              name="bill_no"
-                              className="error-text"
-                              component="div"
-                            />
+                            >
+                              <i className="fa fa-plus-circle"></i>
+                              Exclusive (+)
+                            </button>
+                            <button
+                              type="button"
+                              className={`pb-tax-btn${values.tax_type === "inclusive" ? " active-inclusive" : ""}`}
+                              onClick={() =>
+                                setFieldValue("tax_type", "inclusive")
+                              }
+                            >
+                              <i className="fa fa-arrow-circle-down"></i>
+                              Inclusive (In)
+                            </button>
                           </div>
                         </div>
 
-                        {isBillLost && (
-                          <div className="lost-bill-hint">
-                            <span>
-                              You can update the real bill no. later from the
-                              bills list once supplier sends a copy.
-                            </span>
-                          </div>
-                        )}
+                        <div className="mb-20 col-md-4">
+                          <label className="pb-field-label">
+                            Settlement Amount (Final Adjusted Paid)
+                          </label>
+                          <Field
+                            type="number"
+                            name="settlement_amount"
+                            placeholder="e.g., 722"
+                          />
+                          <ErrorMessage
+                            name="settlement_amount"
+                            className="error-text"
+                            component="div"
+                          />
+                        </div>
+
+                        <div className="mb-0 col-md-4">
+                          <label className="pb-field-label">
+                            Bill Remarks / Ledger Notes
+                          </label>
+                          <Field
+                            as="textarea"
+                            name="notes"
+                            rows="1"
+                            placeholder="Enter settlement remarks or adjustment details..."
+                          />
+                          <ErrorMessage
+                            name="notes"
+                            component="div"
+                            className="error-text"
+                          />
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  {/* ── Line Items ── */}
-                  <div className="pb-card">
-                    <p className="pb-section-label">Line Items</p>
+                    {/* Split Payments & Due/Paid Status Card */}
+                    <div className="pb-card">
+                      <p className="pb-section-label">Payments Ledger</p>
 
-                    <FieldArray name="lines">
-                      {({ push, remove }) => (
+                      {/* Dynamic Due / Paid Info Banner in Edit Mode */}
+                      {isEdit && (
                         <>
-                          <input
-                            id="barcode-input"
-                            className="pb-barcode-input"
-                            type="text"
-                            value={barcode}
-                            onChange={(e) => setBarcode(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter") {
-                                e.preventDefault();
-                                handleBarcodeScan(
-                                  barcode,
-                                  values,
-                                  push,
-                                  setFieldValue,
-                                );
-                              }
-                            }}
-                            placeholder="⌁ Scan barcode to auto-fill a line"
-                          />
+                          {dueAmount > 0 ? (
+                            <div className="payment-summary-box due-bg text-2xl">
+                              <span>
+                                <i className="fa fa-info-circle mr-2"></i> Due
+                                Bill Amount Pending:
+                              </span>
+                              <span style={{ fontSize: "16px" }}>
+                                ₹{formatAmount(dueAmount)}
+                              </span>
+                            </div>
+                          ) : (
+                            <div className="payment-summary-box paid-bg text-2xl">
+                              <span>
+                                <i className="fa fa-check-circle mr-2"></i> Bill
+                                Fully Settled:
+                              </span>
+                              <span>
+                                Paid Details Logged: ₹{formatAmount(paidTotal)}
+                              </span>
+                            </div>
+                          )}
+                        </>
+                      )}
 
-                          <div className="pb-lines-scroll">
-                            {values?.lines?.map((line, index) => (
-                              <div
-                                key={index}
-                                className={`pb-line-row${line.is_opening ? " is-opening" : ""}`}
-                              >
-                                {/* Product */}
-                                <div className="field-col">
-                                  <small className="field-label">Product</small>
-                                  <Field name={`lines.${index}.product_id`}>
-                                    {({ field, form }) => (
-                                      <select
-                                        {...field}
-                                        onChange={(e) => {
-                                          const value = e.target.value;
-                                          if (value === "add_new") {
-                                            setShowProductModal(true);
-                                            setActiveRowIndex(index);
-                                            return;
-                                          }
-                                          form.setFieldValue(field.name, value);
-                                        }}
-                                      >
-                                        <option value="">Select</option>
-                                        {products.map((p) => (
-                                          <option key={p.id} value={p.id}>
-                                            {p.name}
-                                          </option>
-                                        ))}
-                                        <option value="add_new">
-                                          + Add New Product
-                                        </option>
-                                      </select>
-                                    )}
-                                  </Field>
-                                  <ErrorMessage
-                                    name={`lines.${index}.product_id`}
-                                    component="div"
-                                    className="field-error"
-                                  />
-                                </div>
-
-                                {/* Qty */}
-                                <div className="field-col">
-                                  <small className="field-label">Qty</small>
-                                  <Field
-                                    type="number"
-                                    name={`lines.${index}.qty`}
-                                  />
-                                  <ErrorMessage
-                                    name={`lines.${index}.qty`}
-                                    component="div"
-                                    className="field-error"
-                                  />
-                                </div>
-
-                                {/* Free */}
-                                <div className="field-col">
-                                  <small className="field-label">Free</small>
-                                  <Field
-                                    type="number"
-                                    name={`lines.${index}.free_qty`}
-                                  />
-                                  <ErrorMessage
-                                    name={`lines.${index}.free_qty`}
-                                    component="div"
-                                    className="field-error"
-                                  />
-                                </div>
-
-                                {/* Rate */}
-                                <div className="field-col">
-                                  <small className="field-label">Rate</small>
-                                  <Field
-                                    type="number"
-                                    name={`lines.${index}.purchase_rate`}
-                                  />
-                                  <ErrorMessage
-                                    name={`lines.${index}.purchase_rate`}
-                                    component="div"
-                                    className="field-error"
-                                  />
-                                </div>
-
-                                {/* MRP */}
-                                <div className="field-col">
-                                  <small className="field-label">MRP</small>
-                                  <Field
-                                    type="number"
-                                    name={`lines.${index}.mrp`}
-                                  />
-                                  <ErrorMessage
-                                    name={`lines.${index}.mrp`}
-                                    component="div"
-                                    className="field-error"
-                                  />
-                                </div>
-
-                                {/* Selling Price */}
-                                <div className="field-col">
-                                  <small className="field-label">SP</small>
-                                  <Field
-                                    type="number"
-                                    name={`lines.${index}.selling_price`}
-                                  />
-                                  <ErrorMessage
-                                    name={`lines.${index}.selling_price`}
-                                    component="div"
-                                    className="field-error"
-                                  />
-                                </div>
-
-                                {/* Discount Type */}
-                                <div className="field-col">
-                                  <small className="field-label">
-                                    Disc Type
-                                  </small>
+                      <FieldArray name="payments">
+                        {({ push, remove }) => (
+                          <>
+                            {values.payments?.map((payment, pIndex) => (
+                              <div key={pIndex} className="payment-row">
+                                <div style={{ flex: 1 }}>
+                                  <label className="pb-field-label">
+                                    Method
+                                  </label>
                                   <Field
                                     as="select"
-                                    name={`lines.${index}.discount_type`}
+                                    name={`payments.${pIndex}.method`}
                                   >
-                                    <option value="">–</option>
-                                    <option value="percent">%</option>
-                                    <option value="fixed">₹</option>
+                                    <option value="cash">Cash</option>
+                                    <option value="online">Online</option>
+                                    <option value="bank">Bank</option>
                                   </Field>
                                   <ErrorMessage
-                                    name={`lines.${index}.discount_type`}
+                                    name={`payments.${pIndex}.method`}
                                     component="div"
-                                    className="field-error"
+                                    className="error-text"
                                   />
                                 </div>
 
-                                {/* Discount */}
-                                <div className="field-col">
-                                  <small className="field-label">
-                                    Discount
-                                  </small>
+                                <div style={{ flex: 1 }}>
+                                  <label className="pb-field-label">
+                                    Amount
+                                  </label>
                                   <Field
                                     type="number"
-                                    name={`lines.${index}.discount`}
+                                    name={`payments.${pIndex}.amount`}
+                                    placeholder="0.00"
                                   />
                                   <ErrorMessage
-                                    name={`lines.${index}.discount`}
+                                    name={`payments.${pIndex}.amount`}
                                     component="div"
-                                    className="field-error"
+                                    className="error-text"
                                   />
                                 </div>
 
-                                {/* GST */}
-                                <div className="field-col">
-                                  <small className="field-label">GST %</small>
-                                  <Field
-                                    as="select"
-                                    name={`lines.${index}.gst_rate_id`}
-                                  >
-                                    <option value="">–</option>
-                                    {gstRates.map((g) => (
-                                      <option key={g.id} value={g.id}>
-                                        {g.rate}%
-                                      </option>
-                                    ))}
-                                  </Field>
-                                  <ErrorMessage
-                                    name={`lines.${index}.gst_rate_id`}
-                                    component="div"
-                                    className="field-error"
-                                  />
-                                </div>
-
-                                {/* Expiry */}
-                                <div className="field-col">
-                                  <small className="field-label">Expiry</small>
-                                  <FormikDatePicker
-                                    name={`lines.${index}.expiry_date`}
-                                    placeholder="dd-mm-yyyy"
-                                  />
-                                  <ErrorMessage
-                                    name={`lines.${index}.expiry_date`}
-                                    component="div"
-                                    className="field-error"
-                                  />
-                                </div>
-
-                                {/* HSN */}
-                                <div className="field-col">
-                                  <small className="field-label">HSN</small>
+                                <div style={{ flex: 1 }}>
+                                  <label className="pb-field-label">
+                                    Ref / Transaction ID
+                                  </label>
                                   <Field
                                     type="text"
-                                    name={`lines.${index}.hsn_code`}
-                                  />
-                                  <ErrorMessage
-                                    name={`lines.${index}.hsn_code`}
-                                    component="div"
-                                    className="field-error"
+                                    name={`payments.${pIndex}.reference`}
+                                    placeholder="Ref No."
                                   />
                                 </div>
 
-                                {/* Remove */}
+                                <div style={{ flex: 1 }}>
+                                  <label className="pb-field-label">
+                                    Payment Date
+                                  </label>
+                                  <FormikDatePicker
+                                    name={`payments.${pIndex}.payment_date`}
+                                    placeholder="dd-mm-yyyy"
+                                  />
+                                </div>
+
                                 <button
                                   type="button"
                                   className="pb-remove-btn"
-                                  onClick={() => remove(index)}
-                                  title="Remove line"
+                                  style={{ marginTop: "20px" }}
+                                  onClick={() => remove(pIndex)}
+                                  title="Remove payment"
                                 >
                                   ✕
                                 </button>
                               </div>
                             ))}
+
+                            <button
+                              type="button"
+                              className="mt-4 text-blue-600 font-semibold text-2xl hover:text-blue-700 transition"
+                              onClick={() =>
+                                push({
+                                  method: "cash",
+                                  amount: dueAmount > 0 ? dueAmount : "",
+                                  reference: "",
+                                  payment_date: "",
+                                })
+                              }
+                            >
+                              + Add Payment Entry
+                            </button>
+                          </>
+                        )}
+                      </FieldArray>
+                    </div>
+
+                    {/* Actions & Summary */}
+                    <div className="pb-bottom-row">
+                      <button type="submit" className="pb-submit-btn">
+                        {isEdit ? "Update Bill" : "Save Bill"}
+                      </button>
+
+                      <div className="pb-total-bar">
+                        <div className="pb-total-label">
+                          <div className="pb-total-icon">
+                            <i className="fa fa-calculator"></i>
                           </div>
-
-                          <button
-                            type="button"
-                            className="pb-add-product-btn"
-                            onClick={() => {
-                              const newIndex = values.lines.length;
-                              push({
-                                product_id: "",
-                                qty: "",
-                                free_qty: "",
-                                purchase_rate: "",
-                                mrp: "",
-                                selling_price: "",
-                                discount_type: "",
-                                discount: "",
-                                hsn_code: "",
-                                gst_rate_id: "",
-                                batch_no: "",
-                                expiry_date: "",
-                                is_opening: false,
-                              });
-                              setTimeout(() => {
-                                document
-                                  .querySelector(
-                                    `input[name="lines.${newIndex}.qty"]`,
-                                  )
-                                  ?.focus();
-                              }, 50);
-                            }}
-                          >
-                            + Add Product Line
-                          </button>
-                        </>
-                      )}
-                    </FieldArray>
-                  </div>
-
-                  {/* ── Tax type, settlement, notes ── */}
-                  <div className="pb-card">
-                    <p className="pb-section-label">Billing &amp; Settlement</p>
-                    <div className="row mb-0">
-                      <div className="mb-20 col-md-4">
-                        <label className="pb-field-label">
-                          Tax Billing Type
-                        </label>
-                        <div className="pb-tax-toggle">
-                          <button
-                            type="button"
-                            className={`pb-tax-btn${values.tax_type === "exclusive" ? " active-exclusive" : ""}`}
-                            onClick={() =>
-                              setFieldValue("tax_type", "exclusive")
-                            }
-                          >
-                            <i className="fa fa-plus-circle"></i>
-                            Exclusive (+)
-                          </button>
-                          <button
-                            type="button"
-                            className={`pb-tax-btn${values.tax_type === "inclusive" ? " active-inclusive" : ""}`}
-                            onClick={() =>
-                              setFieldValue("tax_type", "inclusive")
-                            }
-                          >
-                            <i className="fa fa-arrow-circle-down"></i>
-                            Inclusive (In)
-                          </button>
+                          <span>Calculated Bill Invoice Total</span>
+                        </div>
+                        <div className="pb-total-amount">
+                          <small>₹</small>
+                          <span>{formatAmount(grandTotal)}</span>
                         </div>
                       </div>
-
-                      <div className="mb-20 col-md-4">
-                        <label className="pb-field-label">
-                          Settlement Amount (Final Adjusted Paid)
-                        </label>
-                        <Field
-                          type="number"
-                          name="settlement_amount"
-                          placeholder="e.g., 722"
-                        />
-                        <ErrorMessage
-                          name="settlement_amount"
-                          className="error-text"
-                          component="div"
-                        />
-                      </div>
-
-                      <div className="mb-0 col-md-4">
-                        <label className="pb-field-label">
-                          Bill Remarks / Ledger Notes
-                        </label>
-                        <Field
-                          as="textarea"
-                          name="notes"
-                          rows="1"
-                          placeholder="Enter settlement remarks or adjustment details..."
-                        />
-                        <ErrorMessage
-                          name="notes"
-                          component="div"
-                          className="error-text"
-                        />
-                      </div>
                     </div>
-                  </div>
+                  </Form>
+                </div>
+              );
+            }}
+          </Formik>
 
-                  <div className="pb-bottom-row">
-                    <button type="submit" className="pb-submit-btn">
-                      {isEdit ? "Update Bill" : "Save Bill"}
-                    </button>
-
-                    <div className="pb-total-bar">
-                      <div className="pb-total-label">
-                        <div className="pb-total-icon">
-                          <i className="fa fa-calculator"></i>
-                        </div>
-                        <span>Calculated Bill Invoice Total</span>
-                      </div>
-                      <div className="pb-total-amount">
-                        <small>₹</small>
-                        <span>
-                          {formatAmount(
-                            calculateTotalAmount(values.lines, values.tax_type),
-                          )}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </Form>
-              )}
-            </Formik>
-          </div>
-
-          {/* ── Add Supplier Modal ── */}
+          {/* Supplier Modal */}
           {showModal && (
             <div
               className="pb-modal-overlay"
@@ -1587,47 +1734,11 @@ const CreateEditPurchaseBill = () => {
                   >
                     <option value="">Select State</option>
                     <option value="Andhra Pradesh">Andhra Pradesh</option>
-                    <option value="Arunachal Pradesh">Arunachal Pradesh</option>
-                    <option value="Assam">Assam</option>
-                    <option value="Bihar">Bihar</option>
-                    <option value="Chhattisgarh">Chhattisgarh</option>
-                    <option value="Goa">Goa</option>
                     <option value="Gujarat">Gujarat</option>
-                    <option value="Haryana">Haryana</option>
-                    <option value="Himachal Pradesh">Himachal Pradesh</option>
-                    <option value="Jharkhand">Jharkhand</option>
-                    <option value="Karnataka">Karnataka</option>
-                    <option value="Kerala">Kerala</option>
-                    <option value="Madhya Pradesh">Madhya Pradesh</option>
                     <option value="Maharashtra">Maharashtra</option>
-                    <option value="Manipur">Manipur</option>
-                    <option value="Meghalaya">Meghalaya</option>
-                    <option value="Mizoram">Mizoram</option>
-                    <option value="Nagaland">Nagaland</option>
-                    <option value="Odisha">Odisha</option>
-                    <option value="Punjab">Punjab</option>
-                    <option value="Rajasthan">Rajasthan</option>
-                    <option value="Sikkim">Sikkim</option>
+                    <option value="Karnataka">Karnataka</option>
                     <option value="Tamil Nadu">Tamil Nadu</option>
-                    <option value="Telangana">Telangana</option>
-                    <option value="Tripura">Tripura</option>
-                    <option value="Uttar Pradesh">Uttar Pradesh</option>
-                    <option value="Uttarakhand">Uttarakhand</option>
-                    <option value="West Bengal">West Bengal</option>
-
-                    {/* Union Territories (optional) */}
-                    <option value="Andaman and Nicobar Islands">
-                      Andaman and Nicobar Islands
-                    </option>
-                    <option value="Chandigarh">Chandigarh</option>
-                    <option value="Dadra and Nagar Haveli and Daman and Diu">
-                      Dadra and Nagar Haveli and Daman and Diu
-                    </option>
                     <option value="Delhi">Delhi</option>
-                    <option value="Jammu and Kashmir">Jammu and Kashmir</option>
-                    <option value="Ladakh">Ladakh</option>
-                    <option value="Lakshadweep">Lakshadweep</option>
-                    <option value="Puducherry">Puducherry</option>
                   </select>
                 </div>
                 <div className="pb-modal-footer">
@@ -1649,7 +1760,7 @@ const CreateEditPurchaseBill = () => {
             </div>
           )}
 
-          {/* ── Add Product Modal ── */}
+          {/* Product Modal */}
           {showProductModal && (
             <div
               className="pb-modal-overlay"
