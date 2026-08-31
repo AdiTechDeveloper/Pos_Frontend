@@ -162,10 +162,17 @@ const CreateEditCategory = () => {
                     </div>
                   </fieldset>
 
+
+                  <div className="flex col">
                   {/* SUBMIT BUTTON */}
                   <button className="tf-button w208" type="submit">
                     {isEdit ? "Update Category" : "Create Category"}
                   </button>
+                  
+                   <button type="button" className="ml-5"><a href="/category"> Cancel</a></button>
+                  </div>
+                  
+                        
                 </Form>
               )}
             </Formik>

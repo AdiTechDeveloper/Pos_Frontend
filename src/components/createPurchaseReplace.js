@@ -573,13 +573,14 @@ const CreatePurchaseReplace = () => {
                             </div>
                           </div>
                         ))}
-
+                      
+                      
                         <button
                           type="button"
                           className="btn btn-outline-primary text-2xl"
                           style={{
                             border: "2px dashed #cbd5e1",
-                            width: "100%",
+                            // width: "100%",
                             padding: "12px",
                             borderRadius: "8px",
                             fontWeight: "600",
@@ -602,12 +603,17 @@ const CreatePurchaseReplace = () => {
                       </>
                     )}
                   </FieldArray>
+               
+               <div className="flex col">
                   <button
                     type="submit"
-                    className="mt-20 btn btn-success text-2xl w-full"
+                    className="mt-20 btn btn-success text-2xl w-md p-2"
                   >
                     Save Replace Bill
                   </button>
+
+                   <button type="button" className="ml-5"><a href="/purchase-return-bill"> Cancel</a></button>
+                </div>
                 </Form>
               )}
             </Formik>

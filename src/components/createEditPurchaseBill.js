@@ -1521,6 +1521,9 @@ const CreateEditPurchaseBill = () => {
                       {isEdit ? "Update Bill" : "Save Bill"}
                     </button>
 
+                     <button type="button" className="ml-5"><a href="/purchase-bill"> Cancel</a></button>
+
+
                     <div className="pb-total-bar">
                       <div className="pb-total-label">
                         <div className="pb-total-icon">
