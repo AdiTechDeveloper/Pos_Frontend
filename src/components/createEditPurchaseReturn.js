@@ -391,6 +391,7 @@ const CreateEditPurchaseReturn = () => {
                     )}
                   </FieldArray>
                   <button type="submit">Save Return Bill</button>
+                   <button type="button" className="ml-5"><a href="/purchase-return-bill"> Cancel</a></button>
                 </Form>
               )}
             </Formik>

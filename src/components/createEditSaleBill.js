@@ -205,6 +205,7 @@ const CreateEditSaleBill = () => {
                   <button type="submit" className="sales-submit-btn">
                     Submit Sales Bill
                   </button>
+                   <button type="button" className="ml-5"><a href="/sale-bill"> Cancel</a></button>
                 </Form>
               )}
             </Formik>

@@ -371,6 +371,7 @@ export default function ProcessSalesReturn() {
                 </>
               )}
             </button>
+             <button type="button" className="ml-5"><a href="/sales-return/list"> Cancel</a></button>
           </form>
           {billData && (
             <button type="button" className="sr-btn sr-btn-ghost" onClick={resetSearch}>

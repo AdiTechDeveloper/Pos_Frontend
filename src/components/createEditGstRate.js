@@ -121,10 +121,16 @@ const CreateEditGstRates = () => {
                       </div>
                     </fieldset>
                   </div>
+
+                   <div className="flex col">
+
                   {/* SUBMIT BUTTON */}
                   <button className="tf-button w208" type="submit">
                     {isEdit ? "Update Gst Rates" : "Create Gst Rates"}
                   </button>
+                     <button type="button" className="ml-5"><a href="/gst-rates"> Cancel</a></button>
+
+                  </div>
                 </Form>
               )}
             </Formik>
