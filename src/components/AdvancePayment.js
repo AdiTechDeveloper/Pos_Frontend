@@ -4,69 +4,78 @@ import axios from "axios";
 import Layout from "./layout";
 import { Link } from "react-router-dom";
 
-
 const AdvancePayment = () => {
-    const BASE_URL = process.env.REACT_APP_API_BASE_URL;
-    const user_data = JSON.parse(localStorage.getItem("user_detail"));
+  const BASE_URL = process.env.REACT_APP_API_BASE_URL;
+  const user_data = JSON.parse(localStorage.getItem("user_detail"));
 
-    const [data, setData] = useState([]);
-    const [search, setSearch] = useState("");
-    const [filteredData, setFilteredData] = useState([]);
-    const [currentPage, setCurrentPage] = useState(1);
+  const [data, setData] = useState([]);
+  const [search, setSearch] = useState("");
+  const [filteredData, setFilteredData] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
 
-    const perPage = 10;
+  const perPage = 10;
 
-    const customStyles = {
-        headCells: {
-            style: {
-                fontWeight: "bold",
-                fontSize: "14px",
-            },
+  const customStyles = {
+    headCells: {
+      style: {
+        fontWeight: "bold",
+        fontSize: "14px",
+        whiteSpace: "normal",
+        wordBreak: "break-word",
+        overflowWrap: "anywhere",
+        lineHeight: "1.3",
+        textAlign: "center",
+        minHeight: "44px",
+        paddingLeft: "8px",
+        paddingRight: "8px",
+      },
+    },
+    rows: {
+      style: {
+        fontSize: "15px",
+        minHeight: "56px",
+      },
+    },
+    cells: {
+      style: {
+        fontSize: "15px",
+        whiteSpace: "normal",
+        wordBreak: "break-word",
+        overflowWrap: "anywhere",
+        paddingLeft: "8px",
+        paddingRight: "8px",
+      },
+    },
+  };
+
+  // Fetch Advance Payment Report
+  const fetchData = async () => {
+    try {
+      const res = await axios.get(`${BASE_URL}/api/reports/advance-payments`, {
+        headers: {
+          Authorization: `Bearer ${user_data.token}`,
         },
-        rows: {
-            style: {
-                fontSize: "15px",
-                minHeight: "56px",
-            },
-        },
-        cells: {
-            style: {
-                fontSize: "15px",
-            },
-        },
-    };
+      });
 
-    // Fetch Advance Payment Report
-    const fetchData = async () => {
-        try {
-            const res = await axios.get(
-                `${BASE_URL}/api/reports/advance-payments`,
-                {
-                    headers: {
-                        Authorization: `Bearer ${user_data.token}`,
-                    },
-                }
-            );
+      if (res.data.status) {
+        setData(res.data.data || []);
+        setFilteredData(res.data.data || []);
+      }
+    } catch (err) {
+      console.error("Failed to load advance payment report", err);
+    }
+  };
 
-            if (res.data.status) {
-                setData(res.data.data || []);
-                setFilteredData(res.data.data || []);
-            }
-        } catch (err) {
-            console.error("Failed to load advance payment report", err);
-        }
-    };
+  useEffect(() => {
+    fetchData();
+  }, []);
 
-    useEffect(() => {
-        fetchData();
-    }, []);
+  // Search
+  useEffect(() => {
+    const text = search.toLowerCase().trim();
 
-    // Search
-    useEffect(() => {
-        const text = search.toLowerCase().trim();
-
-        const result = data.filter((item) => {
-            const searchString = `
+    const result = data.filter((item) => {
+      const searchString = `
         ${item.customer?.name || ""}
         ${item.customer?.mobile || ""}
         ${item.amount || ""}
@@ -76,204 +85,190 @@ const AdvancePayment = () => {
         ${item.branch?.name || ""}
       `.toLowerCase();
 
-            return searchString.includes(text);
-        });
+      return searchString.includes(text);
+    });
 
-        setFilteredData(result);
-        setCurrentPage(1);
-    }, [search, data]);
+    setFilteredData(result);
+    setCurrentPage(1);
+  }, [search, data]);
 
-    // Format date
-    const formatDate = (date) => {
-        if (!date) return "-";
+  // Format date
+  const formatDate = (date) => {
+    if (!date) return "-";
 
-        return new Date(date).toLocaleString("en-IN", {
-            day: "2-digit",
-            month: "short",
-            year: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-        });
-    };
+    return new Date(date).toLocaleString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
 
-    // Payment method badge
-    const getMethodBadge = (method) => {
-        if (method === "cash") {
-            return (
-                <span className="status-badge bg-success">
-                    Cash
-                </span>
-            );
-        }
+  // Payment method badge
+  const getMethodBadge = (method) => {
+    if (method === "cash") {
+      return <span className="status-badge bg-success">Cash</span>;
+    }
 
-        if (method === "online") {
-            return (
-                <span className="status-badge bg-info">
-                    Online
-                </span>
-            );
-        }
+    if (method === "online") {
+      return <span className="status-badge bg-info">Online</span>;
+    }
 
-        return (
-            <span className="status-badge bg-secondary">
-                {method || "-"}
-            </span>
-        );
-    };
+    return <span className="status-badge bg-secondary">{method || "-"}</span>;
+  };
 
-    const columns = [
-        {
-            name: "ID",
-            cell: (row, index) =>
-                (currentPage - 1) * perPage + index + 1,
-            width: "70px",
-            center: true,
-        },
+  const columns = [
+    {
+      name: "ID",
+      cell: (row, index) => (currentPage - 1) * perPage + index + 1,
+      width: "70px",
+      center: true,
+      wrap: true,
+    },
 
-        {
-            name: "Customer",
-            selector: (row) => row.customer?.name || "-",
-            sortable: true,
-            minWidth: "180px",
-        },
+    {
+      name: "Customer",
+      selector: (row) => row.customer?.name || "-",
+      sortable: true,
+      minWidth: "180px",
+      wrap: true,
+    },
 
-        {
-            name: "Mobile",
-            selector: (row) => row.customer?.mobile || "-",
-            sortable: true,
-            minWidth: "140px",
-        },
+    {
+      name: "Mobile",
+      selector: (row) => row.customer?.mobile || "-",
+      sortable: true,
+      minWidth: "100px",
+      wrap: true,
+    },
 
-        {
-            name: "Advance Amount",
-            selector: (row) => row.amount,
-            sortable: true,
-            width: "160px",
-            right: true,
-            wrap: true,
-            cell: (row) => (
-                <strong>
-                    ₹{Number(row.amount || 0).toFixed(2)}
-                </strong>
-            ),
-        },
+    {
+      name: "Advance Amount",
+      selector: (row) => row.amount,
+      sortable: true,
+      width: "160px",
+      right: true,
+      wrap: true,
+      cell: (row) => <strong>₹{Number(row.amount || 0).toFixed(2)}</strong>,
+    },
 
-        {
-            name: "Payment Method",
-            selector: (row) => row.method,
-            sortable: true,
-            width: "150px",
-            center: true,
-            cell: (row) => getMethodBadge(row.method),
-        },
+    {
+      name: "Payment Method",
+      selector: (row) => row.method,
+      sortable: true,
+      width: "200px",
+      center: true,
+      wrap: true,
+      cell: (row) => getMethodBadge(row.method),
+    },
 
-        {
-            name: "Transaction ID",
-            selector: (row) => row.transaction_id || "-",
-            sortable: true,
-            minWidth: "180px",
-        },
+    {
+      name: "Transaction ID",
+      selector: (row) => row.transaction_id || "-",
+      sortable: true,
+      minWidth: "180px",
+      wrap: true,
+    },
 
-        {
-            name: "Received By",
-            selector: (row) => row.received_by?.name || "-",
-            sortable: true,
-            minWidth: "150px",
-        },
+    {
+      name: "Received By",
+      selector: (row) => row.received_by?.name || "-",
+      sortable: true,
+      minWidth: "150px",
+      wrap: true,
+    },
 
-        {
-            name: "Branch",
-            selector: (row) => row.branch?.name || "-",
-            sortable: true,
-            minWidth: "140px",
-        },
+    {
+      name: "Branch",
+      selector: (row) => row.branch?.name || "-",
+      sortable: true,
+      minWidth: "220px",
+      wrap: true,
+    },
 
-        {
-            name: "Date",
-            selector: (row) => row.created_at,
-            sortable: true,
-            minWidth: "180px",
-            cell: (row) => formatDate(row.created_at),
-        },
-    ];
+    {
+      name: "Date",
+      selector: (row) => row.created_at,
+      sortable: true,
+      minWidth: "200px",
+      wrap: true,
+      cell: (row) => formatDate(row.created_at),
+    },
+  ];
 
-    return (
-        <Layout>
-            <div className="main-content-inner">
-                <div className="main-content-wrap">
+  return (
+    <Layout>
+      <div className="main-content-inner">
+        <div className="main-content-wrap">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-27">
+            <h3>Advance Payment Report</h3>
 
-                    {/* Header */}
-                    <div className="flex items-center justify-between mb-27">
-                        <h3>Advance Payment Report</h3>
+            <ul className="breadcrumbs flex items-center gap10">
+              <li>
+                <Link to="/">Dashboard</Link>
+              </li>
 
-                        <ul className="breadcrumbs flex items-center gap10">
-                            <li>
-                                <Link to="/">Dashboard</Link>
-                            </li>
+              <li>
+                <i className="icon-chevron-right"></i>
+              </li>
 
-                            <li>
-                                <i className="icon-chevron-right"></i>
-                            </li>
+              <li>Reports</li>
 
-                            <li>Reports</li>
+              <li>
+                <i className="icon-chevron-right"></i>
+              </li>
 
-                            <li>
-                                <i className="icon-chevron-right"></i>
-                            </li>
+              <li>Advance Payments</li>
+            </ul>
+          </div>
 
-                            <li>Advance Payments</li>
-                        </ul>
-                    </div>
+          {/* Main Box */}
+          <div className="wg-box">
+            {/* Search */}
+            <div className="flex items-center justify-between gap10 flex-wrap">
+              <div className="wg-filter flex-grow">
+                <form
+                  className="form-search"
+                  onSubmit={(e) => e.preventDefault()}
+                >
+                  <fieldset className="name">
+                    <input
+                      type="text"
+                      placeholder="Search customer, mobile, transaction..."
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                    />
+                  </fieldset>
 
-                    {/* Main Box */}
-                    <div className="wg-box">
+                  <div className="button-submit">
+                    <button type="submit">
+                      <i className="icon-search"></i>
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
 
-                        {/* Search */}
-                        <div className="flex items-center justify-between gap10 flex-wrap">
-                            <div className="wg-filter flex-grow">
+            {/* Data Table */}
+            <DataTable
+              columns={columns}
+              data={filteredData}
+              pagination
+              paginationPerPage={perPage}
+              onChangePage={(page) => setCurrentPage(page)}
+              highlightOnHover
+              pointerOnHover
+              responsive
+              customStyles={customStyles}
+            />
 
-                                <form
-                                    className="form-search"
-                                    onSubmit={(e) => e.preventDefault()}
-                                >
-                                    <fieldset className="name">
-                                        <input
-                                            type="text"
-                                            placeholder="Search customer, mobile, transaction..."
-                                            value={search}
-                                            onChange={(e) => setSearch(e.target.value)}
-                                        />
-                                    </fieldset>
+            <div className="divider"></div>
+          </div>
+        </div>
 
-                                    <div className="button-submit">
-                                        <button type="submit">
-                                            <i className="icon-search"></i>
-                                        </button>
-                                    </div>
-                                </form>
-
-                            </div>
-                        </div>
-
-                        {/* Data Table */}
-                        <DataTable
-                            columns={columns}
-                            data={filteredData}
-                            pagination
-                            paginationPerPage={perPage}
-                            onChangePage={(page) => setCurrentPage(page)}
-                            highlightOnHover
-                            pointerOnHover
-                            responsive
-                            customStyles={customStyles}
-                        />
-
-                        <div className="divider"></div>
-
-                    </div>
-                </div>
-
-                <style>{`
+        <style>{`
           .status-badge {
             padding: 4px 10px;
             border-radius: 999px;
@@ -295,10 +290,9 @@ const AdvancePayment = () => {
             background: #6b7280;
           }
         `}</style>
-
-            </div>
-        </Layout>
-    );
+      </div>
+    </Layout>
+  );
 };
 
 export default AdvancePayment;
