@@ -55,48 +55,67 @@ export default function ProductList({
     barcodeRef.current?.focus();
   }, [barcode]);
 
-  const buildCartItem = (product, batch) => {
-    const rawInclusive =
-      product?.is_gst_inclusive ??
-      product?.is_inclusive ??
-      product?.gst_inclusive ??
-      product?.is_gst_included ??
-      batch?.is_gst_inclusive ??
-      0;
+ const buildCartItem = (product, batch) => {
+  const rawInclusive =
+    product?.is_gst_inclusive ??
+    product?.is_inclusive ??
+    product?.gst_inclusive ??
+    product?.is_gst_included ??
+    batch?.is_gst_inclusive ??
+    0;
 
-    const isInclusive =
-      rawInclusive === true || rawInclusive === 1 || rawInclusive === "1"
-        ? 1
-        : 0;
+  const isInclusive =
+    rawInclusive === true ||
+    rawInclusive === 1 ||
+    rawInclusive === "1" ||
+    rawInclusive === "true"
+      ? 1
+      : 0;
 
-    const gstRate = Number(
-      product?.gst_rate?.rate ??
-        product?.gst_rate ??
-        batch?.gst_rate?.rate ??
-        batch?.gst_rate ??
-        0,
-    );
+  const gstRate = Number(
+    product?.gst_rate?.rate ??
+      product?.gst_rate ??
+      batch?.gst_rate?.rate ??
+      batch?.gst_rate ??
+      0
+  );
 
-    return {
-      cart_key: `${batch.id}`,
-      inventory_id: batch.id,
+   // Product table se is_price_override
+  const is_price_override =
+    Number(product?.is_price_override) === 1 ? 1 : 0;
 
-      product_id: product?.id || batch?.product_id,
-      name: product?.name || batch?.name,
+  console.log("========== BUILD CART ITEM ==========");
+  console.log("PRODUCT:", product);
+  console.log("PRODUCT is_price_override:", product?.is_price_override);
+  console.log("FINAL is_price_override:", is_price_override);
+  console.log("BATCH:", batch);
 
-      batch_no: batch.batch_no,
-      selling_price: Number(batch.selling_price),
-      expiry_date: batch.expiry_date,
+  
 
-      stock: batch.qty_available,
-      free_qty: 0,
+  return {
+    cart_key: `${batch.id}`,
+    inventory_id: batch.id,
 
-      gst_percent: gstRate,
-      gst_inclusive: isInclusive,
+    product_id: product?.id || batch?.product_id,
+    name: product?.name || batch?.name,
 
-      qty: 1,
-    };
+    batch_no: batch.batch_no,
+    selling_price: Number(batch.selling_price),
+    expiry_date: batch.expiry_date,
+
+    stock: Number(batch.qty_available) || 0,
+    total_stock: Number(batch.qty_available) || 0,
+    free_qty: 0,
+
+    gst_percent: gstRate,
+    gst_inclusive: isInclusive,
+
+    // THIS IS THE IMPORTANT FIELD
+    is_price_override: is_price_override,
+
+    qty: 1,
   };
+};
 
   const handleCardClick = (product) => {
     if (!product.total_stock || product.total_stock <= 0) return;

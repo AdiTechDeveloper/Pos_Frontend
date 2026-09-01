@@ -30,6 +30,8 @@ const CreateEditProduct = () => {
   const [newBrand, setNewBrand] = useState("");
   const [error, setError] = useState("");
 
+  const [loadingProduct, setLoadingProduct] = useState(isEdit);
+
   let lastTime = 0;
 
   const [initialValues, setInitialValues] = useState({
@@ -39,57 +41,108 @@ const CreateEditProduct = () => {
     category_id: "",
     hsn_code: "",
     gst_rate_id: "",
+    mrp: "",
+    selling_price: "",
+    cost_price: "",
+    barcode: "",
+    gst_inclusive: false,
+    is_price_override: 0,
   });
+
 
   // Fetch brands
   const fetchBrands = async () => {
-    const response = await axios.get(`${BASE_URL}/api/brands`, {
-      headers: { Authorization: `Bearer ${user_data.token}` },
-    });
-    setBrands(response.data.brands);
+    try {
+      const response = await axios.get(`${BASE_URL}/api/brands`, {
+        headers: { Authorization: `Bearer ${user_data.token}` },
+      });
+      setBrands(response.data.brands);
+    } catch (error) {
+      console.error("Error fetching brands:", error);
+    }
   };
   const fetchGstRates = async () => {
-    const response = await axios.get(`${BASE_URL}/api/gst-rates`, {
-      headers: { Authorization: `Bearer ${user_data.token}` },
-    });
-    setGstRates(response.data.gstRates);
+    try {
+      const response = await axios.get(`${BASE_URL}/api/gst-rates`, {
+        headers: { Authorization: `Bearer ${user_data.token}` },
+      });
+      setGstRates(response.data.gstRates);
+    }
+    catch (error) {
+      console.error("Error fetching GST rates:", error);
+    }
   };
+
 
   // Fetch categories
   const fetchCategories = async () => {
-    const response = await axios.get(`${BASE_URL}/api/categories`, {
-      headers: { Authorization: `Bearer ${user_data.token}` },
-    });
-    setCategories(response.data.categories);
-  };
-
-  // If editing → set initial values
-  const loadProductData = () => {
-    if (incomingProduct) {
-      setBrandId(incomingProduct.brand_id);
-      setCategoryId(incomingProduct.category_id);
-      setInitialValues({
-        sku: incomingProduct.sku,
-        name: incomingProduct.name,
-        brand_id: incomingProduct.brand_id,
-        category_id: incomingProduct.category_id,
-        hsn_code: incomingProduct.hsn_code,
-        gst_rate_id: incomingProduct.gst_rate_id,
-        mrp: incomingProduct.mrp,
-        selling_price: incomingProduct.selling_price,
-        cost_price: incomingProduct.cost_price,
-        barcode: incomingProduct.barcode,
-        gst_inclusive: incomingProduct.gst_inclusive == 1,
+    try {
+      const response = await axios.get(`${BASE_URL}/api/categories`, {
+        headers: {
+          Authorization: `Bearer ${user_data.token}`,
+        },
       });
+
+      setCategories(response.data.categories);
+    } catch (error) {
+      console.error("Error fetching categories:", error);
     }
   };
+
+  const fetchProduct = async () => {
+  if (!id) return;
+
+  try {
+    setLoadingProduct(true);
+
+    const response = await axios.get(
+      `${BASE_URL}/api/products/${id}`,
+      {
+        headers: {
+          Accept: "application/json",
+          Authorization: `Bearer ${user_data.token}`,
+        },
+      }
+    );
+
+    if (response.data.status) {
+      const product = response.data.product;
+
+      setBrandId(product.brand_id || "");
+      setCategoryId(product.category_id || "");
+
+      setInitialValues({
+        sku: product.sku || "",
+        name: product.name || "",
+        brand_id: product.brand_id || "",
+        category_id: product.category_id || "",
+        hsn_code: product.hsn_code || "",
+        gst_rate_id: product.gst_rate_id || "",
+        mrp: product.mrp || "",
+        selling_price: product.selling_price || "",
+        cost_price: product.cost_price || "",
+        barcode: product.barcode || "",
+        gst_inclusive: product.gst_inclusive == 1,
+        is_price_override: product.is_price_override ? 1 : 0,
+      });
+    }
+  } catch (error) {
+    console.error("Error fetching product:", error);
+    toast.error("Failed to fetch product");
+  } finally {
+    setLoadingProduct(false);
+  }
+};
 
   useEffect(() => {
     fetchBrands();
     fetchCategories();
-    loadProductData();
     fetchGstRates();
-  }, []);
+
+    if (isEdit) {
+      fetchProduct();
+    }
+  }, [id]);
 
   // Validation Schema
   const validationSchema = Yup.object({
@@ -186,6 +239,8 @@ const CreateEditProduct = () => {
     fetchBrands();
   };
 
+
+
   return (
     <Layout>
       <div className="main-content-inner">
@@ -195,6 +250,11 @@ const CreateEditProduct = () => {
           </h3>
 
           <div className="wg-box">
+            {loadingProduct ? (
+  <div className="text-center p-20">
+    Loading product...
+  </div>
+) : (
             <Formik
               enableReinitialize
               initialValues={initialValues}
@@ -360,7 +420,7 @@ const CreateEditProduct = () => {
 
                   {/* Barcode / GST Included */}
                   <div className="row mb-20">
-                    <fieldset className="col-md-6">
+                    <fieldset className="col-md-4">
                       <div className="body-title">Barcode</div>
                       <div className="body-content mb-15">
                         <Field name="barcode">
@@ -404,7 +464,7 @@ const CreateEditProduct = () => {
                       </div>
                     </fieldset>
 
-                    <fieldset className="col-md-6">
+                    <fieldset className="col-md-4">
                       <div className="body-title mb-5">GST Included</div>
 
                       <Field name="gst_inclusive">
@@ -442,6 +502,46 @@ const CreateEditProduct = () => {
                         }}
                       </Field>
                     </fieldset>
+
+
+                    <fieldset className="col-md-4">
+                      <div className="body-title mb-5">Is Price_override</div>
+
+                      <Field name="is_price_override">
+                        {({ field, form }) => {
+                          const isOverride =
+                            field.value === true || field.value === 1;
+
+                          return (
+                            <div className="gst-checkbox-wrapper">
+                              {/* Price override */}
+                              <label>
+                                <input
+                                  type="checkbox"
+                                  checked={isOverride}
+                                  onChange={() => {
+                                    form.setFieldValue("is_price_override", true);
+                                  }}
+                                />
+                                <span>Yes</span>
+                              </label>
+
+                              {/* Price not override */}
+                              <label>
+                                <input
+                                  type="checkbox"
+                                  checked={!isOverride}
+                                  onChange={() => {
+                                    form.setFieldValue("is_price_override", false);
+                                  }}
+                                />
+                                <span>No</span>
+                              </label>
+                            </div>
+                          );
+                        }}
+                      </Field>
+                    </fieldset>
                   </div>
 
                   <div className="flex col">
@@ -456,6 +556,7 @@ const CreateEditProduct = () => {
                 </Form>
               )}
             </Formik>
+)}
           </div>
 
           {showCategoryModal && (

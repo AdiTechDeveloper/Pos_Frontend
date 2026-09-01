@@ -57,6 +57,7 @@ import SalesReturnList from "./components/SalesReturnList";
 import ShiftHistory from "./components/reports/ShiftHistoryReport";
 import stockExpiryReport from "./components/reports/stockExpiryReport";
 import DiscardProducts from "./components/DiscartProducts";
+import AdvancePayment from "./components/AdvancePayment";
 
 const interceptor = axios.interceptors.response.use(
   (response) => response,
@@ -196,6 +197,10 @@ function App() {
             path="/sales-return/list"
             component={SalesReturnList}
           />
+
+           <ProtectedRoute 
+          exact
+          path="/advancepayment" component={AdvancePayment} /> 
 
           <ProtectedRoute exact path="/suppliers" component={SupplierBill} />
           <ProtectedRoute

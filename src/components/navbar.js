@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useHistory, useLocation } from "react-router-dom";
 import axios from "axios";
-import { PiKeyReturnBold } from "react-icons/pi";
+import { PiKeyReturnBold  ,PiWallet } from "react-icons/pi";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import {
   IoHomeOutline,
@@ -17,6 +17,7 @@ import {
   IoLockOpenOutline,
   IoPrintOutline,
   IoExitOutline,
+  
 } from "react-icons/io5";
 
 const BASE_URL = process.env.REACT_APP_API_BASE_URL;
@@ -223,6 +224,20 @@ const Navbar = () => {
             <PiKeyReturnBold />
           </div>
           <div className="text">Sales Return</div>
+        </Link>
+      </li>
+
+      <li className="menu-item">
+        <Link
+          to="/advancepayment"
+          className={`menu-item-button ${isActive("/advancepayment") ? "active" : ""}`}
+          onClick={closeSidebar}
+        >
+          <div className="icon">
+            {/* <IoReturnUpBack size={22} /> */}
+            <PiWallet />
+          </div>
+          <div className="text">Advance Payment</div>
         </Link>
       </li>
 
