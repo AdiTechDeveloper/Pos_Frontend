@@ -1,20 +1,18 @@
-import logo from "./logo.svg";
+import React from "react";
+import axios from "axios";
+import { toast } from "react-toastify";
 import "./App.css";
 import "../src/assets/css/style.css";
 import "../src/assets/font/fonts.css";
 import "../src/assets/icon/style.css";
 import Home from "./components/home";
 import Register from "./components/register";
-import {
-  BrowserRouter as Router,
-  Switch,
-  Route,
-  Redirect,
-} from "react-router-dom";
+import { BrowserRouter as Router, Switch, Route } from "react-router-dom";
 import Login from "./components/login";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Product from "./components/product";
+import PrintBarcode from "./components/printBarcode";
 import Store from "./components/store";
 import CreateStore from "./components/createStore";
 import ViewStore from "./components/viewStore";
@@ -58,6 +56,20 @@ import SalesReturn from "./components/SalesReturn";
 import SalesReturnList from "./components/SalesReturnList";
 import ShiftHistory from "./components/reports/ShiftHistoryReport";
 import stockExpiryReport from "./components/reports/stockExpiryReport";
+import DiscardProducts from "./components/DiscartProducts";
+
+const interceptor = axios.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      localStorage.removeItem("user_detail");
+      toast.error("Session Expired. Please login again.");
+      window.location.href = "/";
+      return new Promise(() => {});
+    }
+    return Promise.reject(error);
+  },
+);
 
 const isAuthenticated = () => {
   const storedData = localStorage.getItem("user_detail");
@@ -87,34 +99,17 @@ function App() {
 
       <Router>
         <Switch>
-          {/* <Route
-            exact
-            path="/"
-            render={() =>
-              isAuthenticated() ? <Redirect to="/dashboard" /> : <Login />
-            }
-          />
-          <Route
-            exact
-            path="/register"
-            render={() =>
-              isAuthenticated() ? <Redirect to="/dashboard" /> : <Register />
-            }
-          />
-          <Route
-            exact
-            path="/cashier_login"
-            render={() =>
-              isAuthenticated() ? <Redirect to="/pos" /> : <CashierLogin />
-            }
-          /> */}
-
           <PublicRoute exact path="/" component={Login} />
           <PublicRoute exact path="/register" component={Register} />
           <PublicRoute exact path="/cashier_login" component={CashierLogin} />
           <ProtectedRoute exact path="/pos" component={POS} />
           <ProtectedRoute exact path="/dashboard" component={Home} />
           <ProtectedRoute exact path="/product" component={Product} />
+          <ProtectedRoute
+            exact
+            path="/print-barcode"
+            component={PrintBarcode}
+          />
           <ProtectedRoute
             exact
             path="/create-product"
@@ -289,6 +284,12 @@ function App() {
             path="/reports/stock-expiry-report"
             component={stockExpiryReport}
           />
+
+          <ProtectedRoute
+            path="/expired-products"
+            component={DiscardProducts}
+          />
+
           <Route path="/customer-dues" component={CustomerDues} />
           <Route path="*" component={Login} />
         </Switch>

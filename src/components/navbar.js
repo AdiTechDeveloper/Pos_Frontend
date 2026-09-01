@@ -5,18 +5,18 @@ import { PiKeyReturnBold } from "react-icons/pi";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import {
   IoHomeOutline,
-  IoReturnUpBack,
   IoCubeOutline,
   IoReceiptOutline,
   IoCartOutline,
   IoBarChartOutline,
-  IoCalculatorOutline,
   IoPricetagsOutline,
   IoDesktopOutline,
   IoGridOutline,
   IoStorefrontOutline,
   IoWalletOutline,
   IoLockOpenOutline,
+  IoPrintOutline,
+  IoExitOutline,
 } from "react-icons/io5";
 
 const BASE_URL = process.env.REACT_APP_API_BASE_URL;
@@ -131,6 +131,32 @@ const Navbar = () => {
             <IoCubeOutline size={22} />
           </div>
           <div className="text">Products</div>
+        </Link>
+      </li>
+
+      <li className="menu-item">
+        <Link
+          to="/print-barcode"
+          className={`menu-item-button ${isActive("/print-barcode") ? "active" : ""}`}
+          onClick={closeSidebar}
+        >
+          <div className="icon">
+            <IoPrintOutline size={22} />
+          </div>
+          <div className="text">Print Barcode</div>
+        </Link>
+      </li>
+
+      <li className="menu-item">
+        <Link
+          to="/expired-products"
+          className={`menu-item-button ${isActive("/expired-products") ? "active" : ""}`}
+          onClick={closeSidebar}
+        >
+          <div className="icon">
+            <IoExitOutline size={22} />
+          </div>
+          <div className="text">Expired Products</div>
         </Link>
       </li>
 

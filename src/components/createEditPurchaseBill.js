@@ -662,7 +662,7 @@ const CreateEditPurchaseBill = () => {
 
   const fetchProduct = async () => {
     try {
-      const response = await axios.get(`${BASE_URL}/api/products`, {
+      const response = await axios.get(`${BASE_URL}/api/all-products`, {
         headers: {
           Accept: "application/json",
           Authorization: `Bearer ${user_data.token}`,

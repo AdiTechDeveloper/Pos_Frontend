@@ -7,7 +7,7 @@ import { toast } from "react-toastify";
 import BarcodePrintModal from "./BarcodePrintModal";
 import Barcode from "react-barcode";
 
-const Product = () => {
+const PrintBarcode = () => {
   const BASE_URL = process.env.REACT_APP_API_BASE_URL;
   const history = useHistory();
   const [products, setProducts] = useState([]);
@@ -17,40 +17,15 @@ const Product = () => {
   const perPage = 10;
 
   const [selectedProduct, setSelectedProduct] = useState(null);
-
   const user_data = JSON.parse(localStorage.getItem("user_detail"));
 
-  const handleEdit = (product) => {
-    localStorage.setItem("product_detail", JSON.stringify(product));
-  };
-
-  const handleDeleteConfirm = (id) => {
-    if (window.confirm("Are you sure you want to delete this Product?")) {
-      handleDelete(id);
-    }
-  };
-
-  const handleCreateProduct = () => {
-    localStorage.setItem("product_detail", null);
-  };
-
-  const handleDelete = async (id) => {
-    const response = await axios.delete(`${BASE_URL}/api/products/${id}`, {
-      headers: {
-        accept: "application/json",
-        Authorization: `Bearer ${user_data.token}`,
-      },
-    });
-    if (response) {
-      history.push("/product");
-      toast.success("Product Deleted");
-      fetchProduct();
-    }
+  const handlePrintBarcode = (row) => {
+    setSelectedProduct(row);
   };
 
   const fetchProduct = async () => {
     try {
-      const response = await axios.get(`${BASE_URL}/api/all-products`, {
+      const response = await axios.get(`${BASE_URL}/api/products`, {
         headers: {
           Accept: "application/json",
           Authorization: `Bearer ${user_data.token}`,
@@ -252,6 +227,33 @@ const Product = () => {
     },
 
     {
+      name: "MRP",
+      selector: (row) => row.mrp,
+      sortable: true,
+      width: "80px",
+      wrap: true,
+    },
+
+    {
+      name: (
+        <div
+          style={{
+            whiteSpace: "normal",
+            wordBreak: "break-word",
+            textAlign: "center",
+            lineHeight: "1.2",
+          }}
+        >
+          Selling Price
+        </div>
+      ),
+      selector: (row) => row.selling_price,
+      sortable: true,
+      width: "100px",
+      wrap: true,
+    },
+
+    {
       name: (
         <div
           style={{
@@ -284,32 +286,12 @@ const Product = () => {
       width: "160px",
       cell: (row) => (
         <div className="list-icon-function">
-          <span className="item edit" title="Edit">
-            <Link
-              to={`/product/edit/${row.product_id}`}
-              onClick={() =>
-                handleEdit({
-                  id: row.product_id,
-                  name: row.name,
-                  sku: row.sku,
-                  brand_id: row.brand?.id,
-                  category_id: row.category?.id,
-                  hsn_code: row.hsn_code,
-                  gst_rate_id: row.gst_rate?.id,
-                  gst_inclusive: row.gst_inclusive,
-                })
-              }
-            >
-              <i className="icon-edit-3" />
-            </Link>
-          </span>
-
           <span
-            className="item trash"
-            title="Delete"
-            onClick={() => handleDeleteConfirm(row.product_id)}
+            className="item print"
+            title="Print Barcode"
+            onClick={() => handlePrintBarcode(row)}
           >
-            <i className="icon-trash-2" />
+            <i className="icon-printer" />
           </span>
         </div>
       ),
@@ -322,7 +304,7 @@ const Product = () => {
         {/* <!-- main-content-wrap --> */}
         <div className="main-content-wrap">
           <div className="flex items-center flex-wrap justify-between gap20 mb-27">
-            <h3>All Products</h3>
+            <h3>All Products Barcode</h3>
             <ul className="breadcrumbs flex items-center flex-wrap justify-start gap10">
               <li>
                 <Link to="/">
@@ -341,7 +323,7 @@ const Product = () => {
                 <i className="icon-chevron-right"></i>
               </li>
               <li>
-                <div className="text-tiny">All Product</div>
+                <div className="text-tiny">Barcode</div>
               </li>
             </ul>
           </div>
@@ -369,13 +351,6 @@ const Product = () => {
                   </div>
                 </form>
               </div>
-              <Link
-                className="tf-button style-1 w208"
-                to="/create-product"
-                onClick={handleCreateProduct}
-              >
-                <i className="icon-plus"></i>Add new
-              </Link>
             </div>
 
             <DataTable
@@ -410,4 +385,4 @@ const Product = () => {
     </Layout>
   );
 };
-export default Product;
+export default PrintBarcode;

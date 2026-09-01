@@ -83,15 +83,55 @@ export default function SalesReport() {
     fetchReport();
   }, [filters]);
 
-  // ================= EXPORT FUNCTIONS =================
+  const getSummaryData = () => {
+    if (!report) return {};
 
-  // 1. Export Excel Function (With Payment Summary Included)
+    if (
+      report.payment_methods?.summary &&
+      Object.keys(report.payment_methods.summary).length > 0
+    ) {
+      return report.payment_methods.summary;
+    }
+
+    const generatedSummary = {};
+
+    (report.invoices?.rows || []).forEach((inv) => {
+      const method = inv.payment_methods || "Unknown";
+      if (!generatedSummary[method]) {
+        generatedSummary[method] = {
+          amount: 0,
+          count: 0,
+          bills: [],
+        };
+      }
+      generatedSummary[method].amount += Number(
+        inv.paid_amount || inv.total_amount || 0,
+      );
+      generatedSummary[method].count += 1;
+      if (inv.bill_no) {
+        generatedSummary[method].bills.push(inv.bill_no);
+      }
+    });
+
+    if (Object.keys(generatedSummary).length === 0) {
+      (report.payment_methods?.rows || []).forEach((pm) => {
+        generatedSummary[pm.method] = {
+          amount: Number(pm.total_collected || 0),
+          count: 0,
+          bills: [],
+        };
+      });
+    }
+
+    return generatedSummary;
+  };
+
   const exportToExcel = () => {
     if (!report) return;
 
     let csvData = [];
 
-    // Payment Methods Breakdown (Always included at top)
+    // Payment Methods Breakdown
     csvData.push(["--- PAYMENT METHOD BREAKDOWN ---"]);
     csvData.push(["Payment Method", "Total Collected", "Share %"]);
 
@@ -104,10 +144,9 @@ export default function SalesReport() {
       report.payment_methods?.grand_total || 0,
       "100%",
     ]);
-    csvData.push([]); // Blank separator row
+    csvData.push([]);
     csvData.push([`--- ${activeTab.toUpperCase()} DETAILED REPORT ---`]);
 
-    // Active Tab Data Export
     let headers = [];
     let rows = [];
 
@@ -122,6 +161,7 @@ export default function SalesReport() {
         "Due",
         "Profit",
         "Status",
+        "Payment Method",
       ];
       rows = (report.invoices?.rows || []).map((row) => [
         new Date(row.created_at).toLocaleDateString(),
@@ -133,6 +173,7 @@ export default function SalesReport() {
         row.due_amount,
         row.total_profit,
         row.payment_status,
+        row.payment_methods || "-",
       ]);
     } else if (activeTab === "products") {
       headers = ["Product Name", "Qty Sold", "Net Revenue", "Profit"];
@@ -148,6 +189,24 @@ export default function SalesReport() {
         p.method,
         p.total_collected,
         `${p.share_pct}%`,
+      ]);
+    } else if (activeTab === "summary") {
+      const summaryObj = getSummaryData();
+      headers = [
+        "Payment Mode",
+        "Total Amount",
+        "Bill Count",
+        "Associated Bills",
+      ];
+      rows = Object.entries(summaryObj).map(([method, item]) => [
+        method.toUpperCase(),
+        Number(item?.amount ?? 0),
+        Number(item?.count ?? 0),
+        Array.isArray(item?.bills)
+          ? item.bills.join(", ")
+          : typeof item?.bills === "string"
+            ? item.bills
+            : "N/A",
       ]);
     } else if (activeTab === "overrides") {
       headers = [
@@ -172,7 +231,6 @@ export default function SalesReport() {
     const worksheet = XLSX.utils.aoa_to_sheet(csvData);
     const billNoColumn = headers.indexOf("Bill No");
 
-    // Keep long bill numbers as text so Excel does not display scientific notation.
     if (billNoColumn !== -1) {
       const firstDataRow = csvData.length - rows.length;
       rows.forEach((_, rowIndex) => {
@@ -192,7 +250,6 @@ export default function SalesReport() {
     XLSX.writeFile(workbook, `Sales_Report_${activeTab}_${Date.now()}.xlsx`);
   };
 
-  // 2. Export PDF Function (With Payment Summary Included)
   const exportToPDF = () => {
     if (!report) return;
 
@@ -202,7 +259,6 @@ export default function SalesReport() {
     doc.setFontSize(10);
     doc.text(`Generated on: ${new Date().toLocaleString()}`, 14, 21);
 
-    // Section 1: Payment Method Summary Breakdown Table
     doc.setFontSize(12);
     doc.text("Payment Method Breakdown", 14, 28);
 
@@ -213,7 +269,6 @@ export default function SalesReport() {
       `${p.share_pct}%`,
     ]);
 
-    // Add Grand Total row for Payments
     paymentRows.push([
       "Grand Total",
       `Rs. ${report.payment_methods?.grand_total || 0}`,
@@ -226,11 +281,10 @@ export default function SalesReport() {
       startY: 32,
       theme: "striped",
       styles: { fontSize: 8 },
-      headStyles: { fillColor: [16, 185, 129] }, // Emerald header
+      headStyles: { fillColor: [16, 185, 129] },
       margin: { bottom: 10 },
     });
 
-    // Section 2: Selected Tab Main Table
     const nextStartY = doc.lastAutoTable.finalY + 10;
     doc.text(`${activeTab.toUpperCase()} Details`, 14, nextStartY);
 
@@ -249,6 +303,7 @@ export default function SalesReport() {
           "Due",
           "Profit",
           "Status",
+          "Payment Method",
         ],
       ];
       rows = (report.invoices?.rows || []).map((row) => [
@@ -261,6 +316,7 @@ export default function SalesReport() {
         `Rs. ${row.due_amount}`,
         `Rs. ${row.total_profit}`,
         row.payment_status,
+        row.payment_methods || "-",
       ]);
     } else if (activeTab === "products") {
       headers = [["Product Name", "Qty Sold", "Net Revenue", "Profit"]];
@@ -276,6 +332,21 @@ export default function SalesReport() {
         p.method,
         `Rs. ${p.total_collected}`,
         `${p.share_pct}%`,
+      ]);
+    } else if (activeTab === "summary") {
+      const summaryObj = getSummaryData();
+      headers = [
+        ["Payment Mode", "Total Amount", "Bill Count", "Associated Bills"],
+      ];
+      rows = Object.entries(summaryObj).map(([method, item]) => [
+        method.toUpperCase(),
+        `Rs. ${item?.amount ?? 0}`,
+        `${item?.count ?? 0} bills`,
+        Array.isArray(item?.bills)
+          ? item.bills.join(", ")
+          : typeof item?.bills === "string"
+            ? item.bills
+            : "N/A",
       ]);
     } else if (activeTab === "overrides") {
       headers = [
@@ -304,7 +375,6 @@ export default function SalesReport() {
       styles: { fontSize: 8 },
       headStyles: { fillColor: [37, 99, 235] },
       didParseCell: function (data) {
-        // Highlight Due amount in RED if greater than 0
         if (
           activeTab === "invoices" &&
           data.section === "body" &&
@@ -331,9 +401,6 @@ export default function SalesReport() {
             <p className="text-3xl font-semibold text-gray-900">
               Loading sales report...
             </p>
-            <p className="mt-2 text-2xl text-gray-500">
-              Please wait while we fetch your latest sales metrics.
-            </p>
           </div>
         </div>
       </Layout>
@@ -349,11 +416,11 @@ export default function SalesReport() {
     );
 
   const k = report.kpis;
+  const summaryData = getSummaryData();
 
   return (
     <Layout>
       <div className="p-8 bg-white min-h-screen text-gray-900">
-        {/* HEADER */}
         <h1 className="text-5xl font-extrabold mb-3 text-gray-900">
           Sales Report
         </h1>
@@ -361,6 +428,7 @@ export default function SalesReport() {
           Overview of sales, collections, profits, and price overrides.
         </p>
 
+        {/* FILTERS */}
         <div className="bg-white rounded-3xl shadow-xl border border-gray-200 p-6 mb-6">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
             <div>
@@ -517,19 +585,21 @@ export default function SalesReport() {
 
         {/* TABS */}
         <div className="flex flex-wrap gap-3 mb-6 border-b border-gray-200">
-          {["invoices", "products", "payments", "overrides"].map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`px-5 py-3 rounded-t-2xl font-semibold text-2xl transition-all ${
-                activeTab === tab
-                  ? "bg-blue-600 text-white border-b-2 border-blue-600"
-                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
-              }`}
-            >
-              {tab.toUpperCase()}
-            </button>
-          ))}
+          {["invoices", "products", "payments", "summary", "overrides"].map(
+            (tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`px-5 py-3 rounded-t-2xl font-semibold text-2xl transition-all ${
+                  activeTab === tab
+                    ? "bg-blue-600 text-white border-b-2 border-blue-600"
+                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                }`}
+              >
+                {tab === "summary" ? "SUMMARY" : tab.toUpperCase()}
+              </button>
+            ),
+          )}
         </div>
 
         {/* TAB CONTENT */}
@@ -537,6 +607,9 @@ export default function SalesReport() {
         {activeTab === "products" && <ProductTable data={report.products} />}
         {activeTab === "payments" && (
           <PaymentTable data={report.payment_methods} />
+        )}
+        {activeTab === "summary" && (
+          <PaymentSummaryTable summary={summaryData} />
         )}
         {activeTab === "overrides" && (
           <OverrideTable data={report.price_overrides} />
@@ -604,9 +677,11 @@ const InvoiceTable = ({ data }) => (
           <th className="px-6 py-5 text-center text-2xl font-semibold text-gray-700">
             Status
           </th>
+          <th className="px-6 py-5 text-center text-2xl font-semibold text-gray-700">
+            Payment Method
+          </th>
         </tr>
       </thead>
-
       <tbody>
         {data.rows.map((row) => (
           <tr
@@ -616,7 +691,7 @@ const InvoiceTable = ({ data }) => (
             <td className="px-6 py-5 text-2xl text-gray-700">
               {new Date(row.created_at).toLocaleDateString()}
             </td>
-            <td className="px-6 py-5 text-2xl font-semibold text-gray-800">
+            <td className="px-6 py-5 text-2xl font-semibold text-gray-800 break-all whitespace-normal max-w-xs">
               {row.bill_no}
             </td>
             <td className="px-6 py-5 text-right text-2xl text-gray-700">
@@ -632,7 +707,9 @@ const InvoiceTable = ({ data }) => (
               ₹{row.paid_amount}
             </td>
             <td
-              className={`px-6 py-5 text-right text-2xl font-semibold ${row.due_amount > 0 ? "text-red-600" : "text-green-600"}`}
+              className={`px-6 py-5 text-right text-2xl font-semibold ${
+                row.due_amount > 0 ? "text-red-600" : "text-green-600"
+              }`}
             >
               ₹{row.due_amount}
             </td>
@@ -642,10 +719,12 @@ const InvoiceTable = ({ data }) => (
             <td className="px-8 py-6 text-center text-2xl font-semibold">
               <StatusBadge status={row.payment_status} />
             </td>
+            <td className="px-6 py-5 text-center text-2xl text-gray-700">
+              {row.payment_methods || "-"}
+            </td>
           </tr>
         ))}
       </tbody>
-
       <tfoot className="bg-gradient-to-r from-gray-50 to-gray-100 border-t-2 border-gray-200 font-semibold text-gray-900">
         <tr>
           <td colSpan="2" className="px-6 py-5 text-3xl font-bold">
@@ -669,6 +748,7 @@ const InvoiceTable = ({ data }) => (
           <td className="px-6 py-5 text-right text-3xl font-bold text-green-600">
             ₹{(Number(data.totals.total_profit) || 0).toFixed(2)}
           </td>
+          <td className="px-6 py-5"></td>
           <td className="px-6 py-5"></td>
         </tr>
       </tfoot>
@@ -723,7 +803,7 @@ const ProductTable = ({ data }) => (
 const PaymentTable = ({ data }) => (
   <div className="bg-white p-8 rounded-3xl shadow-xl border border-gray-200">
     <div className="space-y-5">
-      {data.rows.map((p, i) => (
+      {(data?.rows || []).map((p, i) => (
         <div
           key={i}
           className="flex justify-between items-center border-b border-gray-200 pb-5 hover:bg-gray-50 px-4 py-4 rounded-2xl transition-colors"
@@ -746,6 +826,103 @@ const PaymentTable = ({ data }) => (
     </div>
   </div>
 );
+
+// SAFE PAYMENT SUMMARY TABLE COMPONENT
+const PaymentSummaryTable = ({ summary }) => {
+  const summaryEntries = Object.entries(summary || {});
+
+  return (
+    <div className="overflow-auto bg-white shadow-xl border border-gray-200">
+      <table className="w-full text-lg">
+        <thead className="bg-gradient-to-r from-blue-100 to-cyan-100 border-b border-gray-200">
+          <tr>
+            <th className="px-6 py-5 text-left text-2xl font-semibold text-gray-700">
+              Payment Method
+            </th>
+            <th className="px-6 py-5 text-right text-2xl font-semibold text-gray-700">
+              Total Amount
+            </th>
+            <th className="px-6 py-5 text-center text-2xl font-semibold text-gray-700">
+              Bill Count
+            </th>
+            <th className="px-6 py-5 text-left text-2xl font-semibold text-gray-700">
+              Associated Bills
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {summaryEntries.length === 0 ? (
+            <tr>
+              <td colSpan="4" className="px-6 py-8 text-center">
+                <p className="text-2xl text-gray-500 font-semibold">
+                  No payment summary available.
+                </p>
+              </td>
+            </tr>
+          ) : (
+            summaryEntries.map(([method, item]) => {
+              const hasBills =
+                Array.isArray(item?.bills) && item.bills.length > 0;
+
+              return (
+                <tr
+                  key={method}
+                  className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
+                >
+                  <td className="px-6 py-5 text-2xl font-bold text-gray-800">
+                    <span className="inline-block px-4 py-2 bg-blue-100 text-blue-900 rounded-xl">
+                      {method.toUpperCase()}
+                    </span>
+                  </td>
+                  <td className="px-6 py-5 text-right text-2xl font-bold text-green-600">
+                    ₹{Number(item?.amount || 0).toFixed(2)}
+                  </td>
+                  <td className="px-6 py-5 text-center text-2xl font-semibold text-gray-800">
+                    {item?.count ?? 0}
+                  </td>
+                  <td className="px-6 py-5 text-left">
+                    {hasBills ? (
+                      <div className="flex flex-wrap gap-2">
+                        {item.bills.map((billNo, idx) => (
+                          <span
+                            key={idx}
+                            className="inline-block px-3 py-2 text-2xl font-mono font-semibold rounded-lg"
+                          >
+                            {billNo}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="text-gray-500 text-2xl">-</span>
+                    )}
+                  </td>
+                </tr>
+              );
+            })
+          )}
+        </tbody>
+        <tfoot className="bg-gradient-to-r from-gray-50 to-gray-100 border-t-2 border-gray-200 font-semibold text-gray-900">
+          <tr>
+            <td className="px-6 py-5 text-3xl font-bold">Total</td>
+            <td className="px-6 py-5 text-right text-3xl font-bold text-green-600">
+              ₹
+              {Object.values(summary || {})
+                .reduce((sum, item) => sum + (Number(item?.amount) || 0), 0)
+                .toFixed(2)}
+            </td>
+            <td className="px-6 py-5 text-center text-3xl font-bold">
+              {Object.values(summary || {}).reduce(
+                (sum, item) => sum + (Number(item?.count) || 0),
+                0
+              )}
+            </td>
+            <td className="px-6 py-5"></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  );
+};
 
 const OverrideTable = ({ data }) => (
   <div className="overflow-auto bg-white shadow-xl border border-gray-200">
@@ -775,7 +952,7 @@ const OverrideTable = ({ data }) => (
             key={i}
             className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
           >
-            <td className="px-6 py-5 text-2xl font-semibold text-gray-800">
+            <td className="px-6 py-5 text-2xl font-semibold text-gray-800 break-all whitespace-normal max-w-xs">
               {o.bill_no}
             </td>
             <td className="px-6 py-5 text-2xl font-semibold text-gray-800">
@@ -806,7 +983,9 @@ const StatusBadge = ({ status }) => {
 
   return (
     <span
-      className={`px-6 py-4 rounded-full text-2xl font-semibold ${colors[status] || "bg-gray-200 text-gray-800 border border-gray-300"}`}
+      className={`px-6 py-4 rounded-full text-2xl font-semibold ${
+        colors[status] || "bg-gray-200 text-gray-800 border border-gray-300"
+      }`}
     >
       {status}
     </span>
