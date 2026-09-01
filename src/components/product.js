@@ -281,7 +281,32 @@ const Product = () => {
         );
       },
     },
+    {
+      name: (
+        <div
+          style={{
+            whiteSpace: "normal",
+            wordBreak: "break-word",
+            textAlign: "center",
+            lineHeight: "1.2",
+          }}
+        >
+          Price Override
+        </div>
+      ),
+      sortable: true,
+      center: true,
+      width: "100px",
+      cell: (row) => {
+        const isYes = row?.is_price_override === true || row?.is_price_override === 1;
 
+        return (
+          <span className={`gst-dot ${isYes ? "yes" : "no"}`}>
+            {isYes ? "✓" : "✕"}
+          </span>
+        );
+      },
+    },
     {
       name: "Action",
       center: true,
