@@ -15,6 +15,7 @@ export default function POSApp() {
   const [popupData, setPopupData] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [selectedBranchId, setSelectedBranchId] = useState(null);
+ 
 
   const BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
@@ -80,48 +81,103 @@ export default function POSApp() {
     setRefreshProducts((prev) => !prev);
   };
 
+  // const addToCart = (product) => {
+  //   setCart((prev) => {
+  //     const index = prev.findIndex(
+  //       (item) =>
+  //         item.inventory_id === product.inventory_id &&
+  //         item.selling_price === product.selling_price,
+          
+  //     );
+
+  //     if (index !== -1) {
+  //       const currentQtyInCart = prev[index].qty;
+
+  //       if (currentQtyInCart + 1 > product.total_stock) {
+  //         toast.error(
+  //           `Only ${product.total_stock} units available for this batch`,
+  //         );
+  //         return prev;
+  //       }
+
+  //       const updated = [...prev];
+  //       updated[index] = {
+  //         ...updated[index],
+  //         qty: currentQtyInCart + 1,
+  //       };
+  //       return updated;
+  //     }
+
+  //     if (product.total_stock < 1) {
+  //       toast.error("Out of stock for this batch");
+  //       return prev;
+  //     }
+
+  //     return [
+  //       ...prev,
+  //       {
+  //         ...product,
+  //         qty: 1,
+  //         cart_key: `${product.inventory_id}_${product.selling_price}`,
+  //       },
+  //     ];
+  //   });
+  // };
+
   const addToCart = (product) => {
-    setCart((prev) => {
-      const index = prev.findIndex(
-        (item) =>
-          item.inventory_id === product.inventory_id &&
-          item.selling_price === product.selling_price,
-      );
+  console.log("========== ADD TO CART ==========");
+  console.log("PRODUCT RECEIVED:", product);
+  console.log("is_price_override:", product?.is_price_override);
 
-      if (index !== -1) {
-        const currentQtyInCart = prev[index].qty;
+  setCart((prev) => {
+    const index = prev.findIndex(
+      (item) =>
+        item.inventory_id === product.inventory_id &&
+        item.selling_price === product.selling_price
+    );
 
-        if (currentQtyInCart + 1 > product.total_stock) {
-          toast.error(
-            `Only ${product.total_stock} units available for this batch`,
-          );
-          return prev;
-        }
+    if (index !== -1) {
+      const currentQtyInCart = prev[index].qty;
 
-        const updated = [...prev];
-        updated[index] = {
-          ...updated[index],
-          qty: currentQtyInCart + 1,
-        };
-        return updated;
-      }
-
-      if (product.total_stock < 1) {
-        toast.error("Out of stock for this batch");
+      if (currentQtyInCart + 1 > product.total_stock) {
+        toast.error(
+          `Only ${product.total_stock} units available for this batch`
+        );
         return prev;
       }
 
-      return [
-        ...prev,
-        {
-          ...product,
-          qty: 1,
-          cart_key: `${product.inventory_id}_${product.selling_price}`,
-        },
-      ];
-    });
-  };
+      const updated = [...prev];
 
+      updated[index] = {
+        ...updated[index],
+        qty: currentQtyInCart + 1,
+      };
+
+      return updated;
+    }
+
+    if (product.total_stock < 1) {
+      toast.error("Out of stock for this batch");
+      return prev;
+    }
+
+    const cartItem = {
+      ...product,
+
+      qty: 1,
+
+      cart_key: `${product.inventory_id}_${product.selling_price}`,
+      is_pirce_override: Number(product?.is_price_override) === 1 ? 1 : 0,
+    
+    };
+
+    console.log("========== FINAL CART ITEM ==========");
+    console.log(cartItem);
+    console.log("FINAL is_price_override:", cartItem.is_price_override);
+
+    return [...prev, cartItem];
+  });
+};
   const handleProductSelection = (productOrGroup) => {
     if (Array.isArray(productOrGroup) && productOrGroup.length > 1) {
       setPopupData(productOrGroup);
@@ -163,6 +219,7 @@ export default function POSApp() {
         cart={cart}
         setCart={setCart}
         triggerRefresh={triggerRefresh}
+        onPriceUpdated={() => setRefreshProducts(prev => prev + 1)}
       />
     </div>
   );

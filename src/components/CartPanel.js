@@ -19,7 +19,7 @@ const getAuthHeader = () => {
     : {};
 };
 
-export default function CartPanel({ cart, setCart, triggerRefresh }) {
+export default function CartPanel({ cart, setCart, triggerRefresh , onPriceUpdated,}) {
   const history = useHistory();
   const [showPayment, setShowPayment] = useState(false);
 
@@ -29,7 +29,7 @@ export default function CartPanel({ cart, setCart, triggerRefresh }) {
 
   localStorage.setItem("cart_detail", JSON.stringify(cart));
   const user_data = JSON.parse(localStorage.getItem("user_detail"));
-  const role = user_data?.user?.role;
+  const role = user_data?.user?.role || user_data?.role;
 
   const receiptRef = useRef();
   const [showReceipt, setShowReceipt] = useState(false);
@@ -39,7 +39,6 @@ export default function CartPanel({ cart, setCart, triggerRefresh }) {
   const [showEndShift, setShowEndShift] = useState(false);
   const [showAddAdvance, setShowAddAdvance] = useState(false);
 
-  const canOverridePrice = role === "admin" || role === "manager";
 
   const getPriceWithGST = (item) => {
     const sellingPrice = parseFloat(item.selling_price) || 0;
@@ -112,8 +111,9 @@ export default function CartPanel({ cart, setCart, triggerRefresh }) {
     }));
   };
 
-  const confirmPriceOverride = (item) => {
+  const confirmPriceOverride = async (item) => {
     const override = priceOverrides[item.cart_key];
+
     if (!override) return;
 
     const newPrice = parseFloat(override.tempValue);
@@ -123,46 +123,81 @@ export default function CartPanel({ cart, setCart, triggerRefresh }) {
       return;
     }
 
-    const originalPrice = parseFloat(item.original_price || item.selling_price);
-
-    if (newPrice > originalPrice) {
-      toast.error("Override price cannot be more than original price");
+    if (!item.inventory_id) {
+      toast.error("Inventory ID not found");
       return;
     }
 
-    setCart((prev) =>
-      prev.map((i) =>
-        i.cart_key === item.cart_key
-          ? {
-              ...i,
-              selling_price: newPrice,
-              original_price: i.original_price || i.selling_price,
-              is_price_overridden: true,
-            }
-          : i,
-      ),
-    );
+    try {
+      const response = await axios.put(
+        `${BASE_URL}/api/inventory/${item.inventory_id}/selling-price`,
+        {
+          selling_price: newPrice,
+        },
+        {
+          headers: getAuthHeader(),
+        }
+      );
 
-    setPriceOverrides((prev) => ({
-      ...prev,
-      [item.cart_key]: { editing: false, tempValue: "" },
-    }));
+      if (response.data.status) {
+        const originalPrice = parseFloat(
+          item.original_price || item.selling_price
+        );
 
-    toast.success(
-      `Price updated: ₹${originalPrice.toFixed(2)} → ₹${newPrice.toFixed(2)}`,
-    );
-  };
+        setCart((prev) =>
+          prev.map((i) =>
+            i.cart_key === item.cart_key
+              ? {
+                ...i,
+                selling_price: newPrice,
+                original_price: i.original_price || i.selling_price,
+                is_price_overridden: true,
+              }
+              : i
+          )
+        );
+
+        setPriceOverrides((prev) => ({
+          ...prev,
+          [item.cart_key]: {
+            editing: false,
+            tempValue: "",
+          },
+        }));
+
+          // ProductList ko fresh data fetch karne ke liye trigger
+  if (onPriceUpdated) {
+    onPriceUpdated();
+  }
+
+
+        toast.success(
+          `Price updated: ₹${originalPrice.toFixed(
+            2
+          )} → ₹${newPrice.toFixed(2)}`
+        );
+      }
+    } catch (error) {
+      console.error("Price override error:", error);
+
+      toast.error(
+        error.response?.data?.message ||
+        "Failed to update product price"
+      );
+    }
+  };  
+
 
   const resetPrice = (item) => {
     if (!item.original_price) return;
     setCart((prev) =>
       prev.map((i) =>
-        i.cart_key === item.cart_key
+        i.product_id === item.product_id || i.inventory_id === item.inventory_id
           ? {
-              ...i,
-              selling_price: i.original_price,
-              is_price_overridden: false,
-            }
+            ...i,
+            selling_price: i.original_price,
+            is_price_overridden: false,
+          }
           : i,
       ),
     );
@@ -330,6 +365,10 @@ export default function CartPanel({ cart, setCart, triggerRefresh }) {
     }, 500);
   };
 
+ const isProductOverrideAllowed = (item) => {
+    return Number(item.is_price_override) === 1;
+};
+
   return (
     <>
       <div className="w-1/3 bg-gray-50 border-l shadow-2xl p-10 flex flex-col">
@@ -423,6 +462,8 @@ export default function CartPanel({ cart, setCart, triggerRefresh }) {
               const isEditing = override?.editing;
               const isOverridden =
                 item.is_price_overridden && item.original_price;
+
+
 
               return (
                 <div
@@ -616,7 +657,7 @@ export default function CartPanel({ cart, setCart, triggerRefresh }) {
                           </span>
                         )}
 
-                        {canOverridePrice && !isEditing && (
+                        {!isEditing && isProductOverrideAllowed(item) && (
                           <>
                             <button
                               onClick={() => startPriceEdit(item)}
@@ -633,6 +674,7 @@ export default function CartPanel({ cart, setCart, triggerRefresh }) {
                             >
                               ✏️ Edit
                             </button>
+
                             {isOverridden && (
                               <button
                                 onClick={() => resetPrice(item)}
@@ -680,9 +722,8 @@ export default function CartPanel({ cart, setCart, triggerRefresh }) {
             <button
               onClick={() => setShowPayment(true)}
               disabled={cart.length === 0}
-              className={`w-full bg-gradient-to-r from-green-500 to-green-700 hover:from-green-600 hover:to-green-800 text-white p-6 rounded-3xl text-4xl font-extrabold shadow-2xl ${
-                cart.length === 0 ? "cursor-not-allowed" : ""
-              }`}
+              className={`w-full bg-gradient-to-r from-green-500 to-green-700 hover:from-green-600 hover:to-green-800 text-white p-6 rounded-3xl text-4xl font-extrabold shadow-2xl ${cart.length === 0 ? "cursor-not-allowed" : ""
+                }`}
             >
               Checkout
             </button>

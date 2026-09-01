@@ -83,6 +83,7 @@ const Product = () => {
                 hsn_code: product.hsn_code,
                 gst_rate: product.gst_rate,
                 gst_inclusive: product.gst_inclusive,
+                is_price_override:product.is_price_override,
 
                 batch_no: inv.batch_no,
 
@@ -106,6 +107,8 @@ const Product = () => {
               grouped[key].barcodes.add(inv.batch_barcode);
             }
           });
+
+          console.log(product);
 
           Object.values(grouped).forEach((row) => {
             row.total_qty = row.qty + row.free;
@@ -131,6 +134,7 @@ const Product = () => {
             hsn_code: product.hsn_code,
             gst_rate: product.gst_rate,
             gst_inclusive: product.gst_inclusive,
+            is_price_override:product.is_price_override,
 
             batch_no: "-",
             barcode: product.barcode ?? null,

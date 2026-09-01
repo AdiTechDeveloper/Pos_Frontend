@@ -27,6 +27,7 @@ const ProductForm = ({ onSuccess, onCancel, initialData = null }) => {
     gst_rate_id: initialData?.gst_rate_id || "",
     barcode: initialData?.barcode || "",
     gst_inclusive: initialData?.gst_inclusive == 1 || false,
+    is_price_override: 0,
   };
 
   useEffect(() => {
@@ -359,6 +360,66 @@ const ProductForm = ({ onSuccess, onCancel, initialData = null }) => {
 
                           <span className="text-[10px] font-bold text-gray-600">
                             GST EXCLUSIVE
+                          </span>
+                        </label>
+
+                      </div>
+                    );
+                  }}
+                </Field>
+              </div>
+
+
+              {/* Price Override */}
+               <div className="flex flex-col justify-end mb-20">
+                <Field name="is_price_override">
+                  {({ field, form }) => {
+                    const isOverride =
+                      field.value === true || field.value === 1;
+
+                    return (
+                      <div className="flex gap-3">
+
+                        {/* GST Included */}
+                        <label
+                          className={`flex items-center gap-3 p-2 rounded-lg border cursor-pointer transition-all ${isOverride
+                              ? "bg-indigo-50 border-indigo-200"
+                              : "bg-gray-50 border-gray-100"
+                            }`}
+                        >
+                          <input
+                            type="checkbox"
+                            className="w-4 h-4 accent-indigo-600"
+                            checked={isOverride}
+                            onChange={() =>
+                              form.setFieldValue("is_price_override", true)
+                            }
+                          />
+
+                          <span className="text-[10px] font-bold text-gray-600">
+                            Price Override
+                          </span>
+                        </label>
+
+
+                        {/* GST Excluded */}
+                        <label
+                          className={`flex items-center gap-3 p-2 rounded-lg border cursor-pointer transition-all ${!isOverride
+                              ? "bg-indigo-50 border-indigo-200"
+                              : "bg-gray-50 border-gray-100"
+                            }`}
+                        >
+                          <input
+                            type="checkbox"
+                            className="w-4 h-4 accent-indigo-600"
+                            checked={!isOverride}
+                            onChange={() =>
+                              form.setFieldValue("is_price_override", false)
+                            }
+                          />
+
+                          <span className="text-[10px] font-bold text-gray-600">
+                              Price Not Override
                           </span>
                         </label>
 

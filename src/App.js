@@ -58,6 +58,8 @@ import SalesReturn from "./components/SalesReturn";
 import SalesReturnList from "./components/SalesReturnList";
 import ShiftHistory from "./components/reports/ShiftHistoryReport";
 import stockExpiryReport from "./components/reports/stockExpiryReport";
+import AdvancePayment from "./components/AdvancePayment";
+
 
 const isAuthenticated = () => {
   const storedData = localStorage.getItem("user_detail");
@@ -201,6 +203,10 @@ function App() {
             path="/sales-return/list"
             component={SalesReturnList}
           />
+
+           <ProtectedRoute 
+          exact
+          path="/advancepayment" component={AdvancePayment} /> 
 
           <ProtectedRoute exact path="/suppliers" component={SupplierBill} />
           <ProtectedRoute
